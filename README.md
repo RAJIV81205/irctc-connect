@@ -1,4 +1,8 @@
 # IRCTC Connect
+[![npm version](https://badge.fury.io/js/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
+[![Downloads](https://img.shields.io/npm/dm/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
+[![License](https://img.shields.io/npm/l/irctc-connect.svg)](https://github.com/RAJIV81205/irctc-connect/blob/main/LICENSE)
+![Tests](https://github.com/RAJIV81205/irctc-connect/workflows/Test/badge.svg)
 
 A comprehensive, promise-based Node.js package for Indian Railways services. Currently supports PNR status checking with more features coming soon including train schedules, seat availability, live train status, and booking management.
 
