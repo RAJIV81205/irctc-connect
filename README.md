@@ -2,25 +2,15 @@
 [![npm version](https://badge.fury.io/js/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
 [![Downloads](https://img.shields.io/npm/dm/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
 [![License](https://img.shields.io/npm/l/irctc-connect.svg)](https://github.com/RAJIV81205/irctc-connect/blob/main/LICENSE)
-![Tests](https://github.com/RAJIV81205/irctc-connect/workflows/Test/badge.svg)
 
-A comprehensive, promise-based Node.js package for Indian Railways services. Currently supports PNR status checking with more features coming soon including train schedules, seat availability, live train status, and booking management.
+A comprehensive Node.js package for Indian Railways services. Get real-time PNR status and detailed train information with complete route details.
 
-## Current Features
+## Features
 
-- ✅ **PNR Status Checking** - Real-time PNR status with comprehensive details
-- 🚂 **Train Information** - Complete train and journey details
-- 👥 **Passenger Details** - Individual passenger status and seat information
-- ⏱️ **Reliable Performance** - Built-in timeout handling and error management
-
-## Coming Soon
-
-- 🕐 **Train Schedules** - Get detailed train timetables and schedules
-- 💺 **Seat Availability** - Check available seats for any train and date
-- 📍 **Live Train Status** - Real-time train running status and delays  
-- 🎫 **Booking Management** - Advanced booking and cancellation features
-- 🔍 **Station Information** - Comprehensive station codes and details
-- 📊 **Route Planning** - Find optimal routes between stations
+- ✅ **PNR Status Checking** - Real-time PNR status with passenger details
+- 🚂 **Train Information** - Complete train details with route information
+- 🗺️ **Route Details** - Station-wise route with timings and coordinates
+- ⚡ **Fast & Reliable** - Built-in timeout handling and validation
 
 ## Installation
 
@@ -31,38 +21,50 @@ npm install irctc-connect
 ## Quick Start
 
 ```javascript
-import { checkPNRStatus } from 'irctc-connect';
+import { checkPNRStatus, getTrainInfo } from 'irctc-connect';
 
 // Check PNR status
-const result = await checkPNRStatus('1234567890');
+const pnrResult = await checkPNRStatus('1234567890');
+console.log(pnrResult);
 
-if (result.success) {
-    console.log('PNR Status:', result.data.status);
-    console.log('Train:', result.data.train.name);
-    console.log('From:', result.data.journey.from.name);
-    console.log('To:', result.data.journey.to.name);
-} else {
-    console.error('Error:', result.error);
-}
+// Get train information
+const trainResult = await getTrainInfo('12345');
+console.log(trainResult);
 ```
 
 ## API Reference
 
-### Current Methods
-
 ### `checkPNRStatus(pnr)`
 
-Checks the status of an Indian Railways PNR number.
+Get comprehensive PNR status information.
 
-#### Parameters
-
+**Parameters:**
 - `pnr` (string): 10-digit PNR number
 
-#### Returns
+**Example:**
+```javascript
+import { checkPNRStatus } from 'irctc-connect';
 
-Returns a Promise that resolves to an object with the following structure:
+const result = await checkPNRStatus('1234567890');
 
-**Success Response:**
+if (result.success) {
+    console.log('PNR:', result.data.pnr);
+    console.log('Status:', result.data.status);
+    console.log('Train:', result.data.train.name);
+    console.log('From:', result.data.journey.from.name);
+    console.log('To:', result.data.journey.to.name);
+    console.log('Departure:', result.data.journey.departure);
+    
+    // Passenger details
+    result.data.passengers.forEach(passenger => {
+        console.log(`${passenger.name}: ${passenger.status} - ${passenger.seat}`);
+    });
+} else {
+    console.log('Error:', result.error);
+}
+```
+
+**Response Structure:**
 ```javascript
 {
     success: true,
@@ -75,16 +77,8 @@ Returns a Promise that resolves to an object with the following structure:
             class: "3A"
         },
         journey: {
-            from: {
-                name: "New Delhi",
-                code: "NDLS",
-                platform: "16"
-            },
-            to: {
-                name: "Mumbai Central",
-                code: "BCT",
-                platform: "3"
-            },
+            from: { name: "New Delhi", code: "NDLS", platform: "16" },
+            to: { name: "Mumbai Central", code: "BCT", platform: "3" },
             departure: "20:05",
             arrival: "08:35",
             duration: "12h 30m"
@@ -107,116 +101,152 @@ Returns a Promise that resolves to an object with the following structure:
 }
 ```
 
-**Error Response:**
+### `getTrainInfo(trainNumber)`
+
+Get detailed train information including complete route.
+
+**Parameters:**
+- `trainNumber` (string): 5-digit train number
+
+**Example:**
+```javascript
+import { getTrainInfo } from 'irctc-connect';
+
+const result = await getTrainInfo('12345');
+
+if (result.success) {
+    const { trainInfo, route } = result.data;
+    
+    // Train basic information
+    console.log('Train:', trainInfo.train_name);
+    console.log('Number:', trainInfo.train_no);
+    console.log('From:', trainInfo.from_stn_name);
+    console.log('To:', trainInfo.to_stn_name);
+    console.log('Departure:', trainInfo.from_time);
+    console.log('Arrival:', trainInfo.to_time);
+    console.log('Duration:', trainInfo.travel_time);
+    console.log('Running Days:', trainInfo.running_days);
+    
+    // Route information
+    console.log('\nRoute Details:');
+    route.forEach(station => {
+        console.log(`${station.stnName} (${station.stnCode})`);
+        console.log(`  Arrival: ${station.arrival} | Departure: ${station.departure}`);
+        console.log(`  Halt: ${station.halt} | Distance: ${station.distance}km`);
+        if (station.coordinates) {
+            console.log(`  Location: ${station.coordinates.latitude}, ${station.coordinates.longitude}`);
+        }
+    });
+} else {
+    console.log('Error:', result.error);
+}
+```
+
+**Response Structure:**
 ```javascript
 {
-    success: false,
-    error: "Error message describing what went wrong"
+    success: true,
+    data: {
+        trainInfo: {
+            train_no: "12345",
+            train_name: "Rajdhani Express",
+            from_stn_name: "New Delhi",
+            from_stn_code: "NDLS",
+            to_stn_name: "Mumbai Central", 
+            to_stn_code: "BCT",
+            from_time: "20:05",
+            to_time: "08:35",
+            travel_time: "12:30 hrs",
+            running_days: "1234567",
+            type: "Express",
+            train_id: "12345"
+        },
+        route: [
+            {
+                stnName: "New Delhi",
+                stnCode: "NDLS",
+                arrival: "00:00",
+                departure: "20:05",
+                halt: "0 min",
+                distance: "0",
+                day: "1",
+                platform: "16",
+                coordinates: {
+                    latitude: 28.6431,
+                    longitude: 77.2197
+                }
+            },
+            // ... more stations
+        ]
+    }
 }
 ```
 
 ## Usage Examples
 
-### Basic PNR Check
+### Complete PNR Journey Tracker
 
 ```javascript
 import { checkPNRStatus } from 'irctc-connect';
 
-async function main() {
-    try {
-        const result = await checkPNRStatus('1234567890');
+async function trackJourney(pnr) {
+    const result = await checkPNRStatus(pnr);
+    
+    if (result.success) {
+        const { data } = result;
         
-        if (result.success) {
-            const { data } = result;
-            
-            console.log(`PNR: ${data.pnr}`);
-            console.log(`Status: ${data.status}`);
-            console.log(`Train: ${data.train.number} - ${data.train.name}`);
-            console.log(`Journey: ${data.journey.from.name} → ${data.journey.to.name}`);
-            console.log(`Departure: ${data.journey.departure} | Arrival: ${data.journey.arrival}`);
-            
-            // Display passenger information
-            data.passengers.forEach((passenger, index) => {
-                console.log(`Passenger ${index + 1}: ${passenger.name} - ${passenger.status} (${passenger.seat})`);
-            });
-        } else {
-            console.error('Failed to fetch PNR status:', result.error);
-        }
-    } catch (error) {
-        console.error('Unexpected error:', error);
+        console.log(`🚂 ${data.train.name} (${data.train.number})`);
+        console.log(`📍 ${data.journey.from.name} → ${data.journey.to.name}`);
+        console.log(`🕐 ${data.journey.departure} - ${data.journey.arrival}`);
+        console.log(`⏱️  Duration: ${data.journey.duration}`);
+        console.log(`📊 Status: ${data.status}`);
+        
+        console.log('\n👥 Passengers:');
+        data.passengers.forEach((passenger, i) => {
+            console.log(`${i + 1}. ${passenger.name} - ${passenger.status} (${passenger.seat})`);
+        });
     }
 }
-
-main();
 ```
 
-### Handle Different PNR Statuses
+### Train Route Explorer
 
 ```javascript
-import { checkPNRStatus } from 'irctc-connect';
+import { getTrainInfo } from 'irctc-connect';
 
-async function interpretPNRStatus(pnr) {
-    const result = await checkPNRStatus(pnr);
+async function exploreRoute(trainNumber) {
+    const result = await getTrainInfo(trainNumber);
     
-    if (!result.success) {
-        return `Error: ${result.error}`;
+    if (result.success) {
+        const { trainInfo, route } = result.data;
+        
+        console.log(`🚂 ${trainInfo.train_name} (${trainInfo.train_no})`);
+        console.log(`🗓️  Running Days: ${trainInfo.running_days}`);
+        console.log(`⏱️  Total Journey: ${trainInfo.travel_time}\n`);
+        
+        console.log('🛤️  Route Details:');
+        route.forEach((station, index) => {
+            const isSource = index === 0;
+            const isDestination = index === route.length - 1;
+            
+            let symbol = '├─';
+            if (isSource) symbol = '┌─';
+            if (isDestination) symbol = '└─';
+            
+            console.log(`${symbol} ${station.stnName} (${station.stnCode})`);
+            console.log(`   📍 ${station.arrival} → ${station.departure} | Halt: ${station.halt}`);
+            console.log(`   📏 Distance: ${station.distance}km | Day: ${station.day}`);
+            
+            if (station.coordinates) {
+                console.log(`   🌍 ${station.coordinates.latitude}, ${station.coordinates.longitude}`);
+            }
+            console.log('');
+        });
     }
-    
-    const status = result.data.status;
-    
-    switch (status) {
-        case 'CNF':
-            return 'Your ticket is confirmed! 🎉';
-        case 'WL':
-            return 'Your ticket is on waiting list 📋';
-        case 'RAC':
-            return 'Your ticket is under RAC (Reservation Against Cancellation) 🔄';
-        case 'CAN':
-            return 'Your ticket has been cancelled ❌';
-        default:
-            return `Status: ${status}`;
-    }
-}
-
-// Usage
-console.log(await interpretPNRStatus('1234567890'));
-```
-
-### Error Handling
-
-```javascript
-import { checkPNRStatus } from 'irctc-connect';
-
-async function safePNRCheck(pnr) {
-    const result = await checkPNRStatus(pnr);
-    
-    if (!result.success) {
-        switch (result.error) {
-            case 'PNR number is required and must be a string':
-                console.log('Please provide a valid PNR number');
-                break;
-            case 'PNR number must be exactly 10 digits':
-                console.log('PNR should be 10 digits long');
-                break;
-            case 'Request timed out after 10 seconds':
-                console.log('Request took too long, please try again');
-                break;
-            case 'No PNR data found or invalid PNR number':
-                console.log('PNR not found, please check the number');
-                break;
-            default:
-                console.log('Something went wrong:', result.error);
-        }
-        return null;
-    }
-    
-    return result.data;
 }
 ```
 
-## PNR Status Codes
-
-Common PNR status codes you might encounter:
+## Common Status Codes
 
 | Code | Full Form | Description |
 |------|-----------|-------------|
@@ -228,54 +258,9 @@ Common PNR status codes you might encounter:
 | TQWL | Tatkal Quota Waiting List | On tatkal quota waiting list |
 | GNWL | General Waiting List | On general waiting list |
 
-## Error Handling
-
-The package includes comprehensive error handling for:
-
-- Invalid PNR format (non-10 digit numbers)
-- Network timeouts (10-second limit)
-- API failures
-- Invalid responses
-- Missing or malformed data
-
-## Package Features
-
-- 🛡️ **Input Validation** - Comprehensive input validation and error handling
-- 📱 **Cross-Platform** - Works in both Node.js and modern browsers
-- 🎯 **Zero Dependencies** - Lightweight with no external dependencies
-- ⚡ **Fast & Reliable** - Optimized for performance with timeout handling
-- 🔄 **Promise-Based** - Modern async/await support
-
-## Limitations
-
-- This package relies on external APIs and their availability
-- Rate limiting may apply based on the underlying service
-- PNR data accuracy depends on the source API
-- Some PNR numbers might not be available immediately after booking
-
-## Roadmap
-
-IRCTC Connect is actively developed with new features being added regularly. Here's what's planned:
-
-**Phase 1 (Current):**
-- ✅ PNR Status Checking
-
-**Phase 2 (Coming Soon):**
-- 🚂 Train Schedules & Timetables
-- 💺 Seat Availability Checker
-- 📍 Live Train Running Status
-
-**Phase 3 (Future):**
-- 🎫 Booking Management
-- 🔍 Station Information & Codes
-- 📊 Route Planning & Optimization
-- 📱 Advanced Search & Filters
-
-Stay tuned for updates!
-
 ## Requirements
 
-- Node.js 14+ (for fetch support) or modern browser
+- Node.js 14+ (for fetch support)
 - Internet connection for API calls
 
 ## License
@@ -286,10 +271,6 @@ MIT
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Disclaimer
-
-This package is for educational and personal use only. Please respect the terms of service of Indian Railways and related services. The authors are not responsible for any misuse of this package.
-
 ---
 
-**Note:** This package is actively maintained and new features are being added regularly. Check back for updates!
+**Built with ❤️ for Indian Railways enthusiasts**
