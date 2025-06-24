@@ -1,6 +1,6 @@
 {
   "name": "irctc-connect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "irctc-connect is a lightweight Node.js wrapper designed to simplify access to Indian Railways and IRCTC-related data such as PNR status, train schedules, live train status, and station information. It helps developers easily integrate railway features into their apps or backend systems using simple and customizable methods.",
   "keywords": [
     "irctc"
@@ -20,6 +20,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js"
-
   }
 }
