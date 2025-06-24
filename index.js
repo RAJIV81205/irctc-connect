@@ -108,9 +108,13 @@ async function checkPNRStatus(pnr) {
 }
 
 
-
-
-
+async function getTimeTable(trainNumber) {
+    // Placeholder for future implementation
+    return {
+        success: false,
+        error: 'getTimeTable function is not implemented yet'
+    };
+}
 
 
 
