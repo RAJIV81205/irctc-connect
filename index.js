@@ -258,7 +258,8 @@ async function getTrainInfo(trainNumber) {
     }
 }
 
-console.log(await getTrainInfo("12237"))
+
+
 
 
 
