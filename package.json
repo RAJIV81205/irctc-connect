@@ -1,6 +1,6 @@
 {
   "name": "irctc-connect",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "🚂 Complete Node.js SDK for Indian Railways IRCTC - Check PNR status, train schedules, live running status, seat availability & station info. Promise-based API with TypeScript support.",
   "keywords": [
     "irctc",
