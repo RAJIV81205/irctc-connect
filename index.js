@@ -1,3 +1,7 @@
+
+
+
+/// 1. Check PNR Status
 async function checkPNRStatus(pnr) {
     // Input validation
     if (!pnr || typeof pnr !== 'string') {
@@ -107,6 +111,13 @@ async function checkPNRStatus(pnr) {
     }
 }
 
+
+
+
+
+
+
+/// 2. Get Train Info
 function checkTrain(rawString) {
     try {
         const sections = rawString.split("~~~~~~~~");
@@ -262,8 +273,83 @@ async function getTrainInfo(trainNumber) {
 
 
 
+/// 3. Get Train Status
+async function trackTrain(trainNumber, date) {
+    if (!trainNumber || typeof trainNumber !== 'string' || trainNumber.length !== 5) {
+        return {
+            success: false,
+            error: 'Invalid train number. It must be a 5-character string.'
+        };
+    }
+
+    // Validate date format: dd-mm-yyyy using RegExp
+    const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+    if (!date || !dateRegex.test(date)) {
+        return {
+            success: false,
+            error: 'Invalid date format. Please use dd-mm-yyyy format.'
+        };
+    }
+
+    // Parse the date
+    const [day, month, year] = date.split('-').map(Number);
+    const parsedDate = new Date(`${year}-${month}-${day}`);
+
+    // Check if the constructed date is valid
+    if (isNaN(parsedDate.getTime()) || parsedDate.getDate() !== day || parsedDate.getMonth() + 1 !== month || parsedDate.getFullYear() !== year) {
+        return {
+            success: false,
+            error: 'Invalid date. Please check the day, month, and year values.'
+        };
+    }
+
+    try {
+        const response = await fetch(`https://easy-rail.onrender.com/fetch-train-status` , {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            },
+            body: JSON.stringify({
+                trainNumber: trainNumber,
+                dates: date
+            })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data ) {
+            return {
+                success: false,
+                error: data.error || 'Failed to fetch train status'
+            };
+        }
+        return {
+            success: true,
+            data: data || {}
+        };
+        
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message || 'Failed to track train'
+        };
+        
+    }
+
+    
+}
+
+
+
+
+
+
 
 export {
     checkPNRStatus,
     getTrainInfo,
+    trackTrain
 }
