@@ -1,4 +1,4 @@
-import { checkTrain  , getRoute } from "./utils";
+import { checkTrain  , getRoute } from "./utils.js";
 
 
 /// 1. Check PNR Status
