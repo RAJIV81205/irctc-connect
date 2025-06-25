@@ -137,7 +137,7 @@ async function getTrainInfo(trainNumber) {
         }
 
         const rawData = await response.text();
-        const trainInfo = checkTrain(rawData);
+        const trainInfo = await checkTrain(rawData);
 
         if (!trainInfo.success) {
             return trainInfo;
