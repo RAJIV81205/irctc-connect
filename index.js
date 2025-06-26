@@ -237,6 +237,11 @@ async function trackTrain(trainNumber, date) {
     
 }
 
+
+
+
+
+
 ///4. 
 async function liveAtStation(stnCode){
     try {
@@ -247,10 +252,26 @@ async function liveAtStation(stnCode){
             },
             body:JSON.stringify({stnCode})
         })
+
+        if(!response.ok){
+            throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        
+
+        console.log(data)
+
+        
+
     } catch (error) {
         console.error(error.message)
     }
 }
+
+
+console.log(await liveAtStation('BBS'))
 
 
 
