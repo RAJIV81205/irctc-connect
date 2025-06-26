@@ -271,7 +271,7 @@ async function liveAtStation(stnCode){
 }
 
 
-console.log(await liveAtStation('BBS'))
+
 
 
 
