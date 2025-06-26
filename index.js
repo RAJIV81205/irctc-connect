@@ -237,8 +237,20 @@ async function trackTrain(trainNumber, date) {
     
 }
 
-
-
+///4. 
+async function liveAtStation(stnCode){
+    try {
+        const response = await fetch("https://easy-rail.onrender.com/at-station",{
+            method:'POST',
+            headers:{
+                'Content-Type':"application/json"
+            },
+            body:JSON.stringify({stnCode})
+        })
+    } catch (error) {
+        console.error(error.message)
+    }
+}
 
 
 
