@@ -242,7 +242,7 @@ async function trackTrain(trainNumber, date) {
 
 
 
-///4. 
+///4. Get Current list of upcoming trains at a station 
 async function liveAtStation(stnCode){
     try {
         const response = await fetch("https://easy-rail.onrender.com/at-station",{
