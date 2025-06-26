@@ -242,8 +242,17 @@ async function trackTrain(trainNumber, date) {
 
 
 
-///4. Get Current list of upcoming trains at a station 
+/// 4. Get Current list of upcoming trains at a station 
 async function liveAtStation(stnCode){
+    if (!stnCode || typeof stnCode !== 'string'){
+
+        return{
+            success:false,
+            error:'Station code is required and must be a string'
+        }
+    }
+
+
     try {
         const response = await fetch("https://easy-rail.onrender.com/at-station",{
             method:'POST',
@@ -259,14 +268,27 @@ async function liveAtStation(stnCode){
 
         const data = await response.json()
 
-        
+        if(!data){
+            return{
+                success:false,
+                error :'Failed to fetch data '
+            }
+        }
 
-        console.log(data)
 
-        
+        return{
+            success:true,
+            data: data 
+        }
+
+
 
     } catch (error) {
         console.error(error.message)
+        return { 
+            success:false ,
+            error : error.message || 'Failed to fetch data'
+        }
     }
 }
 
@@ -279,5 +301,6 @@ async function liveAtStation(stnCode){
 export {
     checkPNRStatus,
     getTrainInfo,
-    trackTrain
+    trackTrain,
+    liveAtStation
 }
