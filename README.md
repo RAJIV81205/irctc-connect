@@ -22,7 +22,7 @@ npm install irctc-connect
 ## Quick Start
 
 ```javascript
-import { checkPNRStatus, getTrainInfo, trackTrain } from 'irctc-connect';
+import { checkPNRStatus, getTrainInfo, trackTrain , liveAtStation , searchTrainBetweenStations } from 'irctc-connect';
 
 // Check PNR status
 const pnrResult = await checkPNRStatus('1234567890');
