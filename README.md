@@ -35,6 +35,15 @@ console.log(trainResult);
 // Track live train status
 const trackResult = await trackTrain('12345', '25-06-2024');
 console.log(trackResult);
+
+// Get live upcoming Trains at any station
+const atStationResult = await liveAtStation("BBS")
+console.log(atStationResult)
+
+// Get all Trains between Station
+const betweenResult = await searchTrainBetweenStations('ASN','DDU')
+console.log(betweenResult)
+
 ```
 
 ## API Reference
