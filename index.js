@@ -1,4 +1,4 @@
-import { checkTrain  , getRoute } from "./utils.js";
+import { checkTrain  , getRoute , parseTrainData } from "./utils.js";
 
 
 /// 1. Check PNR Status
@@ -296,11 +296,55 @@ async function liveAtStation(stnCode){
 
 
 
+/// 5. Search train between stations 
+async function searchTrainBetweenStations(fromStnCode , toStnCode){
+    if (!fromStnCode || typeof fromStnCode !== 'string' || !toStnCode || typeof toStnCode !== 'string'){
+        return{
+            success:false,
+            error:'Both from and to station codes are required and must be strings'
+        }
+    }
+
+    try {
+        const response = await fetch(`https://erail.in/rail/getTrains.aspx?Station_From=${fromStnCode}&Station_To=${toStnCode}&DataSource=0&Language=0&Cache=true`)
+
+        if (!response.ok){
+            throw new Error('HTTP Error! status:'+ response.status) 
+        }
+
+        const result = await response.text()
+        const trainData = await parseTrainData(result)
+
+        return{
+            success: trainData.success,
+            data : trainData.data
+        }
+
+
+        
+    } catch (error) {
+        return{
+            success:false,
+            error: error.message || 'Failed to fetch train data'
+        }
+        
+    }
+
+    
+}
+
+
+
+
+
+
+
 
 
 export {
     checkPNRStatus,
     getTrainInfo,
     trackTrain,
-    liveAtStation
+    liveAtStation,
+    searchTrainBetweenStations
 }

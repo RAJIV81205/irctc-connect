@@ -68,8 +68,6 @@ export function parseTrainRoute(string) {
                             longitude: parseFloat(details[13])
                         }
                         : null
-
-
             };
         });
 
@@ -99,6 +97,89 @@ export async function getRoute(train_id) {
         return {
             success: false,
             error: "Failed to fetch route data"
+        };
+    }
+}
+
+export async function parseTrainData(data) {
+    try {
+        const arr = [];
+        const rawData = data.split("~~~~~~~~").filter((el) => el.trim() !== ""); // Filter valid data
+
+        // Check for error messages
+        if (rawData[0].includes("No direct trains found")) {
+            return {
+                success: false,
+                time_stamp: Date.now(),
+                data: "No direct trains found between the selected stations.",
+            };
+        }
+
+        if (
+            rawData[0].includes("Please try again after some time.") ||
+            rawData[0].includes("From station not found") ||
+            rawData[0].includes("To station not found")
+        ) {
+            return {
+                success: false,
+                time_stamp: Date.now(),
+                data: rawData[0].replace(/~/g, ""),
+            };
+        }
+
+        // Parse each train's details
+        for (let i = 0; i < rawData.length; i++) {
+            const trainData = rawData[i].split("~^");
+            const nextData = rawData[i + 1] || ""; // Ensure next data exists or use an empty string
+            const trainData2 = nextData.split("~^");
+
+            if (trainData.length === 2) {
+                const details = trainData[1].split("~").filter((el) => el.trim() !== "");
+                const details2 = trainData2[0]
+                    ? trainData2[0].split("~").filter((el) => el.trim() !== "")
+                    : []; // Handle empty trainData2 safely
+
+                if (details.length >= 14) {
+                    arr.push({
+                        train_no: details[0],
+                        train_name: details[1],
+                        source_stn_name: details[2],
+                        source_stn_code: details[3],
+                        dstn_stn_name: details[4],
+                        dstn_stn_code: details[5],
+                        from_stn_name: details[6],
+                        from_stn_code: details[7],
+                        to_stn_name: details[8],
+                        to_stn_code: details[9],
+                        from_time: details[10].replace(".", ":"),
+                        to_time: details[11].replace(".", ":"),
+                        travel_time: details[12].replace(".", ":") + " hrs",
+                        running_days: details[13],
+                        distance: details2[18] || "N/A", // Use "N/A" if distance is unavailable
+                        halts: details2[7] - details2[4] - 1
+                    });
+                }
+            }
+        }
+        arr.sort((a, b) => {
+            const timeA = a.from_time.split(":").map(Number);
+            const timeB = b.from_time.split(":").map(Number);
+            const minutesA = timeA[0] * 60 + timeA[1];
+            const minutesB = timeB[0] * 60 + timeB[1];
+            return minutesA - minutesB;
+        });
+
+        return {
+            success: true,
+            time_stamp: Date.now(),
+            data: arr,
+        };
+    } catch (err) {
+        console.error("Parsing error:", err);
+        return {
+            success: false,
+            time_stamp: Date.now(),
+            data: "An error occurred while processing train data.",
         };
     }
 }
