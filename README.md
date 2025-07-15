@@ -3,6 +3,10 @@
 [![Downloads](https://img.shields.io/npm/dm/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
 [![License](https://img.shields.io/npm/l/irctc-connect.svg)](https://github.com/RAJIV81205/irctc-connect/blob/main/LICENSE)
 
+<img width="1536" height="657" alt="ChatGPT Image Jul 15, 2025, 11_30_02 AM" src="https://github.com/user-attachments/assets/39c770a2-639c-443c-93b6-4e78889e78b0" />
+
+
+
 A comprehensive Node.js package for Indian Railways services. Get real-time PNR status, detailed train information, live train tracking, station updates, and search trains between stations.
 
 ## ✨ Features
