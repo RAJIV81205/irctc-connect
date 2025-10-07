@@ -340,10 +340,10 @@ async function searchTrainBetweenStations(fromStnCode , toStnCode){
 
 
 
-// export {
-//     checkPNRStatus,
-//     getTrainInfo,
-//     trackTrain,
-//     liveAtStation,
-//     searchTrainBetweenStations
-// }
+export {
+    checkPNRStatus,
+    getTrainInfo,
+    trackTrain,
+    liveAtStation,
+    searchTrainBetweenStations
+}
