@@ -46,42 +46,122 @@ export async function checkTrain(rawString) {
     }
 }
 
-export function parseTrainRoute(string) {
-    try {
-        let data = string.split("~^");
+export function parseTrainRoute(rawString, options = {}) {
+  const enforceIndiaBounds = options.enforceIndia !== false; // default true
 
-        let arr = data.map((item) => {
-            let details = item.split("~").filter((el) => el !== "");
-            return {
-                stnName: details[2],
-                stnCode: details[1],
-                arrival: details[3].replace(".", ":"),
-                departure: details[4].replace(".", ":"),
-                halt: details[5] ? details[5] + " min" : "0 min",
-                distance: details[6],
-                day: details[7],
-                platform: !isNaN(Number(details[8])) ? details[8] : '',
-                coordinates:
-                    !isNaN(parseFloat(details[12])) && !isNaN(parseFloat(details[13]))
-                        ? {
-                            latitude: parseFloat(details[12]),
-                            longitude: parseFloat(details[13])
-                        }
-                        : null
-            };
-        });
+  const INDIA = {
+    latMin: 6.0,
+    latMax: 38.0,
+    lonMin: 66.0,
+    lonMax: 98.0
+  };
 
-        return {
-            success: true,
-            data: arr,
-        };
-    } catch (err) {
-        return {
-            success: false,
-            error: "Failed to parse route data",
-        };
+  function looksLikeLatLonPairStr(s1, s2, enforceIndia) {
+    if (!s1 || !s2) return false;
+    const n1 = parseFloat(s1);
+    const n2 = parseFloat(s2);
+    if (isNaN(n1) || isNaN(n2)) return false;
+    if (Math.abs(n1) > 90 || Math.abs(n2) > 180) return false;
+
+    if (enforceIndia) {
+      if (n1 < INDIA.latMin || n1 > INDIA.latMax) return false;
+      if (n2 < INDIA.lonMin || n2 > INDIA.lonMax) return false;
     }
+
+    // require at least one value to look like a decimal coordinate (avoid integer elevations)
+    const hasDecimal = (String(s1).includes('.') || String(s2).includes('.')
+                        || (n1 % 1 !== 0) || (n2 % 1 !== 0));
+    return hasDecimal;
+  }
+
+  function normalizeTime(t) {
+    if (!t) return "";
+    if (t === "First" || t === "first") return "--";
+    if (t === "Last"  || t === "last")  return "--";
+    return t.replace(".", ":");
+  }
+
+  try {
+    // station chunks start after the first '^' in your raw string -> slice(1)
+    const chunks = String(rawString).split("^").slice(1).filter(Boolean);
+
+    const parsed = chunks.map((chunk) => {
+      const details = chunk.split("~"); // keep empties so indices align with original format
+
+      const stnCode = (details[1] || "").trim();
+      const stnName = (details[2] || "").trim();
+      const arrivalRaw = (details[3] || "").trim();
+      const departureRaw = (details[4] || "").trim();
+
+      const haltRaw = (details[5] || "").trim();
+      const haltMinutes = haltRaw === "" ? 0 : (isNaN(Number(haltRaw)) ? 0 : Number(haltRaw));
+      const halt = `${haltMinutes} min`;
+
+      const distance = (details[6] || "").trim();
+      const day = (details[7] || "").trim();
+      const platform = !isNaN(Number(details[8])) && details[8] !== "" ? Number(details[8]) : (details[8] || "");
+
+      // ---- 1) Try strict India-based search from right -> left ----
+      let lat = null, lon = null;
+      for (let i = details.length - 2; i >= 0; i--) {
+        if (looksLikeLatLonPairStr(details[i], details[i + 1], enforceIndiaBounds)) {
+          lat = parseFloat(details[i]);
+          lon = parseFloat(details[i + 1]);
+          break;
+        }
+      }
+
+      // ---- 2) Fallback: if none found and we enforced India, try global lat/lon (still prefer decimals) ----
+      if (lat === null && enforceIndiaBounds) {
+        for (let i = details.length - 2; i >= 0; i--) {
+          const s1 = (details[i] || "").trim();
+          const s2 = (details[i + 1] || "").trim();
+          const n1 = parseFloat(s1);
+          const n2 = parseFloat(s2);
+          if (!isNaN(n1) && !isNaN(n2) && Math.abs(n1) <= 90 && Math.abs(n2) <= 180) {
+            // require decimals or fractional part
+            if (s1.includes('.') || s2.includes('.') || (n1 % 1 !== 0) || (n2 % 1 !== 0)) {
+              lat = n1; lon = n2; break;
+            }
+          }
+        }
+      }
+
+      // ---- 3) Final fallback: last numeric pair within the last 8 fields ----
+      if (lat === null) {
+        const start = Math.max(0, details.length - 8);
+        for (let i = details.length - 2; i >= start; i--) {
+          const n1 = parseFloat(details[i]);
+          const n2 = parseFloat(details[i + 1]);
+          if (!isNaN(n1) && !isNaN(n2)) {
+            lat = n1; lon = n2; break;
+          }
+        }
+      }
+
+      const coordinates = (lat !== null && lon !== null) ? { latitude: lat, longitude: lon } : null;
+
+      return {
+        stnCode,
+        stnName,
+        arrival: normalizeTime(arrivalRaw),
+        departure: normalizeTime(departureRaw),
+        halt,                 // "5 min"
+        haltMinutes,          // 5 (number)
+        distance,
+        day,
+        platform,
+        coordinates
+      };
+    });
+
+    return { success: true, data: parsed };
+  } catch (err) {
+    return { success: false, error: err?.message || "parsing failed" };
+  }
 }
+
+
 
 export async function getRoute(train_id) {
     try {
