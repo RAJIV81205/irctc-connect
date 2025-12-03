@@ -43,7 +43,7 @@ const pnrResult = await checkPNRStatus('1234567890');
 const trainResult = await getTrainInfo('12345');
 
 // Track live train status
-const trackResult = await trackTrain('12345', '25-06-2024');
+const trackResult = await trackTrain('12345', '03-12-2025');
 
 // Get live trains at station
 const stationResult = await liveAtStation('NDLS');
@@ -111,7 +111,7 @@ if (result.success) {
 
 ### 3. `trackTrain(trainNumber, date)`
 
-Get real-time train status and tracking for a specific date.
+Get real-time train status and tracking for a specific date with detailed station-wise information including delays and coach positions.
 
 **Parameters:**
 - `trainNumber` (string): 5-digit train number
@@ -119,22 +119,98 @@ Get real-time train status and tracking for a specific date.
 
 **Example:**
 ```javascript
-const result = await trackTrain('12345', '28-06-2025');
+const result = await trackTrain('12342', '03-12-2025');
 
 if (result.success) {
-    // Find current location
-    const current = result.data.find(s => s.current === "true");
-    if (current) {
-        console.log(`🚂 Currently at: ${current.station}`);
-    }
+    const { trainNo, trainName, date, statusNote, lastUpdate, totalStations, stations } = result.data;
     
-    // Show next 3 stations
-    const upcoming = result.data.filter(s => s.status === "upcoming").slice(0, 3);
-    console.log('\n📋 Next Stations:');
-    upcoming.forEach(station => {
-        console.log(`  • ${station.station} - Arr: ${station.arr}`);
-        if (station.delay) console.log(`    ⚠️ Delay: ${station.delay}`);
+    console.log(`🚂 ${trainName} (${trainNo})`);
+    console.log(`📅 Date: ${date}`);
+    console.log(`📍 Status: ${statusNote}`);
+    console.log(`🕐 Last Update: ${lastUpdate}`);
+    console.log(`🛤️ Total Stations: ${totalStations}`);
+    
+    // Show station details with delays
+    console.log('\n📋 Station Details:');
+    stations.forEach(station => {
+        console.log(`\n  🚉 ${station.stationName} (${station.stationCode})`);
+        console.log(`     Platform: ${station.platform} | Distance: ${station.distanceKm} km`);
+        console.log(`     Arrival: ${station.arrival.scheduled} → ${station.arrival.actual}`);
+        if (station.arrival.delay) {
+            console.log(`     ⚠️ Arrival Delay: ${station.arrival.delay}`);
+        }
+        console.log(`     Departure: ${station.departure.scheduled} → ${station.departure.actual}`);
+        if (station.departure.delay) {
+            console.log(`     ⚠️ Departure Delay: ${station.departure.delay}`);
+        }
+        
+        // Show coach composition
+        if (station.coachPosition && station.coachPosition.length > 0) {
+            const coaches = station.coachPosition.map(c => c.type).join(' - ');
+            console.log(`     🚃 Coaches: ${coaches}`);
+        }
     });
+}
+```
+
+**Response Structure:**
+```javascript
+{
+    success: true,
+    data: {
+        trainNo: "12342",
+        trainName: "AGNIVEENA EXP",
+        date: "03-Dec-2025",
+        statusNote: "Arrived at HOWRAH JN(HWH) at 09:06 03-Dec (Delay: 00:06)",
+        lastUpdate: "03-Dec-2025 09:11",
+        totalStations: 8,
+        stations: [
+            {
+                stationCode: "ASN",
+                stationName: "ASANSOL JN.",
+                platform: "5",
+                distanceKm: "",
+                arrival: {
+                    scheduled: "SRC",
+                    actual: "SRC",
+                    delay: ""
+                },
+                departure: {
+                    scheduled: "05:30 03-Dec",
+                    actual: "05:30 03-Dec",
+                    delay: "On Time"
+                },
+                coachPosition: [
+                    { type: "ENG", number: "ENG", position: "0" },
+                    { type: "LPR", number: "LPR", position: "1" },
+                    { type: "GEN", number: "GEN", position: "2" },
+                    { type: "2S", number: "D5", position: "4" },
+                    { type: "CC", number: "C2", position: "9" }
+                    // ... more coaches
+                ]
+            },
+            {
+                stationCode: "RNG",
+                stationName: "RANIGANJ",
+                platform: "4",
+                distanceKm: "18",
+                arrival: {
+                    scheduled: "05:41 03-Dec",
+                    actual: "05:50 03-Dec",
+                    delay: "9 Min"
+                },
+                departure: {
+                    scheduled: "05:43 03-Dec",
+                    actual: "05:52 03-Dec",
+                    delay: "9 Min"
+                },
+                coachPosition: [
+                    // ... coach details
+                ]
+            }
+            // ... more stations
+        ]
+    }
 }
 ```
 
