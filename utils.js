@@ -263,3 +263,47 @@ export async function parseTrainData(data) {
         };
     }
 }
+
+export async function normalizeDate(date) {
+    // Split by "-" and clean spacing
+    let parts = date.split("-").map(p => p.trim());
+
+    if (parts.length !== 3) {
+        return { success: false, error: "Invalid date format." };
+    }
+
+    let [day, month, year] = parts;
+
+    // Pad day if single digit
+    if (day.length === 1) day = "0" + day;
+
+    // Pad month if single digit
+    if (month.length === 1) month = "0" + month;
+
+    // Convert year from 2-digit → 4-digit
+    if (year.length === 2) year = "20" + year;
+
+    // Validate after formatting: dd-mm-yyyy
+    const validRegex = /^\d{2}-\d{2}-\d{4}$/;
+    const finalRaw = `${day}-${month}-${year}`;
+
+    if (!validRegex.test(finalRaw)) {
+        return { success: false, error: "Date still invalid after normalization." };
+    }
+
+    // Convert MM → Jan/Feb/... format
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthIndex = parseInt(month, 10) - 1;
+
+    if (monthIndex < 0 || monthIndex > 11) {
+        return { success: false, error: "Invalid month." };
+    }
+
+    const formatted = `${day}-${months[monthIndex]}-${year}`;
+
+    return {
+        success: true,
+        formatted
+    };
+}
+
