@@ -1,478 +1,981 @@
 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState('introduction');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // Playground state
+  const [playgroundTab, setPlaygroundTab] = useState<'pnr' | 'train' | 'track' | 'station' | 'search'>('pnr');
+  const [pnrInput, setPnrInput] = useState('');
+  const [trainInput, setTrainInput] = useState('');
+  const [trackTrainInput, setTrackTrainInput] = useState('');
+  const [trackDateInput, setTrackDateInput] = useState('');
+  const [stationInput, setStationInput] = useState('');
+  const [fromStationInput, setFromStationInput] = useState('');
+  const [toStationInput, setToStationInput] = useState('');
+  const [playgroundResult, setPlaygroundResult] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const sections = [
-    { id: 'introduction', label: 'Introduction', icon: '🏠' },
-    { id: 'features', label: 'Features', icon: '✨' },
+    { id: 'introduction', label: 'Introduction', icon: '📖' },
     { id: 'installation', label: 'Installation', icon: '📦' },
     { id: 'quickstart', label: 'Quick Start', icon: '🚀' },
-    { id: 'pnr', label: 'PNR Status', icon: '🎫' },
-    { id: 'train', label: 'Train Info', icon: '🚂' },
-    { id: 'tracking', label: 'Live Tracking', icon: '📍' },
-    { id: 'station', label: 'Station Live', icon: '🚉' },
-    { id: 'status', label: 'Status Codes', icon: '📊' }
+    { id: 'pnr-status', label: 'PNR Status', icon: '🎫' },
+    { id: 'train-info', label: 'Train Information', icon: '🚂' },
+    { id: 'live-tracking', label: 'Live Tracking', icon: '📍' },
+    { id: 'station-live', label: 'Live at Station', icon: '🚉' },
+    { id: 'train-search', label: 'Train Search', icon: '🔍' },
+    { id: 'validation', label: 'Input Validation', icon: '✅' },
+    { id: 'status-codes', label: 'Status Codes', icon: '📊' },
+    { id: 'errors', label: 'Error Handling', icon: '⚠️' },
+    { id: 'playground', label: 'Playground', icon: '🎮' },
   ];
 
+  const handlePlaygroundSubmit = async () => {
+    setIsLoading(true);
+    setPlaygroundResult('');
+    
+    let code = '';
+    
+    switch (playgroundTab) {
+      case 'pnr':
+        if (!pnrInput || pnrInput.length !== 10) {
+          setPlaygroundResult('❌ Error: PNR must be exactly 10 digits');
+          setIsLoading(false);
+          return;
+        }
+        code = `import { checkPNRStatus } from 'irctc-connect';
+
+const result = await checkPNRStatus('${pnrInput}');
+
+// Expected Response:
+{
+  success: true,
+  data: {
+    pnr: "${pnrInput}",
+    status: "CNF",
+    train: {
+      number: "12345",
+      name: "Rajdhani Express"
+    },
+    passengers: [
+      { name: "Passenger 1", status: "CNF", seat: "B1-45" }
+    ]
+  }
+}`;
+        break;
+        
+      case 'train':
+        if (!trainInput || trainInput.length !== 5) {
+          setPlaygroundResult('❌ Error: Train number must be exactly 5 digits');
+          setIsLoading(false);
+          return;
+        }
+        code = `import { getTrainInfo } from 'irctc-connect';
+
+const result = await getTrainInfo('${trainInput}');
+
+// Expected Response:
+{
+  success: true,
+  data: {
+    trainInfo: {
+      train_no: "${trainInput}",
+      train_name: "Express Train",
+      from_stn_name: "New Delhi",
+      to_stn_name: "Mumbai Central",
+      from_time: "20:05",
+      to_time: "08:35",
+      travel_time: "12:30 hrs",
+      running_days: "1234567"
+    },
+    route: [
+      { stnName: "New Delhi", stnCode: "NDLS", arrival: "00:00", departure: "20:05" }
+    ]
+  }
+}`;
+        break;
+        
+      case 'track':
+        if (!trackTrainInput || trackTrainInput.length !== 5) {
+          setPlaygroundResult('❌ Error: Train number must be exactly 5 digits');
+          setIsLoading(false);
+          return;
+        }
+        if (!trackDateInput || !/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) {
+          setPlaygroundResult('❌ Error: Date must be in dd-mm-yyyy format');
+          setIsLoading(false);
+          return;
+        }
+        code = `import { trackTrain } from 'irctc-connect';
+
+const result = await trackTrain('${trackTrainInput}', '${trackDateInput}');
+
+// Expected Response:
+{
+  success: true,
+  data: {
+    trainNo: "${trackTrainInput}",
+    trainName: "Express Train",
+    date: "${trackDateInput}",
+    statusNote: "Running on time",
+    stations: [
+      {
+        stationCode: "NDLS",
+        stationName: "New Delhi",
+        arrival: { scheduled: "20:00", actual: "20:05", delay: "5 Min" },
+        departure: { scheduled: "20:10", actual: "20:15" }
+      }
+    ]
+  }
+}`;
+        break;
+        
+      case 'station':
+        if (!stationInput || stationInput.length < 2) {
+          setPlaygroundResult('❌ Error: Please enter a valid station code');
+          setIsLoading(false);
+          return;
+        }
+        code = `import { liveAtStation } from 'irctc-connect';
+
+const result = await liveAtStation('${stationInput.toUpperCase()}');
+
+// Expected Response:
+{
+  success: true,
+  data: {
+    stationName: "Station Name",
+    stationCode: "${stationInput.toUpperCase()}",
+    trains: [
+      {
+        trainNumber: "12345",
+        trainName: "Rajdhani Express",
+        expectedTime: "20:05",
+        platform: "5",
+        status: "On Time"
+      }
+    ]
+  }
+}`;
+        break;
+        
+      case 'search':
+        if (!fromStationInput || !toStationInput) {
+          setPlaygroundResult('❌ Error: Please enter both station codes');
+          setIsLoading(false);
+          return;
+        }
+        code = `import { searchTrainBetweenStations } from 'irctc-connect';
+
+const result = await searchTrainBetweenStations('${fromStationInput.toUpperCase()}', '${toStationInput.toUpperCase()}');
+
+// Expected Response:
+{
+  success: true,
+  data: {
+    from: "${fromStationInput.toUpperCase()}",
+    to: "${toStationInput.toUpperCase()}",
+    totalTrains: 15,
+    trains: [
+      {
+        trainNumber: "12345",
+        trainName: "Rajdhani Express",
+        departure: "20:05",
+        arrival: "08:35",
+        duration: "12h 30m",
+        runningDays: "Daily"
+      }
+    ]
+  }
+}`;
+        break;
+    }
+    
+    setTimeout(() => {
+      setPlaygroundResult(code);
+      setIsLoading(false);
+    }, 800);
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 shadow-sm">
-        <div className="px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 antialiased">
+      {/* Top Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-[80%] mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🚂</span>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">IRCTC Connect</h1>
-              <p className="text-xs text-slate-500">Node.js SDK for Indian Railways</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <a 
-              href="https://github.com/RAJIV81205/irctc-connect" 
-              className="text-sm text-slate-600 hover:text-blue-600 transition-colors"
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors lg:hidden"
             >
-              GitHub
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🚂</span>
+              <span className="text-xl font-bold text-slate-900">irctc-connect</span>
+            </div>
+            <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+              v1.0.0
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <a 
+              href="https://www.npmjs.com/package/irctc-connect"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 0v24h24V0H0zm19.2 19.2H4.8V4.8h14.4v14.4z"/>
+              </svg>
+              npm
             </a>
             <a 
-              href="https://www.npmjs.com/package/irctc-connect" 
-              className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              href="https://github.com/RAJIV81205/irctc-connect"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 rounded-lg transition-all"
             >
-              npm
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              GitHub
             </a>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <div className="flex pt-16">
-        {/* Left Sidebar */}
-        <aside className="fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-slate-200 overflow-y-auto">
-          <nav className="p-4 space-y-1">
-            <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Documentation
+      {/* Main Layout */}
+      <div className="pt-16 max-w-[80%] mx-auto flex">
+        {/* Sidebar */}
+        <aside className={`fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-slate-200 overflow-y-auto transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          <div className="p-6">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Documentation</p>
+            <nav className="space-y-1">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => scrollToSection(section.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    activeSection === section.id
+                      ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="text-base">{section.icon}</span>
+                  {section.label}
+                </button>
+              ))}
+            </nav>
+            
+            <div className="mt-8 p-4 bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border border-blue-100">
+              <p className="text-xs font-semibold text-blue-800 mb-2">Monthly Downloads</p>
+              <p className="text-2xl font-bold text-blue-600">251</p>
+              <p className="text-xs text-slate-500 mt-1">MIT License</p>
             </div>
-            {sections.map(section => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-all ${
-                  activeSection === section.id
-                    ? 'bg-blue-50 text-blue-600 font-semibold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-                type="button"
-              >
-                <span className="text-lg">{section.icon}</span>
-                <span className="text-sm">{section.label}</span>
-              </button>
-            ))}
-          </nav>
+          </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="ml-64 flex-1 p-8 max-w-4xl">
-          {/* Introduction */}
-          {activeSection === 'introduction' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">IRCTC Connect</h1>
-                <p className="text-xl text-slate-600">
-                  Comprehensive Node.js SDK for Indian Railways with real-time PNR status, 
-                  live train tracking, station updates, and complete route information.
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/20 z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Content */}
+        <main className="flex-1 min-h-screen lg:pl-8 py-8 px-4 lg:px-0">
+          <div className="max-w-4xl">
+            
+            {/* Introduction */}
+            <section id="introduction" className="mb-16 scroll-mt-24">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white mb-8">
+                <h1 className="text-3xl font-bold mb-3">IRCTC Connect</h1>
+                <p className="text-blue-100 text-lg leading-relaxed">
+                  A comprehensive Node.js package for Indian Railways services. Get real-time PNR status, 
+                  detailed train information, live train tracking, station updates, and search trains between stations.
                 </p>
               </div>
-
-              <div className="bg-slate-900 text-white p-6 rounded-xl font-mono text-sm">
-                npm install irctc-connect
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 py-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">251</div>
-                  <div className="text-sm text-slate-600">Downloads/month</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">MIT</div>
-                  <div className="text-sm text-slate-600">License</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">14+</div>
-                  <div className="text-sm text-slate-600">Node.js</div>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
-                <p className="text-blue-900">
-                  <strong>Quick Tip:</strong> All API methods return a standardized response with 
-                  <code className="bg-blue-100 px-2 py-1 rounded mx-1">success</code> and either 
-                  <code className="bg-blue-100 px-2 py-1 rounded mx-1">data</code> or 
-                  <code className="bg-blue-100 px-2 py-1 rounded mx-1">error</code> fields.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Features */}
-          {activeSection === 'features' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">Core Features</h1>
-                <p className="text-lg text-slate-600">
-                  Everything you need to integrate Indian Railways data into your application.
-                </p>
-              </div>
-
-              <div className="space-y-4">
+              
+              <div className="grid sm:grid-cols-3 gap-4">
                 {[
-                  { icon: '🎫', title: 'PNR Status', desc: 'Real-time PNR status with passenger details and confirmation status' },
-                  { icon: '🚂', title: 'Train Information', desc: 'Complete train details with route, schedule, and station coordinates' },
-                  { icon: '📍', title: 'Live Tracking', desc: 'Real-time train location, delays, and station-wise status updates' },
-                  { icon: '🚉', title: 'Station Live', desc: 'Upcoming trains at any station with expected arrival times' },
-                  { icon: '🔍', title: 'Train Search', desc: 'Find trains between stations with classes and availability info' },
-                  { icon: '⚡', title: 'Fast & Reliable', desc: 'Built-in validation, timeout handling, and error management' }
-                ].map((feature, idx) => (
-                  <div key={idx} className="bg-white p-6 rounded-xl border border-slate-200 hover:shadow-lg transition-shadow">
-                    <div className="flex items-start gap-4">
-                      <span className="text-3xl">{feature.icon}</span>
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">{feature.title}</h3>
-                        <p className="text-slate-600">{feature.desc}</p>
-                      </div>
-                    </div>
+                  { icon: '🎫', title: 'PNR Status', desc: 'Real-time booking status' },
+                  { icon: '🚂', title: 'Train Info', desc: 'Complete route details' },
+                  { icon: '📍', title: 'Live Tracking', desc: 'Real-time location' },
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-white p-5 rounded-xl border border-slate-200 hover:border-blue-200 hover:shadow-md transition-all">
+                    <span className="text-2xl mb-2 block">{item.icon}</span>
+                    <h3 className="font-semibold text-slate-900 mb-1">{item.title}</h3>
+                    <p className="text-sm text-slate-500">{item.desc}</p>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            </section>
 
-          {/* Installation */}
-          {activeSection === 'installation' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">Installation</h1>
-                <p className="text-lg text-slate-600">
-                  Get started with IRCTC Connect in seconds.
-                </p>
+            {/* Installation */}
+            <section id="installation" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">📦</span> Installation
+              </h2>
+              <div className="bg-slate-900 rounded-xl p-6 font-mono text-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-400 text-xs">Terminal</span>
+                  <button className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-slate-800 transition-colors">
+                    Copy
+                  </button>
+                </div>
+                <code className="text-green-400">npm install irctc-connect</code>
               </div>
+              
+              <div className="mt-6 grid sm:grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-xl border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-3">Requirements</h4>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Node.js 14+</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Internet connection</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Valid credentials</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-5 rounded-xl border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-3">Supported Platforms</h4>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li className="flex items-center gap-2"><span className="text-blue-500">→</span> Node.js apps</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-500">→</span> Express.js servers</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-500">→</span> Next.js applications</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-500">→</span> React Native</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
 
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-3">Using npm</h2>
-                <div className="bg-slate-900 text-white p-4 rounded-lg font-mono text-sm">
-                  npm install irctc-connect
+            {/* Quick Start */}
+            <section id="quickstart" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">🚀</span> Quick Start
+              </h2>
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  <span className="ml-2 text-xs text-slate-500">index.js</span>
+                </div>
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+{`import { 
+  checkPNRStatus, 
+  getTrainInfo, 
+  trackTrain,
+  liveAtStation,
+  searchTrainBetweenStations 
+} from 'irctc-connect';
+
+// Check PNR status
+const pnrResult = await checkPNRStatus('1234567890');
+
+// Get train information
+const trainResult = await getTrainInfo('12345');
+
+// Track live train status
+const trackResult = await trackTrain('12345', '06-12-2025');
+
+// Get live trains at station
+const stationResult = await liveAtStation('NDLS');
+
+// Search trains between stations
+const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
+                </pre>
+              </div>
+            </section>
+
+            {/* PNR Status */}
+            <section id="pnr-status" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">🎫</span> checkPNRStatus(pnr)
+              </h2>
+              <p className="text-slate-600 mb-6">
+                Get comprehensive PNR status with passenger details and journey information.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-2">Parameters</h4>
+                <div className="flex items-center gap-3">
+                  <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">pnr</code>
+                  <span className="text-sm text-slate-600">(string) — 10-digit PNR number</span>
                 </div>
               </div>
 
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-3">Using yarn</h2>
-                <div className="bg-slate-900 text-white p-4 rounded-lg font-mono text-sm">
-                  yarn add irctc-connect
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <span className="text-sm font-medium text-slate-700">Example Usage</span>
                 </div>
-              </div>
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+{`const result = await checkPNRStatus('1234567890');
 
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Requirements</h2>
-                <ul className="space-y-2 text-slate-600">
-                  <li>• Node.js 14 or higher</li>
-                  <li>• Active internet connection</li>
-                  <li>• Valid PNR numbers or train numbers for testing</li>
-                </ul>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Supported Platforms</h2>
-                <ul className="space-y-2 text-slate-600">
-                  <li>• Node.js applications</li>
-                  <li>• Express.js servers</li>
-                  <li>• Next.js (App Router & Pages Router)</li>
-                  <li>• React Native</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* Quick Start */}
-          {activeSection === 'quickstart' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">Quick Start</h1>
-                <p className="text-lg text-slate-600">
-                  Start using IRCTC Connect in your project with these simple examples.
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Basic Usage</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm space-y-2">
-                  <div className="text-slate-600">{`// Import the functions you need`}</div>
-                  <div>{`import { checkPNRStatus, getTrainInfo } from 'irctc-connect';`}</div>
-                  <div className="h-2"></div>
-                  <div className="text-slate-600">{`// Check PNR status`}</div>
-                  <div>{`const pnrResult = await checkPNRStatus('1234567890');`}</div>
-                  <div className="h-2"></div>
-                  <div className="text-slate-600">{`// Always check success first`}</div>
-                  <div>{`if (pnrResult.success) {`}</div>
-                  <div className="pl-4">{`  console.log(pnrResult.data);`}</div>
-                  <div>{`} else {`}</div>
-                  <div className="pl-4">{`  console.error(pnrResult.error);`}</div>
-                  <div>{`}`}</div>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
-                <p className="text-blue-900 font-semibold mb-2">Important</p>
-                <p className="text-blue-800">
-                  Always check the <code className="bg-blue-100 px-2 py-1 rounded">success</code> field 
-                  before accessing the data to handle errors gracefully.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* PNR Status */}
-          {activeSection === 'pnr' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">PNR Status</h1>
-                <p className="text-lg text-slate-600">
-                  Check real-time PNR status with passenger details and booking information.
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Function Signature</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm">
-                  {`checkPNRStatus(pnr: string): Promise<Result>`}
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Example</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm space-y-2">
-                  <div>{`import { checkPNRStatus } from 'irctc-connect';`}</div>
-                  <div className="h-2"></div>
-                  <div>{`const result = await checkPNRStatus('1234567890');`}</div>
-                  <div className="h-2"></div>
-                  <div>{`if (result.success) {`}</div>
-                  <div className="pl-4">{`  console.log('Status:', result.data.status);`}</div>
-                  <div className="pl-4">{`  console.log('Train:', result.data.trainName);`}</div>
-                  <div className="pl-4">{`  console.log('Passengers:', result.data.passengers);`}</div>
-                  <div>{`}`}</div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Response Fields</h2>
-                <div className="space-y-3">
-                  <div>
-                    <code className="bg-slate-100 px-2 py-1 rounded text-sm">status</code>
-                    <span className="text-slate-600 ml-2">- Booking status (CNF, WL, RAC, etc.)</span>
-                  </div>
-                  <div>
-                    <code className="bg-slate-100 px-2 py-1 rounded text-sm">trainName</code>
-                    <span className="text-slate-600 ml-2">- Name of the train</span>
-                  </div>
-                  <div>
-                    <code className="bg-slate-100 px-2 py-1 rounded text-sm">trainNo</code>
-                    <span className="text-slate-600 ml-2">- Train number</span>
-                  </div>
-                  <div>
-                    <code className="bg-slate-100 px-2 py-1 rounded text-sm">passengers</code>
-                    <span className="text-slate-600 ml-2">- Array of passenger details</span>
-                  </div>
-                  <div>
-                    <code className="bg-slate-100 px-2 py-1 rounded text-sm">boardingPoint</code>
-                    <span className="text-slate-600 ml-2">- Boarding station</span>
-                  </div>
-                  <div>
-                    <code className="bg-slate-100 px-2 py-1 rounded text-sm">destination</code>
-                    <span className="text-slate-600 ml-2">- Destination station</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Train Info */}
-          {activeSection === 'train' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">Train Information</h1>
-                <p className="text-lg text-slate-600">
-                  Get complete train details including route, schedule, and station coordinates.
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Function Signature</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm">
-                  {`getTrainInfo(trainNo: string): Promise<Result>`}
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Example</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm space-y-2">
-                  <div>{`import { getTrainInfo } from 'irctc-connect';`}</div>
-                  <div className="h-2"></div>
-                  <div>{`const result = await getTrainInfo('12345');`}</div>
-                  <div className="h-2"></div>
-                  <div>{`if (result.success) {`}</div>
-                  <div className="pl-4">{`  console.log('Train:', result.data.trainName);`}</div>
-                  <div className="pl-4">{`  console.log('Route:', result.data.route);`}</div>
-                  <div className="pl-4">{`  console.log('Classes:', result.data.classes);`}</div>
-                  <div>{`}`}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Live Tracking */}
-          {activeSection === 'tracking' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">Live Train Tracking</h1>
-                <p className="text-lg text-slate-600">
-                  Track trains in real-time with current location, delays, and station updates.
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Function Signature</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm">
-                  {`trackTrain(trainNo: string, date: string): Promise<Result>`}
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Example</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm space-y-2">
-                  <div>{`import { trackTrain } from 'irctc-connect';`}</div>
-                  <div className="h-2"></div>
-                  <div className="text-slate-600">{`// Date format: DD-MM-YYYY`}</div>
-                  <div>{`const result = await trackTrain('12345', '06-12-2025');`}</div>
-                  <div className="h-2"></div>
-                  <div>{`if (result.success) {`}</div>
-                  <div className="pl-4">{`  console.log('Status:', result.data.statusNote);`}</div>
-                  <div className="pl-4">{`  console.log('Current Station:', result.data.currentStation);`}</div>
-                  <div className="pl-4">{`  console.log('Delay:', result.data.delay);`}</div>
-                  <div>{`}`}</div>
-                </div>
-              </div>
-
-              <div className="bg-amber-50 border-l-4 border-amber-600 p-6 rounded-r-lg">
-                <p className="text-amber-900 font-semibold mb-2">Date Format</p>
-                <p className="text-amber-800">
-                  The date parameter must be in <code className="bg-amber-100 px-2 py-1 rounded">DD-MM-YYYY</code> format.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Station Live */}
-          {activeSection === 'station' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">Station Live</h1>
-                <p className="text-lg text-slate-600">
-                  Get upcoming trains at any station with expected arrival times.
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Function Signature</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm">
-                  {`liveAtStation(stationCode: string): Promise<Result>`}
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Example</h2>
-                <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm space-y-2">
-                  <div>{`import { liveAtStation } from 'irctc-connect';`}</div>
-                  <div className="h-2"></div>
-                  <div className="text-slate-600">{`// Use station code (e.g., NDLS for New Delhi)`}</div>
-                  <div>{`const result = await liveAtStation('NDLS');`}</div>
-                  <div className="h-2"></div>
-                  <div>{`if (result.success) {`}</div>
-                  <div className="pl-4">{`  result.data.trains.forEach(train => {`}</div>
-                  <div className="pl-8">{`    console.log(train.trainName, train.expectedTime);`}</div>
-                  <div className="pl-4">{`  });`}</div>
-                  <div>{`}`}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Status Codes */}
-          {activeSection === 'status' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">Status Codes</h1>
-                <p className="text-lg text-slate-600">
-                  Understanding PNR status codes and response formats.
-                </p>
+if (result.success) {
+  console.log('PNR:', result.data.pnr);
+  console.log('Status:', result.data.status);
+  console.log('Train:', result.data.train.name);
+  console.log('Journey:', result.data.journey.from.name, '→', result.data.journey.to.name);
+  
+  result.data.passengers.forEach(passenger => {
+    console.log(\`\${passenger.name}: \${passenger.status} - \${passenger.seat}\`);
+  });
+}`}
+                </pre>
               </div>
 
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Code</th>
-                      <th className="px-6 py-4 text-left text-sm font-bold text-slate-900">Description</th>
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <span className="text-sm font-medium text-slate-700">Response Structure</span>
+                </div>
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+{`{
+  success: true,
+  data: {
+    pnr: "1234567890",
+    status: "CNF",
+    train: { number: "12345", name: "Rajdhani Express", class: "3A" },
+    journey: {
+      from: { name: "New Delhi", code: "NDLS", platform: "16" },
+      to: { name: "Mumbai Central", code: "BCT", platform: "3" },
+      departure: "20:05",
+      arrival: "08:35",
+      duration: "12h 30m"
+    },
+    passengers: [
+      { name: "JOHN DOE", status: "CNF", seat: "B1-45", berthType: "SL" }
+    ]
+  }
+}`}
+                </pre>
+              </div>
+            </section>
+
+            {/* Train Info */}
+            <section id="train-info" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">🚂</span> getTrainInfo(trainNumber)
+              </h2>
+              <p className="text-slate-600 mb-6">
+                Get detailed train information including complete route with station coordinates.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-2">Parameters</h4>
+                <div className="flex items-center gap-3">
+                  <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">trainNumber</code>
+                  <span className="text-sm text-slate-600">(string) — 5-digit train number</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <span className="text-sm font-medium text-slate-700">Example Usage</span>
+                </div>
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+{`const result = await getTrainInfo('12345');
+
+if (result.success) {
+  const { trainInfo, route } = result.data;
+  
+  console.log(\`🚂 \${trainInfo.train_name} (\${trainInfo.train_no})\`);
+  console.log(\`📍 \${trainInfo.from_stn_name} → \${trainInfo.to_stn_name}\`);
+  console.log(\`⏱️ \${trainInfo.from_time} - \${trainInfo.to_time}\`);
+  console.log(\`📅 Running Days: \${trainInfo.running_days}\`);
+  
+  route.forEach(station => {
+    console.log(\`  \${station.stnName} - \${station.departure}\`);
+  });
+}`}
+                </pre>
+              </div>
+            </section>
+
+            {/* Live Tracking */}
+            <section id="live-tracking" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">📍</span> trackTrain(trainNumber, date)
+              </h2>
+              <p className="text-slate-600 mb-6">
+                Get real-time train status and tracking for a specific date with detailed station-wise information including delays and coach positions.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-3">Parameters</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">trainNumber</code>
+                    <span className="text-sm text-slate-600">(string) — 5-digit train number</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">date</code>
+                    <span className="text-sm text-slate-600">(string) — Date in dd-mm-yyyy format</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <span className="text-sm font-medium text-slate-700">Example Usage</span>
+                </div>
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+{`const result = await trackTrain('12342', '06-12-2025');
+
+if (result.success) {
+  const { trainNo, trainName, statusNote, stations } = result.data;
+  
+  console.log(\`🚂 \${trainName} (\${trainNo})\`);
+  console.log(\`📍 Status: \${statusNote}\`);
+  
+  stations.forEach(station => {
+    console.log(\`🚉 \${station.stationName} (\${station.stationCode})\`);
+    console.log(\`   Arrival: \${station.arrival.scheduled} → \${station.arrival.actual}\`);
+    if (station.arrival.delay) {
+      console.log(\`   ⚠️ Delay: \${station.arrival.delay}\`);
+    }
+  });
+}`}
+                </pre>
+              </div>
+            </section>
+
+            {/* Live at Station */}
+            <section id="station-live" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">🚉</span> liveAtStation(stationCode)
+              </h2>
+              <p className="text-slate-600 mb-6">
+                Get list of upcoming trains at any station with real-time information.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-2">Parameters</h4>
+                <div className="flex items-center gap-3">
+                  <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">stationCode</code>
+                  <span className="text-sm text-slate-600">(string) — Station code (e.g., 'NDLS', 'BCT', 'HWH')</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <span className="text-sm font-medium text-slate-700">Example Usage</span>
+                </div>
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+{`const result = await liveAtStation('NDLS');
+
+if (result.success) {
+  console.log(\`🚉 Live trains at \${result.data.stationName}:\`);
+  
+  result.data.trains.forEach(train => {
+    console.log(\`🚂 \${train.trainName} (\${train.trainNumber})\`);
+    console.log(\`   📍 \${train.source} → \${train.destination}\`);
+    console.log(\`   ⏰ Expected: \${train.expectedTime}\`);
+    console.log(\`   📊 Status: \${train.status}\`);
+  });
+}`}
+                </pre>
+              </div>
+            </section>
+
+            {/* Train Search */}
+            <section id="train-search" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">🔍</span> searchTrainBetweenStations(from, to)
+              </h2>
+              <p className="text-slate-600 mb-6">
+                Find all trains running between two stations with timing and availability.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-3">Parameters</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">fromStationCode</code>
+                    <span className="text-sm text-slate-600">(string) — Origin station code</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">toStationCode</code>
+                    <span className="text-sm text-slate-600">(string) — Destination station code</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <span className="text-sm font-medium text-slate-700">Example Usage</span>
+                </div>
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+{`const result = await searchTrainBetweenStations('NDLS', 'BCT');
+
+if (result.success) {
+  console.log(\`🔍 Trains from \${result.data.from} to \${result.data.to}:\`);
+  
+  result.data.trains.forEach(train => {
+    console.log(\`🚂 \${train.trainName} (\${train.trainNumber})\`);
+    console.log(\`   ⏰ \${train.departure} → \${train.arrival}\`);
+    console.log(\`   ⏱️ Duration: \${train.duration}\`);
+    console.log(\`   📅 Days: \${train.runningDays}\`);
+  });
+}`}
+                </pre>
+              </div>
+            </section>
+
+            {/* Validation */}
+            <section id="validation" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">✅</span> Input Validation
+              </h2>
+              
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-xl border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-3">PNR Number</h4>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li>• Must be exactly 10 digits</li>
+                    <li>• Only numeric characters</li>
+                    <li>• Auto-cleans non-numeric input</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-5 rounded-xl border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-3">Train Number</h4>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li>• Must be exactly 5 characters</li>
+                    <li>• Valid train number string</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-5 rounded-xl border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-3">Date Format</h4>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li>• Format: dd-mm-yyyy</li>
+                    <li>• Validates actual dates</li>
+                    <li>• No invalid dates like 32-01-2025</li>
+                  </ul>
+                </div>
+                <div className="bg-white p-5 rounded-xl border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-3">Station Codes</h4>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    <li>• Valid station code strings</li>
+                    <li>• Examples: NDLS, BCT, HWH</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* Status Codes */}
+            <section id="status-codes" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">📊</span> Status Codes
+              </h2>
+              
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left font-semibold text-slate-900">Code</th>
+                      <th className="px-6 py-4 text-left font-semibold text-slate-900">Full Form</th>
+                      <th className="px-6 py-4 text-left font-semibold text-slate-900">Description</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {[
-                      { code: 'CNF', desc: 'Confirmed - Seat/Berth allocated' },
-                      { code: 'WL', desc: 'Waiting List - Not confirmed' },
-                      { code: 'RAC', desc: 'Reservation Against Cancellation' },
-                      { code: 'CAN', desc: 'Cancelled' },
-                      { code: 'PQWL', desc: 'Pooled Quota Waiting List' },
-                      { code: 'TQWL', desc: 'Tatkal Quota Waiting List' },
-                      { code: 'RLWL', desc: 'Remote Location Waiting List' },
-                      { code: 'GNWL', desc: 'General Waiting List' }
+                      { code: 'CNF', full: 'Confirmed', desc: 'Seat is confirmed' },
+                      { code: 'WL', full: 'Waiting List', desc: 'Not confirmed yet' },
+                      { code: 'RAC', full: 'Reservation Against Cancellation', desc: 'Partially confirmed' },
+                      { code: 'CAN', full: 'Cancelled', desc: 'Ticket cancelled' },
+                      { code: 'PQWL', full: 'Pooled Quota Waiting List', desc: 'On pooled quota' },
+                      { code: 'TQWL', full: 'Tatkal Quota Waiting List', desc: 'On tatkal quota' },
+                      { code: 'GNWL', full: 'General Waiting List', desc: 'On general quota' },
                     ].map((status, idx) => (
                       <tr key={idx} className="hover:bg-slate-50">
                         <td className="px-6 py-4">
-                          <code className="bg-blue-50 text-blue-600 px-3 py-1 rounded font-mono font-bold">
+                          <code className="px-2 py-1 bg-blue-50 text-blue-700 rounded font-mono text-xs font-semibold">
                             {status.code}
                           </code>
                         </td>
-                        <td className="px-6 py-4 text-slate-600">{status.desc}</td>
+                        <td className="px-6 py-4 text-slate-700">{status.full}</td>
+                        <td className="px-6 py-4 text-slate-500">{status.desc}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            </section>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-xl border border-slate-200">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4">✅ Success Response</h2>
-                  <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm space-y-1">
-                    <div>{`{`}</div>
-                    <div className="pl-4">{`  success: true,`}</div>
-                    <div className="pl-4">{`  data: {`}</div>
-                    <div className="pl-8">{`    // Response data`}</div>
-                    <div className="pl-4">{`  }`}</div>
-                    <div>{`}`}</div>
-                  </div>
+            {/* Error Handling */}
+            <section id="errors" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">⚠️</span> Error Handling
+              </h2>
+              <p className="text-slate-600 mb-6">
+                All functions return a consistent response structure. Always check the <code className="px-1.5 py-0.5 bg-slate-100 rounded text-sm">success</code> field before accessing data.
+              </p>
+              
+              <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+                  <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                    <span className="text-lg">✅</span> Success Response
+                  </h4>
+                  <pre className="text-sm text-green-900 font-mono">
+{`{
+  success: true,
+  data: { ... }
+}`}
+                  </pre>
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-slate-200">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4">❌ Error Response</h2>
-                  <div className="bg-slate-50 p-4 rounded-lg font-mono text-sm space-y-1">
-                    <div>{`{`}</div>
-                    <div className="pl-4">{`  success: false,`}</div>
-                    <div className="pl-4">{`  error: "Error message"`}</div>
-                    <div>{`}`}</div>
-                  </div>
+                <div className="bg-red-50 border border-red-200 rounded-xl p-5">
+                  <h4 className="font-semibold text-red-800 mb-3 flex items-center gap-2">
+                    <span className="text-lg">❌</span> Error Response
+                  </h4>
+                  <pre className="text-sm text-red-900 font-mono">
+{`{
+  success: false,
+  error: "Error message"
+}`}
+                  </pre>
                 </div>
               </div>
-            </div>
-          )}
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                <h4 className="font-semibold text-amber-800 mb-3">Common Error Scenarios</h4>
+                <ul className="space-y-2 text-sm text-amber-900">
+                  <li>• Invalid input parameters</li>
+                  <li>• Network timeouts (10-second timeout)</li>
+                  <li>• API service unavailable</li>
+                  <li>• Invalid PNR/train numbers</li>
+                  <li>• Invalid date formats</li>
+                </ul>
+              </div>
+            </section>
+
+            {/* Playground */}
+            <section id="playground" className="mb-16 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <span className="text-xl">🎮</span> Live Playground
+              </h2>
+              <p className="text-slate-600 mb-6">
+                Test the API functions with your own data. Enter values below and see the expected code and response.
+              </p>
+              
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
+                {/* Playground Tabs */}
+                <div className="flex flex-wrap border-b border-slate-200 bg-slate-50">
+                  {[
+                    { id: 'pnr' as const, label: 'PNR Status', icon: '🎫' },
+                    { id: 'train' as const, label: 'Train Info', icon: '🚂' },
+                    { id: 'track' as const, label: 'Live Track', icon: '📍' },
+                    { id: 'station' as const, label: 'Station Live', icon: '🚉' },
+                    { id: 'search' as const, label: 'Search', icon: '🔍' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setPlaygroundTab(tab.id);
+                        setPlaygroundResult('');
+                      }}
+                      className={`flex items-center gap-2 px-5 py-4 text-sm font-medium transition-all ${
+                        playgroundTab === tab.id
+                          ? 'bg-white text-blue-600 border-b-2 border-blue-600 -mb-px'
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>{tab.icon}</span>
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Input Section */}
+                <div className="p-6 border-b border-slate-200">
+                  {playgroundTab === 'pnr' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        PNR Number (10 digits)
+                      </label>
+                      <input
+                        type="text"
+                        value={pnrInput}
+                        onChange={(e) => setPnrInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        placeholder="Enter 10-digit PNR number"
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        maxLength={10}
+                      />
+                      <p className="mt-2 text-xs text-slate-500">Example: 1234567890</p>
+                    </div>
+                  )}
+
+                  {playgroundTab === 'train' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Train Number (5 digits)
+                      </label>
+                      <input
+                        type="text"
+                        value={trainInput}
+                        onChange={(e) => setTrainInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                        placeholder="Enter 5-digit train number"
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        maxLength={5}
+                      />
+                      <p className="mt-2 text-xs text-slate-500">Example: 12345</p>
+                    </div>
+                  )}
+
+                  {playgroundTab === 'track' && (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Train Number (5 digits)
+                        </label>
+                        <input
+                          type="text"
+                          value={trackTrainInput}
+                          onChange={(e) => setTrackTrainInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                          placeholder="Enter train number"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                          maxLength={5}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Date (dd-mm-yyyy)
+                        </label>
+                        <input
+                          type="text"
+                          value={trackDateInput}
+                          onChange={(e) => setTrackDateInput(e.target.value)}
+                          placeholder="06-12-2025"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                          maxLength={10}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {playgroundTab === 'station' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Station Code
+                      </label>
+                      <input
+                        type="text"
+                        value={stationInput}
+                        onChange={(e) => setStationInput(e.target.value.toUpperCase())}
+                        placeholder="Enter station code"
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        maxLength={6}
+                      />
+                      <p className="mt-2 text-xs text-slate-500">Examples: NDLS, BCT, HWH, CSTM</p>
+                    </div>
+                  )}
+
+                  {playgroundTab === 'search' && (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          From Station Code
+                        </label>
+                        <input
+                          type="text"
+                          value={fromStationInput}
+                          onChange={(e) => setFromStationInput(e.target.value.toUpperCase())}
+                          placeholder="e.g., NDLS"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                          maxLength={6}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          To Station Code
+                        </label>
+                        <input
+                          type="text"
+                          value={toStationInput}
+                          onChange={(e) => setToStationInput(e.target.value.toUpperCase())}
+                          placeholder="e.g., BCT"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                          maxLength={6}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handlePlaygroundSubmit}
+                    disabled={isLoading}
+                    className="mt-6 w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <span>▶</span> Generate Code
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Output Section */}
+                {playgroundResult && (
+                  <div className="bg-slate-900">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+                      <span className="text-sm text-slate-400">Output</span>
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(playgroundResult)}
+                        className="text-slate-400 hover:text-white text-xs px-3 py-1 rounded hover:bg-slate-800 transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <pre className="p-6 text-sm overflow-x-auto text-slate-300 max-h-96">
+                      {playgroundResult}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </section>
+
+          </div>
         </main>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="max-w-[80%] mx-auto px-8 py-12">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🚂</span>
+              <div>
+                <p className="font-semibold text-slate-900">irctc-connect</p>
+                <p className="text-sm text-slate-500">Built for Indian Railways enthusiasts</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-slate-500">
+              <a href="https://github.com/RAJIV81205/irctc-connect" className="hover:text-slate-900 transition-colors">GitHub</a>
+              <a href="https://www.npmjs.com/package/irctc-connect" className="hover:text-slate-900 transition-colors">npm</a>
+              <span>MIT License</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
