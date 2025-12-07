@@ -25,7 +25,7 @@ async function checkPNRStatus(pnr) {
   }
 
   try {
-    const response = await fetch (`https://bookmytrain.vercel.app/api/pnr/${clearPNR}`)
+    const response = await fetch (`https://bookmytrain.vercel.app/api/pnr/${cleanPNR}`)
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
