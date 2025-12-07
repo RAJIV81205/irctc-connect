@@ -64,9 +64,7 @@ const Playground = () => {
 
         case "station":
           if (!stationInput || stationInput.length < 2) {
-            setPlaygroundResult(
-              "❌ Error: Please enter a valid station code"
-            );
+            setPlaygroundResult("❌ Error: Please enter a valid station code");
             return;
           }
           result = await liveAtStation(stationInput.toUpperCase());
@@ -74,9 +72,7 @@ const Playground = () => {
 
         case "search":
           if (!fromStationInput || !toStationInput) {
-            setPlaygroundResult(
-              "❌ Error: Please enter both station codes"
-            );
+            setPlaygroundResult("❌ Error: Please enter both station codes");
             return;
           }
           result = await searchTrainBetweenStations(
@@ -88,9 +84,7 @@ const Playground = () => {
 
       if (result !== undefined) {
         setPlaygroundResult(
-          typeof result === "string"
-            ? result
-            : JSON.stringify(result, null, 2)
+          typeof result === "string" ? result : JSON.stringify(result, null, 2)
         );
       }
     } catch (error: any) {
@@ -213,7 +207,11 @@ const Playground = () => {
                 <input
                   type="date"
                   value={trackDateInput}
-                  onChange={(e) => setTrackDateInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value; // yyyy-mm-dd
+                    const [year, month, day] = value.split("-");
+                    setTrackDateInput(`${day}-${month}-${year}`); // convert to dd-mm-yyyy
+                  }}
                   placeholder="06-12-2025"
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                   maxLength={10}
