@@ -138,17 +138,17 @@ const Playground = () => {
 
   return (
     <section id="playground" className="mb-16 scroll-mt-24">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
         <span className="text-xl">🎮</span> Live Playground
       </h2>
-      <p className="text-slate-600 mb-6">
+      <p className="text-slate-600 dark:text-slate-300 mb-6">
         Test the API functions with your own data. See live JSON response,
         status code, and response time.
       </p>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">
         {/* Tabs */}
-        <div className="flex flex-wrap border-b bg-slate-50">
+        <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
           {[
             { id: "pnr", label: "PNR Status", icon: "🎫" },
             { id: "train", label: "Train Info", icon: "🚂" },
@@ -167,8 +167,8 @@ const Playground = () => {
               }}
               className={`px-5 py-4 flex items-center gap-2 text-sm font-medium transition-all ${
                 playgroundTab === tab.id
-                  ? "bg-white text-blue-600 border-b-2 border-blue-600 -mb-px"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 -mb-px"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               <span>{tab.icon}</span>
@@ -178,10 +178,10 @@ const Playground = () => {
         </div>
 
         {/* Inputs */}
-        <div className="p-6 border-b border-slate-200 space-y-4">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700 space-y-4">
           {playgroundTab === "pnr" && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 PNR Number (10 digits)
               </label>
               <input
@@ -191,7 +191,7 @@ const Playground = () => {
                   setPnrInput(e.target.value.replace(/\D/g, "").slice(0, 10))
                 }
                 placeholder="Enter 10-digit PNR"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 maxLength={10}
               />
             </div>
@@ -199,7 +199,7 @@ const Playground = () => {
 
           {playgroundTab === "train" && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Train Number (5 digits)
               </label>
               <input
@@ -209,7 +209,7 @@ const Playground = () => {
                   setTrainInput(e.target.value.replace(/\D/g, "").slice(0, 5))
                 }
                 placeholder="Enter 5-digit train number"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 maxLength={5}
               />
             </div>
@@ -218,7 +218,7 @@ const Playground = () => {
           {playgroundTab === "track" && (
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Train Number (5 digits)
                 </label>
                 <input
@@ -230,12 +230,12 @@ const Playground = () => {
                     )
                   }
                   placeholder="Enter train number"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   maxLength={5}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Date (dd-mm-yyyy)
                 </label>
                 <input
@@ -249,7 +249,7 @@ const Playground = () => {
                     const [yyyy, mm, dd] = e.target.value.split("-");
                     setTrackDateInput(`${dd}-${mm}-${yyyy}`); // store as dd-mm-yyyy
                   }}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>
@@ -257,7 +257,7 @@ const Playground = () => {
 
           {playgroundTab === "station" && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Station Code
               </label>
               <input
@@ -265,7 +265,7 @@ const Playground = () => {
                 value={stationInput}
                 onChange={(e) => setStationInput(e.target.value.toUpperCase())}
                 placeholder="e.g., NDLS"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 maxLength={6}
               />
             </div>
@@ -274,7 +274,7 @@ const Playground = () => {
           {playgroundTab === "search" && (
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   From Station Code
                 </label>
                 <input
@@ -284,12 +284,12 @@ const Playground = () => {
                     setFromStationInput(e.target.value.toUpperCase())
                   }
                   placeholder="e.g., NDLS"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   maxLength={6}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   To Station Code
                 </label>
                 <input
@@ -299,7 +299,7 @@ const Playground = () => {
                     setToStationInput(e.target.value.toUpperCase())
                   }
                   placeholder="e.g., BCT"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   maxLength={6}
                 />
               </div>
@@ -341,9 +341,9 @@ const Playground = () => {
 
         {/* Response Viewer */}
         {playgroundResult && (
-          <div className="bg-slate-900 max-h-96 overflow-auto p-4">
+          <div className="bg-slate-900 dark:bg-slate-950 max-h-96 overflow-auto p-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3 text-slate-200">
+              <div className="flex items-center gap-3 text-slate-200 dark:text-slate-300">
                 <span className="text-sm font-medium">Response</span>
 
                 {statusCode !== null && (
@@ -367,7 +367,7 @@ const Playground = () => {
 
               <button
                 onClick={() => navigator.clipboard.writeText(rawJSON)}
-                className="text-xs text-slate-300 border border-slate-600 px-2 py-1 rounded hover:bg-slate-800"
+                className="text-xs text-slate-300 dark:text-slate-400 border border-slate-600 dark:border-slate-700 px-2 py-1 rounded hover:bg-slate-800 dark:hover:bg-slate-900"
               >
                 Copy JSON
               </button>

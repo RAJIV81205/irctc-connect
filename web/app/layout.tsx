@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono , Inter} from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "./ThemeProvider";
 
 
 const jetBrainsMono = JetBrains_Mono({
@@ -24,11 +25,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme');
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  const activeTheme = theme || systemTheme;
+                  if (activeTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${jetBrainsMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

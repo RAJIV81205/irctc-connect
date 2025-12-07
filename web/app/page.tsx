@@ -1,11 +1,13 @@
 "use client";
-import React, { useState } from "react";
+import { useState } from "react";
 import { sections } from "./docsData";
 import Playground  from "../components/Playground";
+import { useTheme } from "./ThemeProvider";
 
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState("introduction");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { theme, toggleTheme } = useTheme();
 
   
 
@@ -20,17 +22,17 @@ const IRCTCConnectDocs = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 antialiased font-inter">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 antialiased font-inter transition-colors duration-300">
       {/* Top Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="max-w-[80%] mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors lg:hidden"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors lg:hidden"
             >
               <svg
-                className="w-5 h-5"
+                className="w-5 h-5 text-slate-900 dark:text-slate-100"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -45,17 +47,53 @@ const IRCTCConnectDocs = () => {
             </button>
             <div className="flex items-center gap-2">
               <span className="text-2xl">🚂</span>
-              <span className="text-xl font-bold text-slate-900">
+              <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
                 irctc-connect
               </span>
             </div>
-            <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-              v2.0.1
+            <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
+              v2.0.4
               
             </span>
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              aria-label="Toggle dark mode"
+            >
+              {theme === "dark" ? (
+                <svg
+                  className="w-5 h-5 text-yellow-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-5 h-5 text-slate-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+              )}
+            </button>
             <a
               href="https://www.npmjs.com/package/irctc-connect"
               target="_blank"
@@ -97,23 +135,21 @@ const IRCTCConnectDocs = () => {
       <div className="pt-16 max-w-[80%] mx-auto flex">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-slate-200 overflow-y-auto transition-transform duration-300 z-40 ${
+          className={`fixed lg:sticky top-20 left-0 h-fit w-64 bg-white dark:bg-gray-800 border rounded-lg border-slate-200 dark:border-slate-700 overflow-y-auto transition-transform duration-300 z-40 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}
         >
           <div className="p-6">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-              Documentation
-            </p>
+          
             <nav className="space-y-1">
               {sections.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  className={`w-full flex items-center gap-2 px-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                     activeSection === section.id
-                      ? "bg-blue-50 text-blue-700 border-l-2 border-blue-600"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-2 border-blue-600 dark:border-blue-500"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
                   }`}
                 >
                   <span className="text-base">{section.icon}</span>
@@ -122,13 +158,7 @@ const IRCTCConnectDocs = () => {
               ))}
             </nav>
 
-            <div className="mt-8 p-4 bg-linear-to-br from-blue-50 to-slate-50 rounded-xl border border-blue-100">
-              <p className="text-xs font-semibold text-blue-800 mb-2">
-                Monthly Downloads
-              </p>
-              <p className="text-2xl font-bold text-blue-600">251</p>
-              <p className="text-xs text-slate-500 mt-1">MIT License</p>
-            </div>
+           
           </div>
         </aside>
 
@@ -145,9 +175,9 @@ const IRCTCConnectDocs = () => {
           <div className="max-w-4xl">
             {/* Introduction */}
             <section id="introduction" className="mb-16 scroll-mt-24">
-              <div className="bg-linear-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white mb-8">
+              <div className="bg-linear-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl p-8 text-white mb-8">
                 <h1 className="text-3xl font-bold mb-3">IRCTC Connect</h1>
-                <p className="text-blue-100 text-lg leading-relaxed">
+                <p className="text-blue-100 dark:text-blue-200 text-lg leading-relaxed">
                   A comprehensive Node.js package for Indian Railways services.
                   Get real-time PNR status, detailed train information, live
                   train tracking, station updates, and search trains between
@@ -175,13 +205,13 @@ const IRCTCConnectDocs = () => {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="bg-white p-5 rounded-xl border border-slate-200 hover:border-blue-200 hover:shadow-md transition-all"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-600 hover:shadow-md transition-all"
                   >
                     <span className="text-2xl mb-2 block">{item.icon}</span>
-                    <h3 className="font-semibold text-slate-900 mb-1">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-slate-500">{item.desc}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{item.desc}</p>
                   </div>
                 ))}
               </div>
@@ -189,10 +219,10 @@ const IRCTCConnectDocs = () => {
 
             {/* Installation */}
             <section id="installation" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">📦</span> Installation
               </h2>
-              <div className="bg-slate-900 rounded-xl p-6 font-mono text-sm">
+              <div className="bg-slate-900 dark:bg-slate-950 rounded-xl p-6 font-mono text-sm border border-slate-800">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-slate-400 text-xs">Terminal</span>
                   <button className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-slate-800 transition-colors">
@@ -205,11 +235,11 @@ const IRCTCConnectDocs = () => {
               </div>
 
               <div className="mt-6 grid sm:grid-cols-2 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-slate-200">
-                  <h4 className="font-semibold text-slate-900 mb-3">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
                     Requirements
                   </h4>
-                  <ul className="space-y-2 text-sm text-slate-600">
+                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <li className="flex items-center gap-2">
                       <span className="text-green-500">✓</span> Node.js 14+
                     </li>
@@ -223,11 +253,11 @@ const IRCTCConnectDocs = () => {
                     </li>
                   </ul>
                 </div>
-                <div className="bg-white p-5 rounded-xl border border-slate-200">
-                  <h4 className="font-semibold text-slate-900 mb-3">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
                     Supported Platforms
                   </h4>
-                  <ul className="space-y-2 text-sm text-slate-600">
+                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <li className="flex items-center gap-2">
                       <span className="text-blue-500">→</span> Node.js apps
                     </li>
@@ -249,17 +279,17 @@ const IRCTCConnectDocs = () => {
 
             {/* Quick Start */}
             <section id="quickstart" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">🚀</span> Quick Start
               </h2>
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-400"></div>
                   <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                   <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  <span className="ml-2 text-xs text-slate-500">index.js</span>
+                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">index.js</span>
                 </div>
-                <pre className="p-6 font-jetbrains text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 font-jetbrains text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`import { 
   checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations 
   } from 'irctc-connect';
@@ -284,33 +314,33 @@ const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
 
             {/* PNR Status */}
             <section id="pnr-status" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">🎫</span> checkPNRStatus(pnr)
               </h2>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get comprehensive PNR status with passenger details and journey
                 information.
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 mb-2">Parameters</h4>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Parameters</h4>
                 <div className="flex items-center gap-3">
-                  <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                  <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                     pnr
                   </code>
-                  <span className="text-sm text-slate-600">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">
                     (string) — 10-digit PNR number
                   </span>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                  <span className="text-sm font-medium text-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`const result = await checkPNRStatus('1234567890');
 
 if (result.success) {
@@ -326,13 +356,13 @@ if (result.success) {
                 </pre>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                  <span className="text-sm font-medium text-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Response Structure
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`{
   success: true,
   data: {
@@ -357,33 +387,33 @@ if (result.success) {
 
             {/* Train Info */}
             <section id="train-info" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">🚂</span> getTrainInfo(trainNumber)
               </h2>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get detailed train information including complete route with
                 station coordinates.
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 mb-2">Parameters</h4>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Parameters</h4>
                 <div className="flex items-center gap-3">
-                  <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                  <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                     trainNumber
                   </code>
-                  <span className="text-sm text-slate-600">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">
                     (string) — 5-digit train number
                   </span>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                  <span className="text-sm font-medium text-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`const result = await getTrainInfo('12345');
 
 if (result.success) {
@@ -404,45 +434,45 @@ if (result.success) {
 
             {/* Live Tracking */}
             <section id="live-tracking" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">📍</span> trackTrain(trainNumber,
                 date)
               </h2>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get real-time train status and tracking for a specific date with
                 detailed station-wise information including delays and coach
                 positions.
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 mb-3">Parameters</h4>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">Parameters</h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                       trainNumber
                     </code>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">
                       (string) — 5-digit train number
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                       date
                     </code>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">
                       (string) — Date in dd-mm-yyyy format
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                  <span className="text-sm font-medium text-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`const result = await trackTrain('12342', '06-12-2025');
 
 if (result.success) {
@@ -465,33 +495,33 @@ if (result.success) {
 
             {/* Live at Station */}
             <section id="station-live" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">🚉</span> liveAtStation(stationCode)
               </h2>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get list of upcoming trains at any station with real-time
                 information.
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 mb-2">Parameters</h4>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Parameters</h4>
                 <div className="flex items-center gap-3">
-                  <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                  <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                     stationCode
                   </code>
-                  <span className="text-sm text-slate-600">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">
                     (string) — Station code (e.g., 'NDLS', 'BCT', 'HWH')
                   </span>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                  <span className="text-sm font-medium text-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`const result = await liveAtStation('NDLS');
 
 if (result.success) {
@@ -510,44 +540,44 @@ if (result.success) {
 
             {/* Train Search */}
             <section id="train-search" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">🔍</span>{" "}
                 searchTrainBetweenStations(from, to)
               </h2>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Find all trains running between two stations with timing and
                 availability.
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 mb-3">Parameters</h4>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">Parameters</h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                       fromStationCode
                     </code>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">
                       (string) — Origin station code
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                       toStationCode
                     </code>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">
                       (string) — Destination station code
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                  <span className="text-sm font-medium text-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`const result = await searchTrainBetweenStations('NDLS', 'BCT');
 
 if (result.success) {
@@ -566,45 +596,45 @@ if (result.success) {
 
             {/* Validation */}
             <section id="validation" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">✅</span> Input Validation
               </h2>
 
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-slate-200">
-                  <h4 className="font-semibold text-slate-900 mb-3">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
                     PNR Number
                   </h4>
-                  <ul className="space-y-2 text-sm text-slate-600">
+                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <li>• Must be exactly 10 digits</li>
                     <li>• Only numeric characters</li>
                     <li>• Auto-cleans non-numeric input</li>
                   </ul>
                 </div>
-                <div className="bg-white p-5 rounded-xl border border-slate-200">
-                  <h4 className="font-semibold text-slate-900 mb-3">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
                     Train Number
                   </h4>
-                  <ul className="space-y-2 text-sm text-slate-600">
+                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <li>• Must be exactly 5 characters</li>
                     <li>• Valid train number string</li>
                   </ul>
                 </div>
-                <div className="bg-white p-5 rounded-xl border border-slate-200">
-                  <h4 className="font-semibold text-slate-900 mb-3">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
                     Date Format
                   </h4>
-                  <ul className="space-y-2 text-sm text-slate-600">
+                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <li>• Format: dd-mm-yyyy</li>
                     <li>• Validates actual dates</li>
                     <li>• No invalid dates like 32-01-2025</li>
                   </ul>
                 </div>
-                <div className="bg-white p-5 rounded-xl border border-slate-200">
-                  <h4 className="font-semibold text-slate-900 mb-3">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
                     Station Codes
                   </h4>
-                  <ul className="space-y-2 text-sm text-slate-600">
+                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                     <li>• Valid station code strings</li>
                     <li>• Examples: NDLS, BCT, HWH</li>
                   </ul>
@@ -614,26 +644,26 @@ if (result.success) {
 
             {/* Status Codes */}
             <section id="status-codes" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">📊</span> Status Codes
               </h2>
 
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left font-semibold text-slate-900">
+                    <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
                         Code
                       </th>
-                      <th className="px-6 py-4 text-left font-semibold text-slate-900">
+                      <th className="px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
                         Full Form
                       </th>
-                      <th className="px-6 py-4 text-left font-semibold text-slate-900">
+                      <th className="px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
                         Description
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {[
                       {
                         code: "CNF",
@@ -671,16 +701,16 @@ if (result.success) {
                         desc: "On general quota",
                       },
                     ].map((status, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
+                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <td className="px-6 py-4">
-                          <code className="px-2 py-1 bg-blue-50 text-blue-700 rounded font-mono text-xs font-semibold">
+                          <code className="px-2 py-1 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded font-mono text-xs font-semibold">
                             {status.code}
                           </code>
                         </td>
-                        <td className="px-6 py-4 text-slate-700">
+                        <td className="px-6 py-4 text-slate-700 dark:text-slate-300">
                           {status.full}
                         </td>
-                        <td className="px-6 py-4 text-slate-500">
+                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
                           {status.desc}
                         </td>
                       </tr>
@@ -692,35 +722,35 @@ if (result.success) {
 
             {/* Error Handling */}
             <section id="errors" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
                 <span className="text-xl">⚠️</span> Error Handling
               </h2>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
                 All functions return a consistent response structure. Always
                 check the{" "}
-                <code className="px-1.5 py-0.5 bg-slate-100 rounded text-sm">
+                <code className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded text-sm">
                   success
                 </code>{" "}
                 field before accessing data.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-                  <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
+                  <h4 className="font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
                     <span className="text-lg">✅</span> Success Response
                   </h4>
-                  <pre className="text-sm text-green-900 font-mono">
+                  <pre className="text-sm text-green-900 dark:text-green-200 font-mono">
                     {`{
   success: true,
   data: { ... }
 }`}
                   </pre>
                 </div>
-                <div className="bg-red-50 border border-red-200 rounded-xl p-5">
-                  <h4 className="font-semibold text-red-800 mb-3 flex items-center gap-2">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-5">
+                  <h4 className="font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center gap-2">
                     <span className="text-lg">❌</span> Error Response
                   </h4>
-                  <pre className="text-sm text-red-900 font-mono">
+                  <pre className="text-sm text-red-900 dark:text-red-200 font-mono">
                     {`{
   success: false,
   error: "Error message"
@@ -729,11 +759,11 @@ if (result.success) {
                 </div>
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-                <h4 className="font-semibold text-amber-800 mb-3">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
+                <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-3">
                   Common Error Scenarios
                 </h4>
-                <ul className="space-y-2 text-sm text-amber-900">
+                <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-200">
                   <li>• Invalid input parameters</li>
                   <li>• Network timeouts (10-second timeout)</li>
                   <li>• API service unavailable</li>
