@@ -12,7 +12,8 @@
     "irctc-connect": "^2.0.1",
     "next": "16.0.7",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "react-json-view": "^1.21.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

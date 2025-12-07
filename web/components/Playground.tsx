@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ReactJson from "react-json-view";
 import {
   checkPNRStatus,
   getTrainInfo,
@@ -8,73 +9,63 @@ import {
 } from "irctc-connect";
 
 const Playground = () => {
-  // Playground state
   const [playgroundTab, setPlaygroundTab] = useState<
     "pnr" | "train" | "track" | "station" | "search"
   >("pnr");
   const [pnrInput, setPnrInput] = useState("");
   const [trainInput, setTrainInput] = useState("");
   const [trackTrainInput, setTrackTrainInput] = useState("");
-  const [trackDateInput, setTrackDateInput] = useState("");
+  const [trackDateInput, setTrackDateInput] = useState(""); // stored as dd-mm-yyyy
   const [stationInput, setStationInput] = useState("");
   const [fromStationInput, setFromStationInput] = useState("");
   const [toStationInput, setToStationInput] = useState("");
-  const [playgroundResult, setPlaygroundResult] = useState<string>("");
+
+  const [playgroundResult, setPlaygroundResult] = useState<any>(null);
+  const [rawJSON, setRawJSON] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const formatToBrowserDate = (ddmmyyyy: string) => {
+    if (!ddmmyyyy.includes("-")) return "";
+    const [dd, mm, yyyy] = ddmmyyyy.split("-");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   const handlePlaygroundSubmit = async () => {
     setIsLoading(true);
-    setPlaygroundResult("");
+    setPlaygroundResult(null);
 
     try {
-      let result: unknown;
+      let result;
 
       switch (playgroundTab) {
         case "pnr":
-          if (!pnrInput || pnrInput.length !== 10) {
-            setPlaygroundResult("❌ Error: PNR must be exactly 10 digits");
-            return;
-          }
+          if (pnrInput.length !== 10)
+            throw new Error("PNR must be exactly 10 digits");
           result = await checkPNRStatus(pnrInput);
           break;
 
         case "train":
-          if (!trainInput || trainInput.length !== 5) {
-            setPlaygroundResult(
-              "❌ Error: Train number must be exactly 5 digits"
-            );
-            return;
-          }
+          if (trainInput.length !== 5)
+            throw new Error("Train number must be 5 digits");
           result = await getTrainInfo(trainInput);
           break;
 
         case "track":
-          if (!trackTrainInput || trackTrainInput.length !== 5) {
-            setPlaygroundResult(
-              "❌ Error: Train number must be exactly 5 digits"
-            );
-            return;
-          }
-          if (!trackDateInput || !/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) {
-            setPlaygroundResult("❌ Error: Date must be in dd-mm-yyyy format");
-            return;
-          }
+          if (trackTrainInput.length !== 5)
+            throw new Error("Train number must be 5 digits");
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput))
+            throw new Error("Date must be in dd-mm-yyyy format");
           result = await trackTrain(trackTrainInput, trackDateInput);
           break;
 
         case "station":
-          if (!stationInput || stationInput.length < 2) {
-            setPlaygroundResult("❌ Error: Please enter a valid station code");
-            return;
-          }
+          if (!stationInput) throw new Error("Enter a valid station code");
           result = await liveAtStation(stationInput.toUpperCase());
           break;
 
         case "search":
-          if (!fromStationInput || !toStationInput) {
-            setPlaygroundResult("❌ Error: Please enter both station codes");
-            return;
-          }
+          if (!fromStationInput || !toStationInput)
+            throw new Error("Both station codes required");
           result = await searchTrainBetweenStations(
             fromStationInput.toUpperCase(),
             toStationInput.toUpperCase()
@@ -82,18 +73,11 @@ const Playground = () => {
           break;
       }
 
-      if (result !== undefined) {
-        setPlaygroundResult(
-          typeof result === "string" ? result : JSON.stringify(result, null, 2)
-        );
-      }
+      setPlaygroundResult(result);
+      setRawJSON(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      console.error(error);
-      setPlaygroundResult(
-        `❌ Error while calling API: ${
-          error?.message || "Something went wrong"
-        }`
-      );
+      setPlaygroundResult({ error: error.message });
+      setRawJSON(JSON.stringify({ error: error.message }, null, 2));
     } finally {
       setIsLoading(false);
     }
@@ -104,224 +88,145 @@ const Playground = () => {
       <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
         <span className="text-xl">🎮</span> Live Playground
       </h2>
-      <p className="text-slate-600 mb-6">
-        Test the API functions with your own data. Enter values below and see
-        the actual response from <code>irctc-connect</code>.
-      </p>
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
-        {/* Playground Tabs */}
-        <div className="flex flex-wrap border-b border-slate-200 bg-slate-50">
+        {/* Tabs */}
+        <div className="flex flex-wrap border-b bg-slate-50">
           {[
-            { id: "pnr" as const, label: "PNR Status", icon: "🎫" },
-            { id: "train" as const, label: "Train Info", icon: "🚂" },
-            { id: "track" as const, label: "Live Track", icon: "📍" },
-            {
-              id: "station" as const,
-              label: "Station Live",
-              icon: "🚉",
-            },
-            { id: "search" as const, label: "Search", icon: "🔍" },
+            { id: "pnr", label: "PNR Status", icon: "🎫" },
+            { id: "train", label: "Train Info", icon: "🚂" },
+            { id: "track", label: "Live Track", icon: "📍" },
+            { id: "station", label: "Station Live", icon: "🚉" },
+            { id: "search", label: "Search", icon: "🔍" },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => {
-                setPlaygroundTab(tab.id);
-                setPlaygroundResult("");
-              }}
-              className={`flex items-center gap-2 px-5 py-4 text-sm font-medium transition-all ${
+              onClick={() => setPlaygroundTab(tab.id as any)}
+              className={`px-5 py-4 flex items-center gap-2 text-sm font-medium ${
                 playgroundTab === tab.id
-                  ? "bg-white text-blue-600 border-b-2 border-blue-600 -mb-px"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                  ? "bg-white text-blue-600 border-b-2 border-blue-600"
+                  : "text-slate-500 hover:bg-slate-100"
               }`}
             >
-              <span>{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
+              {tab.icon} {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Input Section */}
-        <div className="p-6 border-b border-slate-200">
+        {/* Inputs */}
+        <div className="p-6">
           {playgroundTab === "pnr" && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                PNR Number (10 digits)
-              </label>
-              <input
-                type="text"
-                value={pnrInput}
-                onChange={(e) =>
-                  setPnrInput(e.target.value.replace(/\D/g, "").slice(0, 10))
-                }
-                placeholder="Enter 10-digit PNR number"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                maxLength={10}
-              />
-              <p className="mt-2 text-xs text-slate-500">Example: 1234567890</p>
-            </div>
+            <input
+              type="text"
+              value={pnrInput}
+              onChange={(e) =>
+                setPnrInput(e.target.value.replace(/\D/g, "").slice(0, 10))
+              }
+              placeholder="Enter 10-digit PNR"
+              className="w-full px-4 py-3 border rounded-lg text-black"
+            />
           )}
 
           {playgroundTab === "train" && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Train Number (5 digits)
-              </label>
-              <input
-                type="text"
-                value={trainInput}
-                onChange={(e) =>
-                  setTrainInput(e.target.value.replace(/\D/g, "").slice(0, 5))
-                }
-                placeholder="Enter 5-digit train number"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                maxLength={5}
-              />
-              <p className="mt-2 text-xs text-slate-500">Example: 12345</p>
-            </div>
+            <input
+              type="text"
+              value={trainInput}
+              onChange={(e) =>
+                setTrainInput(e.target.value.replace(/\D/g, "").slice(0, 5))
+              }
+              placeholder="Train Number (5 digits)"
+              className="w-full px-4 py-3 border rounded-lg text-black"
+            />
           )}
 
           {playgroundTab === "track" && (
             <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Train Number (5 digits)
-                </label>
-                <input
-                  type="text"
-                  value={trackTrainInput}
-                  onChange={(e) =>
-                    setTrackTrainInput(
-                      e.target.value.replace(/\D/g, "").slice(0, 5)
-                    )
-                  }
-                  placeholder="Enter train number"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  maxLength={5}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Date (dd-mm-yyyy)
-                </label>
-                <input
-                  type="date"
-                  value={trackDateInput}
-                  onChange={(e) => {
-                    const value = e.target.value; // yyyy-mm-dd
-                    const [year, month, day] = value.split("-");
-                    setTrackDateInput(`${day}-${month}-${year}`); // convert to dd-mm-yyyy
-                  }}
-                  placeholder="06-12-2025"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  maxLength={10}
-                />
-              </div>
+              <input
+                type="text"
+                value={trackTrainInput}
+                onChange={(e) =>
+                  setTrackTrainInput(
+                    e.target.value.replace(/\D/g, "").slice(0, 5)
+                  )
+                }
+                placeholder="Train Number"
+                className="px-4 py-3 border rounded-lg text-black"
+              />
+
+              <input
+                type="date"
+                value={trackDateInput ? formatToBrowserDate(trackDateInput) : ""}
+                onChange={(e) => {
+                  const [yyyy, mm, dd] = e.target.value.split("-");
+                  setTrackDateInput(`${dd}-${mm}-${yyyy}`);
+                }}
+                className="px-4 py-3 border rounded-lg text-black"
+              />
             </div>
           )}
 
           {playgroundTab === "station" && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Station Code
-              </label>
-              <input
-                type="text"
-                value={stationInput}
-                onChange={(e) => setStationInput(e.target.value.toUpperCase())}
-                placeholder="Enter station code"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                maxLength={6}
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                Examples: NDLS, BCT, HWH, CSTM
-              </p>
-            </div>
+            <input
+              type="text"
+              value={stationInput}
+              onChange={(e) => setStationInput(e.target.value.toUpperCase())}
+              placeholder="NDLS / BCT / CSTM"
+              className="w-full px-4 py-3 border rounded-lg text-black"
+            />
           )}
 
           {playgroundTab === "search" && (
             <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  From Station Code
-                </label>
-                <input
-                  type="text"
-                  value={fromStationInput}
-                  onChange={(e) =>
-                    setFromStationInput(e.target.value.toUpperCase())
-                  }
-                  placeholder="e.g., NDLS"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  maxLength={6}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  To Station Code
-                </label>
-                <input
-                  type="text"
-                  value={toStationInput}
-                  onChange={(e) =>
-                    setToStationInput(e.target.value.toUpperCase())
-                  }
-                  placeholder="e.g., BCT"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  maxLength={6}
-                />
-              </div>
+              <input
+                type="text"
+                value={fromStationInput}
+                onChange={(e) =>
+                  setFromStationInput(e.target.value.toUpperCase())
+                }
+                placeholder="FROM"
+                className="px-4 py-3 border rounded-lg text-black"
+              />
+              <input
+                type="text"
+                value={toStationInput}
+                onChange={(e) => setToStationInput(e.target.value.toUpperCase())}
+                placeholder="TO"
+                className="px-4 py-3 border rounded-lg text-black"
+              />
             </div>
           )}
 
           <button
             onClick={handlePlaygroundSubmit}
             disabled={isLoading}
-            className="mt-6 w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Processing...
-              </>
-            ) : (
-              <>
-                <span>▶</span> Run with real API
-              </>
-            )}
+            {isLoading ? "Processing..." : "Run API"}
           </button>
         </div>
 
-        {/* Output Section */}
+        {/* Response Viewer */}
         {playgroundResult && (
-          <div className="bg-slate-900">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-              <span className="text-sm text-slate-400">Response</span>
+          <div className="bg-slate-900 h-96 overflow-auto p-4">
+            <div className="flex justify-between text-slate-300 mb-2">
+              <span>Response</span>
               <button
-                onClick={() => navigator.clipboard.writeText(playgroundResult)}
-                className="text-slate-400 hover:text-white text-xs px-3 py-1 rounded hover:bg-slate-800 transition-colors"
+                onClick={() => navigator.clipboard.writeText(rawJSON)}
+                className="text-xs border px-2 py-1 rounded"
               >
-                Copy
+                Copy JSON
               </button>
             </div>
-            <pre className="p-6 text-sm overflow-x-auto text-slate-300 max-h-96 whitespace-pre-wrap">
-              {playgroundResult}
-            </pre>
+
+            <ReactJson
+              src={playgroundResult}
+              theme="isotope"
+              collapsed={1}
+              enableClipboard={false}
+              displayObjectSize={false}
+              displayDataTypes={false}
+              style={{ background: "transparent" }}
+            />
           </div>
         )}
       </div>
