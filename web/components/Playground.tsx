@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { 
-  checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations 
-  } from 'irctc-connect';
+import {
+  checkPNRStatus,
+  getTrainInfo,
+  trackTrain,
+  liveAtStation,
+  searchTrainBetweenStations,
+} from "irctc-connect";
 
 const Playground = () => {
   // Playground state
@@ -22,171 +26,83 @@ const Playground = () => {
     setIsLoading(true);
     setPlaygroundResult("");
 
-    let code = "";
+    try {
+      let result: unknown;
 
-    switch (playgroundTab) {
-      case "pnr":
-        if (!pnrInput || pnrInput.length !== 10) {
-          setPlaygroundResult("❌ Error: PNR must be exactly 10 digits");
-          setIsLoading(false);
-          return;
-        }
-        code = `import { checkPNRStatus } from 'irctc-connect';
-    
-    const result = await checkPNRStatus('${pnrInput}');
-    
-    // Expected Response:
-    {
-      success: true,
-      data: {
-        pnr: "${pnrInput}",
-        status: "CNF",
-        train: {
-          number: "12345",
-          name: "Rajdhani Express"
-        },
-        passengers: [
-          { name: "Passenger 1", status: "CNF", seat: "B1-45" }
-        ]
-      }
-    }`;
-        break;
+      switch (playgroundTab) {
+        case "pnr":
+          if (!pnrInput || pnrInput.length !== 10) {
+            setPlaygroundResult("❌ Error: PNR must be exactly 10 digits");
+            return;
+          }
+          result = await checkPNRStatus(pnrInput);
+          break;
 
-      case "train":
-        if (!trainInput || trainInput.length !== 5) {
-          setPlaygroundResult(
-            "❌ Error: Train number must be exactly 5 digits"
+        case "train":
+          if (!trainInput || trainInput.length !== 5) {
+            setPlaygroundResult(
+              "❌ Error: Train number must be exactly 5 digits"
+            );
+            return;
+          }
+          result = await getTrainInfo(trainInput);
+          break;
+
+        case "track":
+          if (!trackTrainInput || trackTrainInput.length !== 5) {
+            setPlaygroundResult(
+              "❌ Error: Train number must be exactly 5 digits"
+            );
+            return;
+          }
+          if (!trackDateInput || !/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) {
+            setPlaygroundResult("❌ Error: Date must be in dd-mm-yyyy format");
+            return;
+          }
+          result = await trackTrain(trackTrainInput, trackDateInput);
+          break;
+
+        case "station":
+          if (!stationInput || stationInput.length < 2) {
+            setPlaygroundResult(
+              "❌ Error: Please enter a valid station code"
+            );
+            return;
+          }
+          result = await liveAtStation(stationInput.toUpperCase());
+          break;
+
+        case "search":
+          if (!fromStationInput || !toStationInput) {
+            setPlaygroundResult(
+              "❌ Error: Please enter both station codes"
+            );
+            return;
+          }
+          result = await searchTrainBetweenStations(
+            fromStationInput.toUpperCase(),
+            toStationInput.toUpperCase()
           );
-          setIsLoading(false);
-          return;
-        }
-        code = `import { getTrainInfo } from 'irctc-connect';
-    
-    const result = await getTrainInfo('${trainInput}');
-    
-    // Expected Response:
-    {
-      success: true,
-      data: {
-        trainInfo: {
-          train_no: "${trainInput}",
-          train_name: "Express Train",
-          from_stn_name: "New Delhi",
-          to_stn_name: "Mumbai Central",
-          from_time: "20:05",
-          to_time: "08:35",
-          travel_time: "12:30 hrs",
-          running_days: "1234567"
-        },
-        route: [
-          { stnName: "New Delhi", stnCode: "NDLS", arrival: "00:00", departure: "20:05" }
-        ]
+          break;
       }
-    }`;
-        break;
 
-      case "track":
-        if (!trackTrainInput || trackTrainInput.length !== 5) {
-          setPlaygroundResult(
-            "❌ Error: Train number must be exactly 5 digits"
-          );
-          setIsLoading(false);
-          return;
-        }
-        if (!trackDateInput || !/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) {
-          setPlaygroundResult("❌ Error: Date must be in dd-mm-yyyy format");
-          setIsLoading(false);
-          return;
-        }
-        code = `import { trackTrain } from 'irctc-connect';
-    
-    const result = await trackTrain('${trackTrainInput}', '${trackDateInput}');
-    
-    // Expected Response:
-    {
-      success: true,
-      data: {
-        trainNo: "${trackTrainInput}",
-        trainName: "Express Train",
-        date: "${trackDateInput}",
-        statusNote: "Running on time",
-        stations: [
-          {
-            stationCode: "NDLS",
-            stationName: "New Delhi",
-            arrival: { scheduled: "20:00", actual: "20:05", delay: "5 Min" },
-            departure: { scheduled: "20:10", actual: "20:15" }
-          }
-        ]
+      if (result !== undefined) {
+        setPlaygroundResult(
+          typeof result === "string"
+            ? result
+            : JSON.stringify(result, null, 2)
+        );
       }
-    }`;
-        break;
-
-      case "station":
-        if (!stationInput || stationInput.length < 2) {
-          setPlaygroundResult("❌ Error: Please enter a valid station code");
-          setIsLoading(false);
-          return;
-        }
-        code = `import { liveAtStation } from 'irctc-connect';
-    
-    const result = await liveAtStation('${stationInput.toUpperCase()}');
-    
-    // Expected Response:
-    {
-      success: true,
-      data: {
-        stationName: "Station Name",
-        stationCode: "${stationInput.toUpperCase()}",
-        trains: [
-          {
-            trainNumber: "12345",
-            trainName: "Rajdhani Express",
-            expectedTime: "20:05",
-            platform: "5",
-            status: "On Time"
-          }
-        ]
-      }
-    }`;
-        break;
-
-      case "search":
-        if (!fromStationInput || !toStationInput) {
-          setPlaygroundResult("❌ Error: Please enter both station codes");
-          setIsLoading(false);
-          return;
-        }
-        code = `import { searchTrainBetweenStations } from 'irctc-connect';
-    
-    const result = await searchTrainBetweenStations('${fromStationInput.toUpperCase()}', '${toStationInput.toUpperCase()}');
-    
-    // Expected Response:
-    {
-      success: true,
-      data: {
-        from: "${fromStationInput.toUpperCase()}",
-        to: "${toStationInput.toUpperCase()}",
-        totalTrains: 15,
-        trains: [
-          {
-            trainNumber: "12345",
-            trainName: "Rajdhani Express",
-            departure: "20:05",
-            arrival: "08:35",
-            duration: "12h 30m",
-            runningDays: "Daily"
-          }
-        ]
-      }
-    }`;
-        break;
-    }
-
-    setTimeout(() => {
-      setPlaygroundResult(code);
+    } catch (error: any) {
+      console.error(error);
+      setPlaygroundResult(
+        `❌ Error while calling API: ${
+          error?.message || "Something went wrong"
+        }`
+      );
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -196,7 +112,7 @@ const Playground = () => {
       </h2>
       <p className="text-slate-600 mb-6">
         Test the API functions with your own data. Enter values below and see
-        the expected code and response.
+        the actual response from <code>irctc-connect</code>.
       </p>
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
@@ -295,7 +211,7 @@ const Playground = () => {
                   Date (dd-mm-yyyy)
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   value={trackDateInput}
                   onChange={(e) => setTrackDateInput(e.target.value)}
                   placeholder="06-12-2025"
@@ -387,7 +303,7 @@ const Playground = () => {
               </>
             ) : (
               <>
-                <span>▶</span> Generate Code
+                <span>▶</span> Run with real API
               </>
             )}
           </button>
@@ -397,7 +313,7 @@ const Playground = () => {
         {playgroundResult && (
           <div className="bg-slate-900">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-              <span className="text-sm text-slate-400">Output</span>
+              <span className="text-sm text-slate-400">Response</span>
               <button
                 onClick={() => navigator.clipboard.writeText(playgroundResult)}
                 className="text-slate-400 hover:text-white text-xs px-3 py-1 rounded hover:bg-slate-800 transition-colors"
@@ -405,7 +321,7 @@ const Playground = () => {
                 Copy
               </button>
             </div>
-            <pre className="p-6 text-sm overflow-x-auto text-slate-300 max-h-96">
+            <pre className="p-6 text-sm overflow-x-auto text-slate-300 max-h-96 whitespace-pre-wrap">
               {playgroundResult}
             </pre>
           </div>
