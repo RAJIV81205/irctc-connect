@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import ReactJson from "react-json-view";
+import dynamic from "next/dynamic";
 import {
   checkPNRStatus,
   getTrainInfo,
@@ -9,6 +9,12 @@ import {
   liveAtStation,
   searchTrainBetweenStations,
 } from "irctc-connect";
+
+// Dynamically import ReactJson to avoid SSR issues
+const ReactJson = dynamic(() => import("react-json-view"), {
+  ssr: false,
+  loading: () => <div className="text-slate-400 text-sm">Loading...</div>,
+});
 
 const Playground = () => {
   const [playgroundTab, setPlaygroundTab] = useState<
