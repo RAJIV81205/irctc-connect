@@ -1,3 +1,19 @@
+import { 
+  BookOpen, 
+  Package, 
+  Rocket, 
+  Ticket, 
+  Train, 
+  MapPin, 
+  Building2, 
+  Search, 
+  CheckCircle, 
+  BarChart3, 
+  AlertTriangle, 
+  Gamepad2,
+  type LucideIcon
+} from "lucide-react";
+
 export const packageInfo = {
   name: 'IRCTC Connect',
   tagline: 'Node.js SDK for Indian Railways',
@@ -14,20 +30,20 @@ export const packageInfo = {
   }
 };
 
-  export const sections = [
-    { id: "introduction", label: "Introduction", icon: "📖" },
-    { id: "installation", label: "Installation", icon: "📦" },
-    { id: "quickstart", label: "Quick Start", icon: "🚀" },
-    { id: "pnr-status", label: "PNR Status", icon: "🎫" },
-    { id: "train-info", label: "Train Information", icon: "🚂" },
-    { id: "live-tracking", label: "Live Tracking", icon: "📍" },
-    { id: "station-live", label: "Live at Station", icon: "🚉" },
-    { id: "train-search", label: "Train Search", icon: "🔍" },
-    { id: "validation", label: "Input Validation", icon: "✅" },
-    { id: "status-codes", label: "Status Codes", icon: "📊" },
-    { id: "errors", label: "Error Handling", icon: "⚠️" },
-    { id: "playground", label: "Playground", icon: "🎮" },
-  ];
+export const sections: Array<{ id: string; label: string; icon: LucideIcon }> = [
+  { id: "introduction", label: "Introduction", icon: BookOpen },
+  { id: "installation", label: "Installation", icon: Package },
+  { id: "quickstart", label: "Quick Start", icon: Rocket },
+  { id: "pnr-status", label: "PNR Status", icon: Ticket },
+  { id: "train-info", label: "Train Information", icon: Train },
+  { id: "live-tracking", label: "Live Tracking", icon: MapPin },
+  { id: "station-live", label: "Live at Station", icon: Building2 },
+  { id: "train-search", label: "Train Search", icon: Search },
+  { id: "validation", label: "Input Validation", icon: CheckCircle },
+  { id: "status-codes", label: "Status Codes", icon: BarChart3 },
+  { id: "errors", label: "Error Handling", icon: AlertTriangle },
+  { id: "playground", label: "Playground", icon: Gamepad2 },
+];
 
 export const features = [
   { 

@@ -4,6 +4,7 @@ import { sections } from "./docsData";
 import Playground  from "../components/Playground";
 import { useTheme } from "./ThemeProvider";
 
+
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState("introduction");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -139,23 +140,26 @@ const IRCTCConnectDocs = () => {
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}
         >
-          <div className="p-6">
+          <div className="p-4">
           
-            <nav className="space-y-1">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => scrollToSection(section.id)}
-                  className={`w-full flex items-center gap-2 px-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    activeSection === section.id
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-2 border-blue-600 dark:border-blue-500"
-                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
-                  }`}
-                >
-                  <span className="text-base">{section.icon}</span>
-                  {section.label}
-                </button>
-              ))}
+            <nav className="space-y-2">
+              {sections.map((section) => {
+                const IconComponent = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => scrollToSection(section.id)}
+                    className={`w-full flex items-center gap-3 px-2 py-2.5 text-base font-medium rounded-lg transition-all duration-200 ${
+                      activeSection === section.id
+                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-2 border-blue-600 dark:border-blue-500"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
+                    }`}
+                  >
+                    <IconComponent className="w-6 h-6" />
+                    {section.label}
+                  </button>
+                );
+              })}
             </nav>
 
            
@@ -777,10 +781,6 @@ if (result.success) {
           <Playground />
         </main>
       </div>
-
-      
-
-    
     </div>
   );
 };
