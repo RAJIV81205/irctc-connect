@@ -232,7 +232,8 @@ const result = await searchTrainBetweenStations('${fromStationInput.toUpperCase(
               </span>
             </div>
             <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-              v1.0.0
+              v2.0.1
+              
             </span>
           </div>
 
@@ -1166,37 +1167,7 @@ if (result.success) {
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-[80%] mx-auto px-8 py-12">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🚂</span>
-              <div>
-                <p className="font-semibold text-slate-900">irctc-connect</p>
-                <p className="text-sm text-slate-500">
-                  Built for Indian Railways enthusiasts
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-slate-500">
-              <a
-                href="https://github.com/RAJIV81205/irctc-connect"
-                className="hover:text-slate-900 transition-colors"
-              >
-                GitHub
-              </a>
-              <a
-                href="https://www.npmjs.com/package/irctc-connect"
-                className="hover:text-slate-900 transition-colors"
-              >
-                npm
-              </a>
-              <span>MIT License</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+    
     </div>
   );
 };
