@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { sections } from "./docsData";
 
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState("introduction");
@@ -19,20 +20,7 @@ const IRCTCConnectDocs = () => {
   const [playgroundResult, setPlaygroundResult] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const sections = [
-    { id: "introduction", label: "Introduction", icon: "📖" },
-    { id: "installation", label: "Installation", icon: "📦" },
-    { id: "quickstart", label: "Quick Start", icon: "🚀" },
-    { id: "pnr-status", label: "PNR Status", icon: "🎫" },
-    { id: "train-info", label: "Train Information", icon: "🚂" },
-    { id: "live-tracking", label: "Live Tracking", icon: "📍" },
-    { id: "station-live", label: "Live at Station", icon: "🚉" },
-    { id: "train-search", label: "Train Search", icon: "🔍" },
-    { id: "validation", label: "Input Validation", icon: "✅" },
-    { id: "status-codes", label: "Status Codes", icon: "📊" },
-    { id: "errors", label: "Error Handling", icon: "⚠️" },
-    { id: "playground", label: "Playground", icon: "🎮" },
-  ];
+
 
   const handlePlaygroundSubmit = async () => {
     setIsLoading(true);
@@ -452,14 +440,10 @@ const result = await searchTrainBetweenStations('${fromStationInput.toUpperCase(
                   <div className="w-3 h-3 rounded-full bg-green-400"></div>
                   <span className="ml-2 text-xs text-slate-500">index.js</span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 text-slate-300">
+                <pre className="p-6 font-jetbrains text-sm overflow-x-auto bg-slate-900 text-slate-300">
                   {`import { 
-  checkPNRStatus, 
-  getTrainInfo, 
-  trackTrain,
-  liveAtStation,
-  searchTrainBetweenStations 
-} from 'irctc-connect';
+  checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations 
+  } from 'irctc-connect';
 
 // Check PNR status
 const pnrResult = await checkPNRStatus('1234567890');
