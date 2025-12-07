@@ -10,6 +10,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-jetbrains: var(--font-jetbrains);
+  --font-inter:var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
