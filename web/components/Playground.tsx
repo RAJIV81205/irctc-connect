@@ -333,7 +333,7 @@ const Playground = () => {
               </>
             ) : (
               <>
-                <span>▶</span> Run with real API
+                <span>▶</span> Test in Playground
               </>
             )}
           </button>
