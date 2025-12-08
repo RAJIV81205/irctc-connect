@@ -18,3 +18,32 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+.theme-circle-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  clip-path: circle(0px at var(--circle-x) var(--circle-y));
+  transition: clip-path 0.8s ease-out;
+}
+
+/* Final state (full-screen circle) */
+.theme-circle-overlay--active {
+  clip-path: circle(var(--circle-r) at var(--circle-x) var(--circle-y));
+}
+
+/* Target theme colors */
+.theme-circle-overlay--dark {
+  background: #020617; /* match your dark background */
+}
+
+.theme-circle-overlay--light {
+  background: #f9fafb; /* match your light background */
+}
+
+/* .theme-circle-overlay {
+  opacity: 0.8;
+} */
+
+
