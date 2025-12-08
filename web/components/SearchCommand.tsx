@@ -80,7 +80,7 @@ export default function SearchCommand({ onNavigate }: SearchCommandProps) {
         className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
       >
         <Search className="w-4 h-4" />
-        <span className="hidden md:inline">Search docs...</span>
+        <span className="hidden md:inline mr-10">Search docs...</span>
         <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded">
           {isMac ? (
             <>

@@ -1,19 +1,14 @@
 "use client";
 import { useState } from "react";
 import { sections } from "./docsData";
-import Playground  from "../components/Playground";
+import Playground from "../components/Playground";
 import { useTheme } from "./ThemeProvider";
 import SearchCommand from "../components/SearchCommand";
-
 
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState("introduction");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { theme, toggleTheme } = useTheme();
-
-  
-
-    
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -55,13 +50,59 @@ const IRCTCConnectDocs = () => {
             </div>
             <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
               v2.0.4
-              
             </span>
           </div>
 
           <div className="flex items-center gap-4">
             {/* Search Command */}
             <SearchCommand onNavigate={scrollToSection} />
+
+            <div className="flex items-center gap-3">
+              {/* NPM Button */}
+              <a
+                href="https://www.npmjs.com/package/irctc-connect"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300 
+    bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 
+    rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 2500 2500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="rounded-sm"
+                >
+                  <path d="M0 0h2500v2500H0z" fill="#c00" />
+                  <path
+                    d="M1241.5 268.5h-973v1962.9h972.9V763.5h495v1467.9h495V268.5z"
+                    fill="#fff"
+                  />
+                </svg>
+                NPM
+              </a>
+
+              {/* GitHub Button */}
+              <a
+                href="https://github.com/RAJIV81205/irctc-connect"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium 
+    bg-slate-900 text-white dark:bg-white dark:text-black
+    rounded-lg border border-slate-900 dark:border-white  
+    hover:opacity-90 transition-all"
+              >
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+                GitHub
+              </a>
+            </div>
 
             {/* Dark Mode Toggle */}
             <button
@@ -99,39 +140,6 @@ const IRCTCConnectDocs = () => {
                 </svg>
               )}
             </button>
-            <a
-              href="https://www.npmjs.com/package/irctc-connect"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                x="0px"
-                y="0px"
-                width="48"
-                height="48"
-                viewBox="0 0 48 48"
-              >
-                <path fill="#d50000" d="M0,15h48v17H24v3H13v-3H0V15z"></path>
-                <path
-                  fill="#fff"
-                  d="M3 29L8 29 8 21 11 21 11 29 13 29 13 18 3 18zM16 18v14h5v-3h5V18H16zM24 26h-3v-5h3V26zM29 18L29 29 34 29 34 21 37 21 37 29 40 29 40 21 43 21 43 29 45 29 45 18z"
-                ></path>
-              </svg>
-              
-            </a>
-            <a
-              href="https://github.com/RAJIV81205/irctc-connect"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 rounded-lg transition-all"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-              GitHub
-            </a>
           </div>
         </div>
       </nav>
@@ -145,7 +153,6 @@ const IRCTCConnectDocs = () => {
           }`}
         >
           <div className="p-4">
-          
             <nav className="space-y-2">
               {sections.map((section) => {
                 const IconComponent = section.icon;
@@ -165,8 +172,6 @@ const IRCTCConnectDocs = () => {
                 );
               })}
             </nav>
-
-           
           </div>
         </aside>
 
@@ -219,7 +224,9 @@ const IRCTCConnectDocs = () => {
                     <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{item.desc}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {item.desc}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -295,7 +302,9 @@ const IRCTCConnectDocs = () => {
                   <div className="w-3 h-3 rounded-full bg-red-400"></div>
                   <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                   <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">index.js</span>
+                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                    index.js
+                  </span>
                 </div>
                 <pre className="p-6 font-jetbrains text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
                   {`import { 
@@ -331,7 +340,9 @@ const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
               </p>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Parameters</h4>
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                  Parameters
+                </h4>
                 <div className="flex items-center gap-3">
                   <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                     pnr
@@ -404,7 +415,9 @@ if (result.success) {
               </p>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Parameters</h4>
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                  Parameters
+                </h4>
                 <div className="flex items-center gap-3">
                   <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                     trainNumber
@@ -453,7 +466,9 @@ if (result.success) {
               </p>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">Parameters</h4>
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">
+                  Parameters
+                </h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
@@ -512,7 +527,9 @@ if (result.success) {
               </p>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Parameters</h4>
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                  Parameters
+                </h4>
                 <div className="flex items-center gap-3">
                   <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
                     stationCode
@@ -558,7 +575,9 @@ if (result.success) {
               </p>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">Parameters</h4>
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">
+                  Parameters
+                </h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
@@ -709,7 +728,10 @@ if (result.success) {
                         desc: "On general quota",
                       },
                     ].map((status, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                      <tr
+                        key={idx}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                      >
                         <td className="px-6 py-4">
                           <code className="px-2 py-1 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded font-mono text-xs font-semibold">
                             {status.code}
@@ -780,7 +802,6 @@ if (result.success) {
                 </ul>
               </div>
             </section>
-
           </div>
           <Playground />
         </main>
