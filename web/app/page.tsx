@@ -48,7 +48,7 @@ const IRCTCConnectDocs = () => {
             </button>
             <div className="flex items-center gap-2">
               <span className="text-2xl">🚂</span>
-              <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              <span className="text-xl font-bold text-slate-900 dark:text-slate-100 font-jetbrains">
                 irctc-connect
               </span>
             </div>
