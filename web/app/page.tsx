@@ -3,6 +3,7 @@ import { useState } from "react";
 import { sections } from "./docsData";
 import Playground  from "../components/Playground";
 import { useTheme } from "./ThemeProvider";
+import SearchCommand from "../components/SearchCommand";
 
 
 const IRCTCConnectDocs = () => {
@@ -59,6 +60,9 @@ const IRCTCConnectDocs = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Search Command */}
+            <SearchCommand onNavigate={scrollToSection} />
+
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleTheme}
