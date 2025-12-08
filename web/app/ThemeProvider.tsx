@@ -21,7 +21,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
 
-  // Initial theme (localStorage / system)
+  // Initial theme
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -41,10 +41,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleTheme = (event?: MouseEvent<HTMLElement>) => {
+    const fromTheme: Theme = theme;
     const toTheme: Theme = theme === "light" ? "dark" : "light";
 
     if (typeof window === "undefined" || typeof document === "undefined") {
-      // Fallback: no animation
+      // no animation fallback
       setTheme(toTheme);
       localStorage.setItem("theme", toTheme);
       if (toTheme === "dark") {
@@ -55,12 +56,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // ----- CREATE OVERLAY -----
+    // 1) Immediately switch theme for ALL components
+    setTheme(toTheme);
+    localStorage.setItem("theme", toTheme);
+    if (toTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    // 2) Create overlay that still looks like the PREVIOUS theme
     const overlay = document.createElement("div");
-    overlay.className = `theme-circle-overlay theme-circle-overlay--${toTheme}`;
+    overlay.className = `theme-circle-overlay theme-circle-overlay--${fromTheme}`;
     document.body.appendChild(overlay);
 
-    // Origin = button center (fallback to screen center)
+    // Origin of circle: button center (fallback: screen center)
     let x = window.innerWidth / 2;
     let y = window.innerHeight / 2;
 
@@ -70,37 +80,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       y = rect.top + rect.height / 2;
     }
 
-    // Radius = farthest corner from origin
     const w = window.innerWidth;
     const h = window.innerHeight;
     const maxX = Math.max(x, w - x);
     const maxY = Math.max(y, h - y);
-    const r = Math.hypot(maxX, maxY);
+    const r = Math.hypot(maxX, maxY); // big enough to cover screen
 
     overlay.style.setProperty("--circle-x", `${x}px`);
     overlay.style.setProperty("--circle-y", `${y}px`);
     overlay.style.setProperty("--circle-r", `${r}px`);
 
-    // Force reflow so the browser registers initial clip-path
+    // Force reflow so initial clip-path is applied
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     overlay.getBoundingClientRect();
 
-    // Trigger animation to full radius
+    // 3) Now shrink the circle to reveal the new theme
     overlay.classList.add("theme-circle-overlay--active");
 
-    const DURATION = 700; // must match CSS
+    const DURATION = 700; // ms – must match CSS
 
     window.setTimeout(() => {
-      // Switch theme AFTER the ripple
-      setTheme(toTheme);
-      localStorage.setItem("theme", toTheme);
-
-      if (toTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-
       overlay.remove();
     }, DURATION);
   };
