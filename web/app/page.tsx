@@ -4,6 +4,8 @@ import { sections } from "./docsData";
 import Playground from "../components/Playground";
 import { useTheme } from "./ThemeProvider";
 import SearchCommand from "../components/SearchCommand";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState("introduction");
@@ -322,8 +324,9 @@ const IRCTCConnectDocs = () => {
                     index.js
                   </span>
                 </div>
-                <pre className="p-6 font-jetbrains text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
-                  {`import { 
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl} >
+                    {`import { 
   checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations 
   } from 'irctc-connect';
 
@@ -341,7 +344,8 @@ const stationResult = await liveAtStation('NDLS');
 
 // Search trains between stations
 const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
-                </pre>
+                  </SyntaxHighlighter>
+                </div>
               </div>
             </section>
 
@@ -375,7 +379,8 @@ const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl} >
                   {`const result = await checkPNRStatus('1234567890');
 
 if (result.success) {
@@ -388,7 +393,8 @@ if (result.success) {
     console.log(\`\${passenger.name}: \${passenger.status} - \${passenger.seat}\`);
   });
 }`}
-                </pre>
+                </SyntaxHighlighter>
+                </div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -397,7 +403,8 @@ if (result.success) {
                     Response Structure
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl} >
                   {`{
   success: true,
   data: {
@@ -416,7 +423,8 @@ if (result.success) {
     ]
   }
 }`}
-                </pre>
+                </SyntaxHighlighter>
+                </div>
               </div>
             </section>
 
@@ -450,7 +458,8 @@ if (result.success) {
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl} >
                   {`const result = await getTrainInfo('12345');
 
 if (result.success) {
@@ -465,7 +474,8 @@ if (result.success) {
     console.log(\`  \${station.stnName} - \${station.departure}\`);
   });
 }`}
-                </pre>
+                </SyntaxHighlighter>
+                </div>
               </div>
             </section>
 
@@ -511,7 +521,8 @@ if (result.success) {
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl} >
                   {`const result = await trackTrain('12342', '06-12-2025');
 
 if (result.success) {
@@ -528,7 +539,8 @@ if (result.success) {
     }
   });
 }`}
-                </pre>
+                </SyntaxHighlighter>
+                </div>
               </div>
             </section>
 
@@ -562,7 +574,8 @@ if (result.success) {
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl} >
                   {`const result = await liveAtStation('NDLS');
 
 if (result.success) {
@@ -575,7 +588,8 @@ if (result.success) {
     console.log(\`   📊 Status: \${train.status}\`);
   });
 }`}
-                </pre>
+                </SyntaxHighlighter>
+                </div>
               </div>
             </section>
 
@@ -620,7 +634,8 @@ if (result.success) {
                     Example Usage
                   </span>
                 </div>
-                <pre className="p-6 text-sm overflow-x-auto bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-200">
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl} >
                   {`const result = await searchTrainBetweenStations('NDLS', 'BCT');
 
 if (result.success) {
@@ -633,7 +648,8 @@ if (result.success) {
     console.log(\`   📅 Days: \${train.runningDays}\`);
   });
 }`}
-                </pre>
+                </SyntaxHighlighter>
+                </div>
               </div>
             </section>
 

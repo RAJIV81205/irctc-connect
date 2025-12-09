@@ -41,3 +41,11 @@ yarn-error.log*
 next-env.d.ts
 bun.lock
 package-lock.json
+
+
+node_modules/
+.env
+.next/
+dist/
+.DS_Store
+*.log
