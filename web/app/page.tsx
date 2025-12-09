@@ -48,9 +48,25 @@ const IRCTCConnectDocs = () => {
                 irctc-connect
               </span>
             </div>
-            <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
-              v2.0.4
-            </span>
+            <div className="flex flex-row justify-center items-center gap-3 flex-wrap">
+              {/* NPM Version */}
+              <img
+                src="https://img.shields.io/npm/v/irctc-connect.svg"
+                alt="npm version"
+              />
+
+              {/* Total Downloads */}
+              <img
+                src="https://img.shields.io/npm/dt/irctc-connect.svg"
+                alt="total downloads"
+              />
+
+              {/* License */}
+              <img
+                src="https://img.shields.io/npm/l/irctc-connect.svg"
+                alt="license"
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
