@@ -6,6 +6,21 @@ import { useTheme } from "./ThemeProvider";
 import SearchCommand from "../components/SearchCommand";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { 
+  BookOpen, 
+  Package, 
+  Rocket, 
+  Ticket, 
+  Train, 
+  MapPin, 
+  Building2, 
+  Search, 
+  CheckCircle, 
+  BarChart3, 
+  AlertTriangle, 
+  Gamepad2,
+  type LucideIcon,
+} from "lucide-react";
 
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState("introduction");
@@ -258,7 +273,7 @@ const IRCTCConnectDocs = () => {
             {/* Installation */}
             <section id="installation" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">📦</span> Installation
+                <BookOpen /> Installation
               </h2>
               <div className="bg-slate-900 dark:bg-slate-950 rounded-xl p-6 font-mono text-sm border border-slate-800">
                 <div className="flex items-center justify-between mb-2">
@@ -318,7 +333,7 @@ const IRCTCConnectDocs = () => {
             {/* Quick Start */}
             <section id="quickstart" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">🚀</span> Quick Start
+                <Rocket /> Quick Start
               </h2>
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
@@ -357,7 +372,7 @@ const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
             {/* PNR Status */}
             <section id="pnr-status" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">🎫</span> checkPNRStatus(pnr)
+                <Ticket /> checkPNRStatus(pnr)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get comprehensive PNR status with passenger details and journey
@@ -436,7 +451,7 @@ if (result.success) {
             {/* Train Info */}
             <section id="train-info" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">🚂</span> getTrainInfo(trainNumber)
+                <Train/> getTrainInfo(trainNumber)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get detailed train information including complete route with
@@ -487,7 +502,7 @@ if (result.success) {
             {/* Live Tracking */}
             <section id="live-tracking" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">📍</span> trackTrain(trainNumber,
+                <MapPin /> trackTrain(trainNumber,
                 date)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
@@ -552,7 +567,7 @@ if (result.success) {
             {/* Live at Station */}
             <section id="station-live" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">🚉</span> liveAtStation(stationCode)
+                <Building2 /> liveAtStation(stationCode)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get list of upcoming trains at any station with real-time
@@ -601,7 +616,7 @@ if (result.success) {
             {/* Train Search */}
             <section id="train-search" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">🔍</span>{" "}
+                <Search />{" "}
                 searchTrainBetweenStations(from, to)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
@@ -661,7 +676,7 @@ if (result.success) {
             {/* Validation */}
             <section id="validation" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">✅</span> Input Validation
+                <CheckCircle /> Input Validation
               </h2>
 
               <div className="grid sm:grid-cols-2 gap-4">
@@ -709,7 +724,7 @@ if (result.success) {
             {/* Status Codes */}
             <section id="status-codes" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">📊</span> Status Codes
+                <BarChart3 /> Status Codes
               </h2>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -790,7 +805,7 @@ if (result.success) {
             {/* Error Handling */}
             <section id="errors" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <span className="text-xl">⚠️</span> Error Handling
+                <AlertTriangle /> Error Handling
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 All functions return a consistent response structure. Always

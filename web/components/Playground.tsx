@@ -9,6 +9,7 @@ import {
   liveAtStation,
   searchTrainBetweenStations,
 } from "irctc-connect";
+import { Gamepad2 } from "lucide-react";
 
 // Dynamically import ReactJson to avoid SSR issues
 const ReactJson = dynamic(() => import("react-json-view"), {
@@ -139,7 +140,7 @@ const Playground = () => {
   return (
     <section id="playground" className="mb-16 scroll-mt-24">
       <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-        <span className="text-xl">🎮</span> Live Playground
+        <  Gamepad2 /> Live Playground
       </h2>
       <p className="text-slate-600 dark:text-slate-300 mb-6">
         Test the API functions with your own data. See live JSON response,
