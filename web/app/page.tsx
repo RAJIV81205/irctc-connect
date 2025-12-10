@@ -44,7 +44,8 @@ const IRCTCConnectDocs = () => {
                 />
               </svg>
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2"
+            title="logo">
               <span className="text-2xl">🚂</span>
               <span className="text-xl font-bold text-slate-900 dark:text-slate-100 font-jetbrains">
                 irctc-connect
@@ -71,7 +72,7 @@ const IRCTCConnectDocs = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" title="Search Box">
             {/* Search Command */}
             <SearchCommand onNavigate={scrollToSection} />
 
@@ -81,6 +82,7 @@ const IRCTCConnectDocs = () => {
                 href="https://www.npmjs.com/package/irctc-connect"
                 target="_blank"
                 rel="noopener noreferrer"
+                title="npm"
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300 
     bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 
     rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -106,6 +108,7 @@ const IRCTCConnectDocs = () => {
                 href="https://github.com/RAJIV81205/irctc-connect"
                 target="_blank"
                 rel="noopener noreferrer"
+                title="github"
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium 
     bg-slate-900 text-white dark:bg-white dark:text-black
     rounded-lg border border-slate-900  
@@ -177,6 +180,7 @@ const IRCTCConnectDocs = () => {
                 return (
                   <button
                     key={section.id}
+                    title={section.label}
                     onClick={() => scrollToSection(section.id)}
                     className={`w-full flex items-center gap-3 px-2 py-2.5 text-base font-medium rounded-lg transition-all duration-200 relative
     ${
