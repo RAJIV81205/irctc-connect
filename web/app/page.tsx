@@ -178,11 +178,12 @@ const IRCTCConnectDocs = () => {
                   <button
                     key={section.id}
                     onClick={() => scrollToSection(section.id)}
-                    className={`w-full flex items-center gap-3 px-2 py-2.5 text-base font-medium rounded-lg transition-all duration-200 ${
-                      activeSection === section.id
-                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-2 border-blue-600 dark:border-blue-500"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
-                    }`}
+                    className={`w-full flex items-center gap-3 px-2 py-2.5 text-base font-medium rounded-lg transition-all duration-200 relative
+    ${
+      activeSection === section.id
+        ? "text-blue-600 dark:text-blue-400 font-semibold relative before:absolute before:right-0 before:top-1/2 before:-translate-y-1/2 before:w-0 before:h-0 before:border-t-[6px] before:border-b-[6px] before:border-l-8 before:border-t-transparent before:border-b-transparent before:border-l-blue-600 dark:before:border-l-blue-400"
+        : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
+    }`}
                   >
                     <IconComponent className="w-6 h-6" />
                     {section.label}
@@ -325,7 +326,7 @@ const IRCTCConnectDocs = () => {
                   </span>
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl} >
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
                     {`import { 
   checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations 
   } from 'irctc-connect';
@@ -380,8 +381,8 @@ const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
                   </span>
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl} >
-                  {`const result = await checkPNRStatus('1234567890');
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
+                    {`const result = await checkPNRStatus('1234567890');
 
 if (result.success) {
   console.log('PNR:', result.data.pnr);
@@ -393,7 +394,7 @@ if (result.success) {
     console.log(\`\${passenger.name}: \${passenger.status} - \${passenger.seat}\`);
   });
 }`}
-                </SyntaxHighlighter>
+                  </SyntaxHighlighter>
                 </div>
               </div>
 
@@ -404,8 +405,8 @@ if (result.success) {
                   </span>
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl} >
-                  {`{
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
+                    {`{
   success: true,
   data: {
     pnr: "1234567890",
@@ -423,7 +424,7 @@ if (result.success) {
     ]
   }
 }`}
-                </SyntaxHighlighter>
+                  </SyntaxHighlighter>
                 </div>
               </div>
             </section>
@@ -459,8 +460,8 @@ if (result.success) {
                   </span>
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl} >
-                  {`const result = await getTrainInfo('12345');
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
+                    {`const result = await getTrainInfo('12345');
 
 if (result.success) {
   const { trainInfo, route } = result.data;
@@ -474,7 +475,7 @@ if (result.success) {
     console.log(\`  \${station.stnName} - \${station.departure}\`);
   });
 }`}
-                </SyntaxHighlighter>
+                  </SyntaxHighlighter>
                 </div>
               </div>
             </section>
@@ -522,8 +523,8 @@ if (result.success) {
                   </span>
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl} >
-                  {`const result = await trackTrain('12342', '06-12-2025');
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
+                    {`const result = await trackTrain('12342', '06-12-2025');
 
 if (result.success) {
   const { trainNo, trainName, statusNote, stations } = result.data;
@@ -539,7 +540,7 @@ if (result.success) {
     }
   });
 }`}
-                </SyntaxHighlighter>
+                  </SyntaxHighlighter>
                 </div>
               </div>
             </section>
@@ -575,8 +576,8 @@ if (result.success) {
                   </span>
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl} >
-                  {`const result = await liveAtStation('NDLS');
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
+                    {`const result = await liveAtStation('NDLS');
 
 if (result.success) {
   console.log(\`🚉 Live trains at \${result.data.stationName}:\`);
@@ -588,7 +589,7 @@ if (result.success) {
     console.log(\`   📊 Status: \${train.status}\`);
   });
 }`}
-                </SyntaxHighlighter>
+                  </SyntaxHighlighter>
                 </div>
               </div>
             </section>
@@ -635,8 +636,8 @@ if (result.success) {
                   </span>
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl} >
-                  {`const result = await searchTrainBetweenStations('NDLS', 'BCT');
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
+                    {`const result = await searchTrainBetweenStations('NDLS', 'BCT');
 
 if (result.success) {
   console.log(\`🔍 Trains from \${result.data.from} to \${result.data.to}:\`);
@@ -648,7 +649,7 @@ if (result.success) {
     console.log(\`   📅 Days: \${train.runningDays}\`);
   });
 }`}
-                </SyntaxHighlighter>
+                  </SyntaxHighlighter>
                 </div>
               </div>
             </section>
