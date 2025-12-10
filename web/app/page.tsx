@@ -6,18 +6,18 @@ import { useTheme } from "./ThemeProvider";
 import SearchCommand from "../components/SearchCommand";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { 
-  BookOpen, 
-  Package, 
-  Rocket, 
-  Ticket, 
-  Train, 
-  MapPin, 
-  Building2, 
-  Search, 
-  CheckCircle, 
-  BarChart3, 
-  AlertTriangle, 
+import {
+  BookOpen,
+  Package,
+  Rocket,
+  Ticket,
+  Train,
+  MapPin,
+  Building2,
+  Search,
+  CheckCircle,
+  BarChart3,
+  AlertTriangle,
   Gamepad2,
   type LucideIcon,
 } from "lucide-react";
@@ -59,9 +59,21 @@ const IRCTCConnectDocs = () => {
                 />
               </svg>
             </button>
-            <div className="flex items-center gap-2"
-            title="logo">
-              <span className="text-2xl">🚂</span>
+            <div className="flex items-center gap-2" title="logo">
+              <span className="inline-flex items-center text-2xl">
+                {/* Light logo shown when not dark */}
+                <img
+                  src="/icon.png"
+                  alt="irctc-connect logo (light)"
+                  className="block dark:hidden h-[1.5em] w-auto"
+                />
+                {/* Dark logo shown when dark */}
+                <img
+                  src="/icon-dark.png"
+                  alt="irctc-connect logo (dark)"
+                  className="hidden dark:block h-[1.5em] w-auto"
+                />
+              </span>
               <span className="text-xl font-bold text-slate-900 dark:text-slate-100 font-jetbrains">
                 irctc-connect
               </span>
@@ -93,14 +105,16 @@ const IRCTCConnectDocs = () => {
 
             <div className="flex items-center gap-3">
               {/* NPM Button */}
+              {/* NPM Button */}
               <a
                 href="https://www.npmjs.com/package/irctc-connect"
                 target="_blank"
                 rel="noopener noreferrer"
                 title="npm"
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300 
-    bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 
-    rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium
+    bg-[#CC0000] text-white border border-[#CC0000]
+    dark:bg-white dark:text-[#CC0000] dark:border-white
+    rounded-lg hover:opacity-90 transition-all"
               >
                 <svg
                   width="18"
@@ -109,10 +123,17 @@ const IRCTCConnectDocs = () => {
                   xmlns="http://www.w3.org/2000/svg"
                   className="rounded-sm"
                 >
-                  <path d="M0 0h2500v2500H0z" fill="#c00" />
+                  {/* Background (red in light mode, white in dark mode) */}
+                  <rect
+                    width="2500"
+                    height="2500"
+                    className="fill-[#CC0000] dark:fill-white"
+                  />
+
+                  {/* NPM logo foreground */}
                   <path
                     d="M1241.5 268.5h-973v1962.9h972.9V763.5h495v1467.9h495V268.5z"
-                    fill="#fff"
+                    className="fill-white dark:fill-[#CC0000]"
                   />
                 </svg>
                 NPM
@@ -451,7 +472,7 @@ if (result.success) {
             {/* Train Info */}
             <section id="train-info" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <Train/> getTrainInfo(trainNumber)
+                <Train /> getTrainInfo(trainNumber)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get detailed train information including complete route with
@@ -502,8 +523,7 @@ if (result.success) {
             {/* Live Tracking */}
             <section id="live-tracking" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <MapPin /> trackTrain(trainNumber,
-                date)
+                <MapPin /> trackTrain(trainNumber, date)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get real-time train status and tracking for a specific date with
@@ -616,8 +636,7 @@ if (result.success) {
             {/* Train Search */}
             <section id="train-search" className="mb-16 scroll-mt-24">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-                <Search />{" "}
-                searchTrainBetweenStations(from, to)
+                <Search /> searchTrainBetweenStations(from, to)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Find all trains running between two stations with timing and
