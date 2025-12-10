@@ -24,7 +24,7 @@ import {
 
 const IRCTCConnectDocs = () => {
   const [activeSection, setActiveSection] = useState("introduction");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed on mobile
   const { theme, toggleTheme } = useTheme();
 
   const scrollToSection = (sectionId: string) => {
@@ -39,7 +39,7 @@ const IRCTCConnectDocs = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 antialiased font-inter transition-colors duration-300">
       {/* Top Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="max-w-[80%] mx-auto px-8 h-16 flex items-center justify-between">
+        <div className="max-w-full lg:max-w-[80%] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -78,7 +78,7 @@ const IRCTCConnectDocs = () => {
                 irctc-connect
               </span>
             </div>
-            <div className="flex flex-row justify-center items-center gap-3 flex-wrap">
+            <div className="hidden md:flex flex-row justify-center items-center gap-3 flex-wrap">
               {/* NPM Version */}
               <img
                 src="https://img.shields.io/npm/v/irctc-connect.svg"
@@ -99,11 +99,13 @@ const IRCTCConnectDocs = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4" title="Search Box">
-            {/* Search Command */}
-            <SearchCommand onNavigate={scrollToSection} />
+          <div className="flex items-center gap-2 lg:gap-4" title="Search Box">
+            {/* Search Command - Hidden on small screens */}
+            <div className="hidden sm:block">
+              <SearchCommand onNavigate={scrollToSection} />
+            </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 lg:gap-3">
            
               {/* NPM Button */}
               <a
@@ -111,17 +113,17 @@ const IRCTCConnectDocs = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="npm"
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium
+                className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 text-xs lg:text-sm font-medium
     bg-[#CC0000] text-white border border-[#CC0000]
     dark:bg-white dark:text-[#CC0000] dark:border-white
     rounded-lg hover:opacity-90 transition-all"
               >
                 <svg
-                  width="18"
-                  height="18"
+                  width="16"
+                  height="16"
                   viewBox="0 0 2500 2500"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="rounded-sm"
+                  className="rounded-sm lg:w-[18px] lg:h-[18px]"
                 >
                   {/* Background (red in light mode, white in dark mode) */}
                   <rect
@@ -136,7 +138,7 @@ const IRCTCConnectDocs = () => {
                     className="fill-white dark:fill-[#CC0000]"
                   />
                 </svg>
-                NPM
+                <span className="hidden sm:inline">NPM</span>
               </a>
 
               {/* GitHub Button */}
@@ -145,19 +147,19 @@ const IRCTCConnectDocs = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="github"
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium 
+                className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 text-xs lg:text-sm font-medium 
     bg-slate-900 text-white dark:bg-white dark:text-black
     rounded-lg border border-slate-900  
     hover:opacity-90 transition-all"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-3 h-3 lg:w-4 lg:h-4"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                 </svg>
-                GitHub
+                <span className="hidden sm:inline">GitHub</span>
               </a>
             </div>
 
@@ -202,12 +204,12 @@ const IRCTCConnectDocs = () => {
       </nav>
 
       {/* Main Layout */}
-      <div className="pt-16 max-w-[80%] mx-auto flex">
+      <div className="pt-16 max-w-full lg:max-w-[80%] mx-auto flex px-4 lg:px-0">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-20 left-0 h-fit w-64 bg-white dark:bg-gray-800 border rounded-lg border-slate-200 dark:border-slate-700 overflow-y-auto transition-transform duration-300 z-40 ${
+          className={`fixed lg:sticky top-16 lg:top-20 left-0 h-[calc(100vh-4rem)] lg:h-fit w-64 bg-white dark:bg-gray-800 border-r lg:border lg:rounded-lg border-slate-200 dark:border-slate-700 overflow-y-auto transition-transform duration-300 z-40 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+          } lg:block`}
         >
           <div className="p-4">
             <nav className="space-y-2">
@@ -237,19 +239,19 @@ const IRCTCConnectDocs = () => {
         {/* Overlay for mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/20 z-30 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Content */}
-        <main className="flex-1 min-h-screen lg:pl-8 py-8 px-4 lg:px-0">
+        <main className="flex-1 min-h-screen lg:pl-8 py-4 lg:py-8 px-4 lg:px-0">
           <div className="max-w-4xl">
             {/* Introduction */}
-            <section id="introduction" className="mb-16 scroll-mt-24">
-              <div className="bg-linear-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl p-8 text-white mb-8">
-                <h1 className="text-3xl font-bold mb-3">IRCTC Connect</h1>
-                <p className="text-blue-100 dark:text-blue-200 text-lg leading-relaxed">
+            <section id="introduction" className="mb-8 lg:mb-16 scroll-mt-24">
+              <div className="bg-linear-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl p-4 lg:p-8 text-white mb-6 lg:mb-8">
+                <h1 className="text-2xl lg:text-3xl font-bold mb-3">IRCTC Connect</h1>
+                <p className="text-blue-100 dark:text-blue-200 text-base lg:text-lg leading-relaxed">
                   A comprehensive Node.js package for Indian Railways services.
                   Get real-time PNR status, detailed train information, live
                   train tracking, station updates, and search trains between
@@ -257,7 +259,7 @@ const IRCTCConnectDocs = () => {
                 </p>
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
                     icon: "🎫",
@@ -292,8 +294,8 @@ const IRCTCConnectDocs = () => {
             </section>
 
             {/* Installation */}
-            <section id="installation" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="installation" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <BookOpen /> Installation
               </h2>
               <div className="bg-slate-900 dark:bg-slate-950 rounded-xl p-6 font-mono text-sm border border-slate-800">
@@ -352,8 +354,8 @@ const IRCTCConnectDocs = () => {
             </section>
 
             {/* Quick Start */}
-            <section id="quickstart" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="quickstart" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <Rocket /> Quick Start
               </h2>
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -391,8 +393,8 @@ const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
             </section>
 
             {/* PNR Status */}
-            <section id="pnr-status" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="pnr-status" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <Ticket /> checkPNRStatus(pnr)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
@@ -470,8 +472,8 @@ if (result.success) {
             </section>
 
             {/* Train Info */}
-            <section id="train-info" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="train-info" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <Train /> getTrainInfo(trainNumber)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
@@ -521,8 +523,8 @@ if (result.success) {
             </section>
 
             {/* Live Tracking */}
-            <section id="live-tracking" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="live-tracking" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <MapPin /> trackTrain(trainNumber, date)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
@@ -585,8 +587,8 @@ if (result.success) {
             </section>
 
             {/* Live at Station */}
-            <section id="station-live" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="station-live" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <Building2 /> liveAtStation(stationCode)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
@@ -634,8 +636,8 @@ if (result.success) {
             </section>
 
             {/* Train Search */}
-            <section id="train-search" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="train-search" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <Search /> searchTrainBetweenStations(from, to)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
@@ -693,8 +695,8 @@ if (result.success) {
             </section>
 
             {/* Validation */}
-            <section id="validation" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="validation" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <CheckCircle /> Input Validation
               </h2>
 
@@ -741,22 +743,22 @@ if (result.success) {
             </section>
 
             {/* Status Codes */}
-            <section id="status-codes" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="status-codes" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <BarChart3 /> Status Codes
               </h2>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
+                      <th className="px-3 lg:px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
                         Code
                       </th>
-                      <th className="px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
+                      <th className="px-3 lg:px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100 hidden sm:table-cell">
                         Full Form
                       </th>
-                      <th className="px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
+                      <th className="px-3 lg:px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
                         Description
                       </th>
                     </tr>
@@ -803,15 +805,15 @@ if (result.success) {
                         key={idx}
                         className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
                       >
-                        <td className="px-6 py-4">
+                        <td className="px-3 lg:px-6 py-4">
                           <code className="px-2 py-1 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded font-mono text-xs font-semibold">
                             {status.code}
                           </code>
                         </td>
-                        <td className="px-6 py-4 text-slate-700 dark:text-slate-300">
+                        <td className="px-3 lg:px-6 py-4 text-slate-700 dark:text-slate-300 hidden sm:table-cell">
                           {status.full}
                         </td>
-                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
+                        <td className="px-3 lg:px-6 py-4 text-slate-500 dark:text-slate-400">
                           {status.desc}
                         </td>
                       </tr>
@@ -822,8 +824,8 @@ if (result.success) {
             </section>
 
             {/* Error Handling */}
-            <section id="errors" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+            <section id="errors" className="mb-8 lg:mb-16 scroll-mt-24">
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <AlertTriangle /> Error Handling
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
