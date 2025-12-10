@@ -108,7 +108,7 @@ const IRCTCConnectDocs = () => {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium 
     bg-slate-900 text-white dark:bg-white dark:text-black
-    rounded-lg border border-slate-900 dark:border-white  
+    rounded-lg border border-slate-900  
     hover:opacity-90 transition-all"
               >
                 <svg
