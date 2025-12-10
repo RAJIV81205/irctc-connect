@@ -168,6 +168,7 @@ const IRCTCConnectDocs = () => {
               onClick={toggleTheme}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               aria-label="Toggle dark mode"
+              title="Toggle dark mode"
             >
               {theme === "dark" ? (
                 <svg
