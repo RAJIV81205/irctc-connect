@@ -7,7 +7,7 @@
 
 
 
-A comprehensive Node.js package for Indian Railways services. Get real-time PNR status, detailed train information, live train tracking, station updates, and search trains between stations.
+A comprehensive Node.js package for Indian Railways services. Get real-time PNR status, detailed train information, live train tracking, station updates, search trains between stations, and check seat availability with fare information.
 
 ## ✨ Features
 
@@ -16,6 +16,7 @@ A comprehensive Node.js package for Indian Railways services. Get real-time PNR 
 - 📍 **Live Train Tracking** - Real-time train status and location tracking
 - 🚉 **Live Station Updates** - Current trains at any station
 - 🔍 **Train Search** - Find trains between any two stations
+- 💺 **Seat Availability** - Check availability with fare breakdown for multiple dates
 - 🗺️ **Route Details** - Station-wise route with timings and coordinates
 - ⚡ **Fast & Reliable** - Built-in timeout handling and validation
 
@@ -33,7 +34,8 @@ import {
     getTrainInfo, 
     trackTrain, 
     liveAtStation, 
-    searchTrainBetweenStations 
+    searchTrainBetweenStations,
+    getAvailability
 } from 'irctc-connect';
 
 // Check PNR status
@@ -50,6 +52,9 @@ const stationResult = await liveAtStation('NDLS');
 
 // Search trains between stations
 const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');
+
+// Get seat availability with fare
+const availabilityResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');
 ```
 
 ## 📖 API Reference
@@ -322,6 +327,118 @@ if (result.success) {
     }
 }
 ```
+
+---
+
+### 6. `getAvailability(trainNo, fromStnCode, toStnCode, date, coach, quota)` 🆕
+
+Get seat availability with fare information for a train journey. Returns availability status for multiple dates along with detailed fare breakdown.
+
+**Parameters:**
+- `trainNo` (string): 5-digit train number
+- `fromStnCode` (string): Origin station code (e.g., 'ASN', 'NDLS')
+- `toStnCode` (string): Destination station code (e.g., 'DDU', 'BCT')
+- `date` (string): Date in DD-MM-YYYY format (e.g., "27-12-2025")
+- `coach` (string): Travel class - one of: "2S", "SL", "3A", "3E", "2A", "1A", "CC", "EC"
+- `quota` (string): Booking quota - one of: "GN" (General), "LD" (Ladies), "SS" (Senior Citizen), "TQ" (Tatkal)
+
+**Example:**
+```javascript
+const result = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');
+
+if (result.success) {
+    const { train, fare, availability } = result.data;
+    
+    console.log(`🚂 ${train.trainName} (${train.trainNo})`);
+    console.log(`📍 ${train.fromStationName} (${train.from}) → ${train.toStationName} (${train.to})`);
+    console.log(`📏 Distance: ${train.distance} km`);
+    console.log(`💺 Class: ${train.travelClass} | Quota: ${train.quota}`);
+    
+    // Fare breakdown
+    console.log('\n💰 Fare Breakdown:');
+    console.log(`   Base Fare: ₹${fare.baseFare}`);
+    console.log(`   Reservation Charge: ₹${fare.reservationCharge}`);
+    console.log(`   Superfast Charge: ₹${fare.superfastCharge}`);
+    console.log(`   Service Tax: ₹${fare.serviceTax}`);
+    console.log(`   Total Fare: ₹${fare.totalFare}`);
+    
+    // Availability for multiple dates
+    console.log('\n📅 Availability:');
+    availability.forEach(avail => {
+        console.log(`\n   📆 ${avail.date}`);
+        console.log(`      Status: ${avail.status}`);
+        console.log(`      Availability: ${avail.availabilityText}`);
+        console.log(`      Prediction: ${avail.prediction} (${avail.predictionPercentage}%)`);
+        console.log(`      Can Book: ${avail.canBook ? '✅ Yes' : '❌ No'}`);
+    });
+}
+```
+
+**Response Structure:**
+```javascript
+{
+    success: true,
+    data: {
+        train: {
+            trainNo: "12496",
+            trainName: "PRATAP EXPRESS",
+            from: "ASN",
+            to: "DDU",
+            fromStationName: "Asansol Junction",
+            toStationName: "Pt. Deen Dayal Upadhyaya Junction",
+            distance: 461,
+            travelClass: "2A",
+            quota: "GN"
+        },
+        fare: {
+            baseFare: 981,
+            reservationCharge: 50,
+            superfastCharge: 45,
+            serviceTax: 54,
+            totalFare: 1130
+        },
+        availability: [
+            {
+                date: "27-12-2025",
+                status: "WAITLIST",
+                availabilityText: "Regret",
+                rawStatus: "REGRET",
+                prediction: "No More Booking",
+                predictionPercentage: 0,
+                canBook: false
+            },
+            {
+                date: "17-1-2026",
+                status: "WAITLIST",
+                availabilityText: "WL 2",
+                rawStatus: "PQWL9/WL2",
+                prediction: "90% Chance",
+                predictionPercentage: 90,
+                canBook: true
+            }
+            // ... more dates
+        ]
+    }
+}
+```
+
+**Coach Types:**
+- `2S` - Second Seating
+- `SL` - Sleeper Class
+- `3A` - Third AC
+- `3E` - Third AC Economy
+- `2A` - Second AC
+- `1A` - First AC
+- `CC` - Chair Car
+- `EC` - Executive Chair Car
+
+**Quota Types:**
+- `GN` - General Quota
+- `LD` - Ladies Quota
+- `SS` - Senior Citizen Quota
+- `TQ` - Tatkal Quota
+
+---
 
 ## 🛡️ Input Validation
 

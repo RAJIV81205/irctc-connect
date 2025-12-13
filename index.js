@@ -294,7 +294,7 @@ async function getAvailability(  trainNo,  fromStnCode,  toStnCode,  date,  coac
     }
 
     /* ---------- Quota validation ---------- */
-    const allowedQuotas = ["GN", "LD", "SS", "TQ", "SC"];
+    const allowedQuotas = ["GN", "LD", "SS", "TQ"];
 
     if (!allowedQuotas.includes(quota)) {
       return {
