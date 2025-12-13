@@ -8,6 +8,8 @@ import {
   trackTrain,
   liveAtStation,
   searchTrainBetweenStations,
+  getAvailability
+
 } from "irctc-connect";
 import { Gamepad2 } from "lucide-react";
 
@@ -19,7 +21,7 @@ const ReactJson = dynamic(() => import("react-json-view"), {
 
 const Playground = () => {
   const [playgroundTab, setPlaygroundTab] = useState<
-    "pnr" | "train" | "track" | "station" | "search"
+    "pnr" | "train" | "track" | "station" | "search" | "seat"
   >("pnr");
   const [pnrInput, setPnrInput] = useState("");
   const [trainInput, setTrainInput] = useState("");

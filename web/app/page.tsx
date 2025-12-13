@@ -386,9 +386,9 @@ const IRCTCConnectDocs = () => {
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
                   <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`import { 
-  checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations 
-  } from 'irctc-connect';
+                    {`import {   
+  checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations, getAvailability 
+} from 'irctc-connect';
 
 // Check PNR status
 const pnrResult = await checkPNRStatus('1234567890');
@@ -403,7 +403,10 @@ const trackResult = await trackTrain('12345', '06-12-2025');
 const stationResult = await liveAtStation('NDLS');
 
 // Search trains between stations
-const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');`}
+const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');
+
+// Get seat availability with fare
+const availabilityResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');`}
                   </SyntaxHighlighter>
                 </div>
               </div>
@@ -712,24 +715,19 @@ if (result.success) {
             </section>
 
             {/* Seat Availability */}
-
             <section
               id="seat-availability"
               className="mb-8 lg:mb-16 scroll-mt-24"
             >
               <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <Armchair className="w-6 h-6" />
-                getAvailability(
-               
-                  trainNo, fromStnCode, toStnCode, date, coach, quota
-           
-                )
+                getAvailability( trainNo, fromStnCode, toStnCode, date, coach,
+                quota )
               </h2>
 
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Check seat availability with complete fare breakdown for a
-                specific train journey. Returns availability status for multiple
-                dates along with booking prediction and fare details.
+                specific train journey.
               </p>
 
               {/* Parameters */}
