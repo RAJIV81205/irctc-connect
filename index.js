@@ -25,7 +25,9 @@ async function checkPNRStatus(pnr) {
   }
 
   try {
-    const response = await fetch (`https://bookmytrain.vercel.app/api/pnr/${cleanPNR}`)
+    const response = await fetch(
+      `https://bookmytrain.vercel.app/api/pnr/${cleanPNR}`
+    );
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -46,7 +48,6 @@ async function checkPNRStatus(pnr) {
       success: false,
       error: "Failed to fetch PNR status",
     };
-    
   }
 }
 
@@ -120,7 +121,7 @@ async function trackTrain(trainNumber, date) {
       error: parsedDate.error || "Invalid date format ",
     };
   }
-  
+
   try {
     const response = await fetch(
       `https://bookmytrain.vercel.app/api/livestatus?trainNumber=${trainNumber}&trainDate=${parsedDate.formatted}`
@@ -132,7 +133,7 @@ async function trackTrain(trainNumber, date) {
     const data = await response.json();
     if (!data) {
       return {
-        success: false, 
+        success: false,
         error: data.error || "Failed to fetch train status",
       };
     }
@@ -230,10 +231,132 @@ async function searchTrainBetweenStations(fromStnCode, toStnCode) {
   }
 }
 
+/**
+ * 6. Get Seat Availability
+ */
+async function getAvailability(
+  trainNo,
+  fromStnCode,
+  toStnCode,
+  date,
+  coach,
+  quota
+) {
+  try {
+    /* ---------- Presence check ---------- */
+    if (!trainNo || !fromStnCode || !toStnCode || !date || !coach || !quota) {
+      return {
+        success: false,
+        error: "Incomplete data. Please provide all required fields.",
+      };
+    }
+
+    /* ---------- Train number: 5 digits ---------- */
+    if (
+      typeof trainNo !== "string" ||
+      trainNo.length !== 5 ||
+      !/^\d{5}$/.test(trainNo)
+    ) {
+      return {
+        success: false,
+        error: "Invalid train number. Must be a 5-digit numeric string.",
+      };
+    }
+
+    /* ---------- Station code validation ---------- */
+    const stnRegex = /^[A-Z]{1,5}$/;
+
+    if (!stnRegex.test(fromStnCode)) {
+      return {
+        success: false,
+        error: "Invalid source station code.",
+      };
+    }
+
+    if (!stnRegex.test(toStnCode)) {
+      return {
+        success: false,
+        error: "Invalid destination station code.",
+      };
+    }
+
+    /* ---------- Date validation: DD-MM-YYYY ---------- */
+    const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$/;
+
+    if (!dateRegex.test(date)) {
+      return {
+        success: false,
+        error: "Invalid date format. Use DD-MM-YYYY.",
+      };
+    }
+
+    /* ---------- Coach validation ---------- */
+    const allowedCoaches = ["2S", "SL", "3A", "3E", "2A", "1A", "CC", "EC"];
+
+    if (!allowedCoaches.includes(coach)) {
+      return {
+        success: false,
+        error: "Invalid coach type.",
+      };
+    }
+
+    /* ---------- Quota validation ---------- */
+    const allowedQuotas = ["GN", "LD", "SS", "TQ", "SC"];
+
+    if (!allowedQuotas.includes(quota)) {
+      return {
+        success: false,
+        error: "Invalid quota.",
+      };
+    }
+
+    /* ---------- API Call ---------- */
+    const response = await fetch(
+      "https://bookmytrain.vercel.app/api/get-real-availability",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          trainNo: trainNo , 
+          dateOfJourney: date,
+          travelClass: coach,
+          quota,
+          source: fromStnCode,
+          destination: toStnCode,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `API error: ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: "Something went wrong while fetching availability.",
+      message: error.message,
+    };
+  }
+}
+
 export {
   checkPNRStatus,
   getTrainInfo,
   trackTrain,
   liveAtStation,
   searchTrainBetweenStations,
+  getAvailability
 };
