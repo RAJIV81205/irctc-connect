@@ -234,14 +234,7 @@ async function searchTrainBetweenStations(fromStnCode, toStnCode) {
 /**
  * 6. Get Seat Availability
  */
-async function getAvailability(
-  trainNo,
-  fromStnCode,
-  toStnCode,
-  date,
-  coach,
-  quota
-) {
+async function getAvailability(  trainNo,  fromStnCode,  toStnCode,  date,  coach,  quota) {
   try {
     /* ---------- Presence check ---------- */
     if (!trainNo || !fromStnCode || !toStnCode || !date || !coach || !quota) {
