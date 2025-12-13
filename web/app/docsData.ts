@@ -11,7 +11,8 @@ import {
   BarChart3, 
   AlertTriangle, 
   Gamepad2,
-  type LucideIcon
+  type LucideIcon,
+  Armchair
 } from "lucide-react";
 
 export const packageInfo = {
@@ -29,6 +30,55 @@ export const packageInfo = {
     issues: 'https://github.com/RAJIV81205/irctc-connect/issues'
   }
 };
+
+export type SidebarItem = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+export type SidebarGroup = {
+  title: string;
+  items: SidebarItem[];
+};
+
+export const sidebarGroups: SidebarGroup[] = [
+  {
+    title: "Getting Started",
+    items: [
+      { id: "introduction", label: "Introduction", icon: BookOpen },
+      { id: "installation", label: "Installation", icon: Package },
+      { id: "quickstart", label: "Quick Start", icon: Rocket },
+    ],
+  },
+  {
+    title: "Core Features",
+    items: [
+      { id: "pnr-status", label: "PNR Status", icon: Ticket },
+      { id: "train-info", label: "Train Information", icon: Train },
+      { id: "live-tracking", label: "Live Tracking", icon: MapPin },
+      { id: "station-live", label: "Live at Station", icon: Building2 },
+      { id: "train-search", label: "Train Search", icon: Search },
+      { id: "seat-availability", label: "Seat Availability", icon: Armchair },
+    ],
+  },
+  {
+    title: "Tools",
+    items: [
+      { id: "playground", label: "Playground", icon: Gamepad2 },
+    ],
+  },
+  {
+    title: "Reference",
+    items: [
+      { id: "validation", label: "Input Validation", icon: CheckCircle },
+      { id: "status-codes", label: "Status Codes", icon: BarChart3 },
+      { id: "errors", label: "Error Handling", icon: AlertTriangle },
+    ],
+  },
+  
+];
+
 
 export const sections: Array<{ id: string; label: string; icon: LucideIcon }> = [
   { id: "introduction", label: "Introduction", icon: BookOpen },

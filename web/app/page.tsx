@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { sections } from "./docsData";
+import { sidebarGroups } from "./docsData";
 import Playground from "../components/Playground";
 import { useTheme } from "./ThemeProvider";
 import SearchCommand from "../components/SearchCommand";
@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Gamepad2,
   type LucideIcon,
+  Armchair,
 } from "lucide-react";
 
 const IRCTCConnectDocs = () => {
@@ -106,7 +107,6 @@ const IRCTCConnectDocs = () => {
             </div>
 
             <div className="flex items-center gap-2 lg:gap-3">
-           
               {/* NPM Button */}
               <a
                 href="https://www.npmjs.com/package/irctc-connect"
@@ -213,26 +213,40 @@ const IRCTCConnectDocs = () => {
           } lg:block`}
         >
           <div className="p-4">
-            <nav className="space-y-2">
-              {sections.map((section) => {
-                const IconComponent = section.icon;
-                return (
-                  <button
-                    key={section.id}
-                    title={section.label}
-                    onClick={() => scrollToSection(section.id)}
-                    className={`w-full flex items-center gap-3 px-2 py-2.5 text-base font-medium rounded-lg transition-all duration-200 relative
-    ${
-      activeSection === section.id
-        ? "text-blue-600 dark:text-blue-400 font-semibold relative before:absolute before:right-0 before:top-1/2 before:-translate-y-1/2 before:w-0 before:h-0 before:border-t-[6px] before:border-b-[6px] before:border-l-8 before:border-t-transparent before:border-b-transparent before:border-l-blue-600 dark:before:border-l-blue-400"
-        : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
-    }`}
-                  >
-                    <IconComponent className="w-6 h-6" />
-                    {section.label}
-                  </button>
-                );
-              })}
+            <nav className="space-y-6">
+              {sidebarGroups.map((group) => (
+                <div key={group.title}>
+                  {/* Section Header */}
+                  <div className="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    {group.title}
+                  </div>
+
+                  {/* Items */}
+                  <div className="space-y-1">
+                    {group.items.map((section) => {
+                      const IconComponent = section.icon;
+                      const isActive = activeSection === section.id;
+
+                      return (
+                        <button
+                          key={section.id}
+                          title={section.label}
+                          onClick={() => scrollToSection(section.id)}
+                          className={`w-full flex items-center gap-3 px-2 py-2.5 rounded-lg transition-all duration-200 relative
+                ${
+                  isActive
+                    ? "text-blue-600 dark:text-blue-400 font-semibold before:absolute before:right-0 before:top-1/2 before:-translate-y-1/2 before:w-0 before:h-0 before:border-t-[6px] before:border-b-[6px] before:border-l-8 before:border-t-transparent before:border-b-transparent before:border-l-blue-600 dark:before:border-l-blue-400"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
+                }`}
+                        >
+                          <IconComponent className="w-5 h-5 shrink-0" />
+                          <span className="text-sm">{section.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
           </div>
         </aside>
@@ -251,7 +265,9 @@ const IRCTCConnectDocs = () => {
             {/* Introduction */}
             <section id="introduction" className="mb-8 lg:mb-16 scroll-mt-24">
               <div className="bg-linear-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl p-4 lg:p-8 text-white mb-6 lg:mb-8">
-                <h1 className="text-2xl lg:text-3xl font-bold mb-3">IRCTC Connect</h1>
+                <h1 className="text-2xl lg:text-3xl font-bold mb-3">
+                  IRCTC Connect
+                </h1>
                 <p className="text-blue-100 dark:text-blue-200 text-base lg:text-lg leading-relaxed">
                   A comprehensive Node.js package for Indian Railways services.
                   Get real-time PNR status, detailed train information, live
@@ -590,7 +606,7 @@ if (result.success) {
             {/* Live at Station */}
             <section id="station-live" className="mb-8 lg:mb-16 scroll-mt-24">
               <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <Building2 /> liveAtStation(stationCode)
+                <Building2 /> liveAtStation(stnCode)
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
                 Get list of upcoming trains at any station with real-time
@@ -603,7 +619,7 @@ if (result.success) {
                 </h4>
                 <div className="flex items-center gap-3">
                   <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                    stationCode
+                    stnCode
                   </code>
                   <span className="text-sm text-slate-600 dark:text-slate-300">
                     (string) — Station code (e.g., 'NDLS', 'BCT', 'HWH')
@@ -694,6 +710,116 @@ if (result.success) {
                 </div>
               </div>
             </section>
+
+            {/* Seat Availability */}
+
+            <section
+              id="seat-availability"
+              className="mb-8 lg:mb-16 scroll-mt-24"
+            >
+              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
+                <Armchair className="w-6 h-6" />
+                getAvailability(
+               
+                  trainNo, fromStnCode, toStnCode, date, coach, quota
+           
+                )
+              </h2>
+
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
+                Check seat availability with complete fare breakdown for a
+                specific train journey. Returns availability status for multiple
+                dates along with booking prediction and fare details.
+              </p>
+
+              {/* Parameters */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">
+                  Parameters
+                </h4>
+
+                <div className="space-y-3 text-sm">
+                  {[
+                    ["trainNo", "string", "5-digit train number"],
+                    [
+                      "fromStnCode",
+                      "string",
+                      "Origin station code (e.g. ASN, NDLS)",
+                    ],
+                    [
+                      "toStnCode",
+                      "string",
+                      "Destination station code (e.g. DDU, BCT)",
+                    ],
+                    ["date", "string", "Journey date in DD-MM-YYYY format"],
+                    [
+                      "coach",
+                      "string",
+                      "Class: 2S, SL, 3A, 3E, 2A, 1A, CC, EC",
+                    ],
+                    ["quota", "string", "Quota: GN, LD, SS, TQ"],
+                  ].map(([name, type, desc]) => (
+                    <div
+                      key={name}
+                      className="flex flex-wrap items-center gap-3"
+                    >
+                      <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded font-mono">
+                        {name}
+                      </code>
+                      <span className="text-slate-600 dark:text-slate-300">
+                        ({type}) — {desc}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Example */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Example Usage
+                  </span>
+                </div>
+
+                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
+                  <SyntaxHighlighter language="javascript" style={nightOwl}>
+                    {`const result = await getAvailability(
+  '12496',
+  'ASN',
+  'DDU',
+  '27-12-2025',
+  '2A',
+  'GN'
+);
+
+if (result.success) {
+  const { train, fare, availability } = result.data;
+
+  console.log(\`🚂 \${train.trainName} (\${train.trainNo})\`);
+  console.log(
+    \`📍 \${train.fromStationName} → \${train.toStationName}\`
+  );
+
+  console.log('\\n💰 Fare Breakdown:');
+  console.log('Base Fare:', fare.baseFare);
+  console.log('Reservation:', fare.reservationCharge);
+  console.log('Superfast:', fare.superfastCharge);
+  console.log('Total:', fare.totalFare);
+
+  console.log('\\n📅 Availability:');
+  availability.forEach(day => {
+    console.log(
+      \`\${day.date}: \${day.availabilityText} (\${day.prediction})\`
+    );
+  });
+}`}
+                  </SyntaxHighlighter>
+                </div>
+              </div>
+            </section>
+
+            <Playground />
 
             {/* Validation */}
             <section id="validation" className="mb-8 lg:mb-16 scroll-mt-24">
@@ -877,7 +1003,6 @@ if (result.success) {
               </div>
             </section>
           </div>
-          <Playground />
         </main>
       </div>
     </div>
