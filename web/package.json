@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
-    "irctc-connect": "^2.1.1",
+    "irctc-connect": "^2.1.2",
     "lucide-react": "^0.556.0",
     "next": "16.0.10",
     "react": "19.2.0",
@@ -19,13 +19,13 @@
     "react-syntax-highlighter": "^16.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.17",
-    "@types/node": "^20.19.25",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^20.19.27",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-config-next": "16.0.7",
-    "tailwindcss": "^4.1.17",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
   }
 }

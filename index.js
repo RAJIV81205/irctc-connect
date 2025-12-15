@@ -234,7 +234,14 @@ async function searchTrainBetweenStations(fromStnCode, toStnCode) {
 /**
  * 6. Get Seat Availability
  */
-async function getAvailability(  trainNo,  fromStnCode,  toStnCode,  date,  coach,  quota) {
+async function getAvailability(
+  trainNo,
+  fromStnCode,
+  toStnCode,
+  date,
+  coach,
+  quota
+) {
   try {
     /* ---------- Presence check ---------- */
     if (!trainNo || !fromStnCode || !toStnCode || !date || !coach || !quota) {
@@ -313,7 +320,7 @@ async function getAvailability(  trainNo,  fromStnCode,  toStnCode,  date,  coac
           Accept: "application/json",
         },
         body: JSON.stringify({
-          trainNo: trainNo , 
+          trainNo: trainNo,
           dateOfJourney: date,
           travelClass: coach,
           quota,
@@ -323,18 +330,18 @@ async function getAvailability(  trainNo,  fromStnCode,  toStnCode,  date,  coac
       }
     );
 
+    const data = await response.json();
+
     if (!response.ok) {
       return {
         success: false,
-        error: `API error: ${response.status}`,
+        error: data.error || `API error: ${response.status}`,
       };
     }
 
-    const data = await response.json();
-
     return {
       success: true,
-      data:data.data,
+      data: data.data,
     };
   } catch (error) {
     return {
@@ -351,5 +358,5 @@ export {
   trackTrain,
   liveAtStation,
   searchTrainBetweenStations,
-  getAvailability
+  getAvailability,
 };
