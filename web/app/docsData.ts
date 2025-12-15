@@ -89,10 +89,12 @@ export const sections: Array<{ id: string; label: string; icon: LucideIcon }> = 
   { id: "live-tracking", label: "Live Tracking", icon: MapPin },
   { id: "station-live", label: "Live at Station", icon: Building2 },
   { id: "train-search", label: "Train Search", icon: Search },
+    { id: "seat-availability", label: "Seat Availability", icon: Armchair },
+    { id: "playground", label: "Playground", icon: Gamepad2 },
   { id: "validation", label: "Input Validation", icon: CheckCircle },
   { id: "status-codes", label: "Status Codes", icon: BarChart3 },
   { id: "errors", label: "Error Handling", icon: AlertTriangle },
-  { id: "playground", label: "Playground", icon: Gamepad2 },
+
 ];
 
 export const features = [
