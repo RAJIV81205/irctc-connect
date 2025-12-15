@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
@@ -8,8 +8,7 @@ import {
   trackTrain,
   liveAtStation,
   searchTrainBetweenStations,
-  getAvailability
-
+  getAvailability,
 } from "irctc-connect";
 import { Gamepad2 } from "lucide-react";
 
@@ -23,6 +22,7 @@ const Playground = () => {
   const [playgroundTab, setPlaygroundTab] = useState<
     "pnr" | "train" | "track" | "station" | "search" | "seat"
   >("pnr");
+
   const [pnrInput, setPnrInput] = useState("");
   const [trainInput, setTrainInput] = useState("");
   const [trackTrainInput, setTrackTrainInput] = useState("");
@@ -37,6 +37,13 @@ const Playground = () => {
 
   const [statusCode, setStatusCode] = useState<number | null>(null);
   const [responseTime, setResponseTime] = useState<number | null>(null);
+
+  const [seatTrainNo, setSeatTrainNo] = useState("");
+  const [seatFrom, setSeatFrom] = useState("");
+  const [seatTo, setSeatTo] = useState("");
+  const [seatDate, setSeatDate] = useState(""); // dd-mm-yyyy
+  const [seatCoach, setSeatCoach] = useState("SL");
+  const [seatQuota, setSeatQuota] = useState("GN");
 
   const formatToBrowserDate = (ddmmyyyy: string) => {
     if (!ddmmyyyy || !ddmmyyyy.includes("-")) return "";
@@ -97,6 +104,27 @@ const Playground = () => {
             toStationInput.toUpperCase()
           );
           break;
+
+        case "seat":
+          if (seatTrainNo.length !== 5) {
+            throw new Error("Train number must be 5 digits");
+          }
+          if (!seatFrom || !seatTo) {
+            throw new Error("From & To station codes are required");
+          }
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(seatDate)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+
+          result = await getAvailability(
+            seatTrainNo,
+            seatFrom,
+            seatTo,
+            seatDate,
+            seatCoach,
+            seatQuota
+          );
+          break;
       }
 
       const end = performance.now();
@@ -122,8 +150,7 @@ const Playground = () => {
       const end = performance.now();
       setResponseTime(Math.round(end - start));
 
-      const codeFromError =
-        error?.status || error?.response?.status || 500;
+      const codeFromError = error?.status || error?.response?.status || 500;
       setStatusCode(codeFromError);
 
       const errorObj = {
@@ -142,7 +169,7 @@ const Playground = () => {
   return (
     <section id="playground" className="mb-16 scroll-mt-24">
       <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-3">
-        <  Gamepad2 /> Live Playground
+        <Gamepad2 /> Live Playground
       </h2>
       <p className="text-slate-600 dark:text-slate-300 mb-6">
         Test the API functions with your own data. See live JSON response,
@@ -158,6 +185,7 @@ const Playground = () => {
             { id: "track", label: "Live Track", icon: "📍" },
             { id: "station", label: "Station Live", icon: "🚉" },
             { id: "search", label: "Search", icon: "🔍" },
+            { id: "seat", label: "Seat Availability", icon: "🪑" }, // ✅ NEW
           ].map((tab) => (
             <button
               key={tab.id}
@@ -243,7 +271,9 @@ const Playground = () => {
                 </label>
                 <input
                   type="date"
-                  value={trackDateInput ? formatToBrowserDate(trackDateInput) : ""}
+                  value={
+                    trackDateInput ? formatToBrowserDate(trackDateInput) : ""
+                  }
                   onChange={(e) => {
                     if (!e.target.value) {
                       setTrackDateInput("");
@@ -305,6 +335,124 @@ const Playground = () => {
                   className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   maxLength={6}
                 />
+              </div>
+            </div>
+          )}
+
+          {playgroundTab === "seat" && (
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Train Number
+                </label>
+                <input
+                  type="text"
+                  value={seatTrainNo}
+                  onChange={(e) =>
+                    setSeatTrainNo(
+                      e.target.value.replace(/\D/g, "").slice(0, 5)
+                    )
+                  }
+                  placeholder="12496"
+                  maxLength={5}
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg
+                   bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+                   placeholder:text-slate-400 dark:placeholder:text-slate-500
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Journey Date
+                </label>
+                <input
+                  type="date"
+                  value={seatDate ? formatToBrowserDate(seatDate) : ""}
+                  onChange={(e) => {
+                    if (!e.target.value) {
+                      setSeatDate("");
+                      return;
+                    }
+                    const [yyyy, mm, dd] = e.target.value.split("-");
+                    setSeatDate(`${dd}-${mm}-${yyyy}`);
+                  }}
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg
+                   bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  From Station
+                </label>
+                <input
+                  type="text"
+                  value={seatFrom}
+                  onChange={(e) => setSeatFrom(e.target.value.toUpperCase())}
+                  placeholder="ASN"
+                  maxLength={6}
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg
+                   bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+                   placeholder:text-slate-400 dark:placeholder:text-slate-500
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  To Station
+                </label>
+                <input
+                  type="text"
+                  value={seatTo}
+                  onChange={(e) => setSeatTo(e.target.value.toUpperCase())}
+                  placeholder="DDU"
+                  maxLength={6}
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg
+                   bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+                   placeholder:text-slate-400 dark:placeholder:text-slate-500
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Class
+                </label>
+                <select
+                  value={seatCoach}
+                  onChange={(e) => setSeatCoach(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg
+                   bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                >
+                  {["2S", "SL", "3A", "3E", "2A", "1A", "CC", "EC"].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Quota
+                </label>
+                <select
+                  value={seatQuota}
+                  onChange={(e) => setSeatQuota(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg
+                   bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                >
+                  {["GN", "LD", "SS", "TQ"].map((q) => (
+                    <option key={q} value={q}>
+                      {q}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           )}

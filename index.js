@@ -334,7 +334,7 @@ async function getAvailability(  trainNo,  fromStnCode,  toStnCode,  date,  coac
 
     return {
       success: true,
-      data,
+      data:data.data,
     };
   } catch (error) {
     return {
