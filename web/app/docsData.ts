@@ -1,15 +1,15 @@
-import { 
-  BookOpen, 
-  Package, 
-  Rocket, 
-  Ticket, 
-  Train, 
-  MapPin, 
-  Building2, 
-  Search, 
-  CheckCircle, 
-  BarChart3, 
-  AlertTriangle, 
+import {
+  BookOpen,
+  Package,
+  Rocket,
+  Ticket,
+  Train,
+  MapPin,
+  Building2,
+  Search,
+  CheckCircle,
+  BarChart3,
+  AlertTriangle,
   Gamepad2,
   type LucideIcon,
   Armchair
@@ -76,7 +76,7 @@ export const sidebarGroups: SidebarGroup[] = [
       { id: "errors", label: "Error Handling", icon: AlertTriangle },
     ],
   },
-  
+
 ];
 
 
@@ -89,8 +89,8 @@ export const sections: Array<{ id: string; label: string; icon: LucideIcon }> = 
   { id: "live-tracking", label: "Live Tracking", icon: MapPin },
   { id: "station-live", label: "Live at Station", icon: Building2 },
   { id: "train-search", label: "Train Search", icon: Search },
-    { id: "seat-availability", label: "Seat Availability", icon: Armchair },
-    { id: "playground", label: "Playground", icon: Gamepad2 },
+  { id: "seat-availability", label: "Seat Availability", icon: Armchair },
+  { id: "playground", label: "Playground", icon: Gamepad2 },
   { id: "validation", label: "Input Validation", icon: CheckCircle },
   { id: "status-codes", label: "Status Codes", icon: BarChart3 },
   { id: "errors", label: "Error Handling", icon: AlertTriangle },
@@ -98,35 +98,35 @@ export const sections: Array<{ id: string; label: string; icon: LucideIcon }> = 
 ];
 
 export const features = [
-  { 
-    icon: '🎫', 
-    title: 'PNR Status', 
-    desc: 'Real-time PNR status with passenger details and confirmation status' 
+  {
+    icon: '🎫',
+    title: 'PNR Status',
+    desc: 'Real-time PNR status with passenger details and confirmation status'
   },
-  { 
-    icon: '🚂', 
-    title: 'Train Information', 
-    desc: 'Complete train details with route, schedule, and station coordinates' 
+  {
+    icon: '🚂',
+    title: 'Train Information',
+    desc: 'Complete train details with route, schedule, and station coordinates'
   },
-  { 
-    icon: '📍', 
-    title: 'Live Tracking', 
-    desc: 'Real-time train location, delays, and station-wise status updates' 
+  {
+    icon: '📍',
+    title: 'Live Tracking',
+    desc: 'Real-time train location, delays, and station-wise status updates'
   },
-  { 
-    icon: '🚉', 
-    title: 'Station Live', 
-    desc: 'Upcoming trains at any station with expected arrival times' 
+  {
+    icon: '🚉',
+    title: 'Station Live',
+    desc: 'Upcoming trains at any station with expected arrival times'
   },
-  { 
-    icon: '🔍', 
-    title: 'Train Search', 
-    desc: 'Find trains between stations with classes and availability info' 
+  {
+    icon: '🔍',
+    title: 'Train Search',
+    desc: 'Find trains between stations with classes and availability info'
   },
-  { 
-    icon: '⚡', 
-    title: 'Fast & Reliable', 
-    desc: 'Built-in validation, timeout handling, and error management' 
+  {
+    icon: '⚡',
+    title: 'Fast & Reliable',
+    desc: 'Built-in validation, timeout handling, and error management'
   }
 ];
 
