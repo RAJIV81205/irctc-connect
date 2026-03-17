@@ -59,7 +59,7 @@ export default function PricingPage() {
           </p>
 
           {/* Pricing Cards */}
-          <div className="mt-16 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto text-left">
+          <div className="mt-16 grid md:grid-cols-3 gap-8 max-w-8xl mx-auto text-left">
             
             {/* Free Plan */}
             <div className="relative group rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900/40 p-10 hover:border-blue-500/50 transition-colors backdrop-blur-xl">
