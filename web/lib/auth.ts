@@ -1,8 +1,8 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "irctc_auth_token";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_EXPIRES_IN = "7d";
 
 export type AuthTokenPayload = JwtPayload & {
   userId: string;

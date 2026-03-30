@@ -51,6 +51,7 @@ export async function POST(req: Request) {
         apiKey: createApiKey(),
         plan: "free",
         active: true,
+        limit:50
       });
       authAction = "register";
       statusCode = 201;
