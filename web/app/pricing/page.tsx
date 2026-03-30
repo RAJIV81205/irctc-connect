@@ -1,163 +1,257 @@
 "use client";
-
 import React from "react";
-import { Check, Star, Heart, Zap, Sparkles, Rocket } from "lucide-react";
-import { Header } from "../../components/Header";
+import { Check, ArrowLeft, Star, Heart } from "lucide-react";
+import Link from "next/link";
+import { useTheme } from "../ThemeProvider";
 
 export default function PricingPage() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,#0f172a_0%,transparent_40%),radial-gradient(circle_at_90%_100%,#082f49_0%,transparent_35%),linear-gradient(160deg,#020617,#0f172a,#0f172a)] font-noto-sans selection:bg-sky-500/30 text-slate-100 antialiased overflow-x-hidden">
-      <Header />
+    <div className="min-h-screen bg-slate-50 dark:bg-black font-inter selection:bg-blue-500/30 transition-colors duration-300">
+      {/* Simple Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link
+            href="/docs"
+            className="flex items-center gap-2 group"
+            title="Back to Docs"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+              Back to Docs
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-4">
+            {/* Dark mode toggle copied */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <svg
+                  className="w-5 h-5 text-yellow-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-5 h-5 text-slate-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      </nav>
 
       {/* Main Content */}
       <main className="pt-32 pb-24 px-6 relative">
         {/* Background glow effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-[500px] bg-sky-500/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[400px] bg-blue-500/10 dark:bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
 
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-500/10 text-sky-400 text-sm font-medium mb-8 uppercase tracking-widest shadow-sm ring-1 ring-inset ring-sky-500/20">
-            <Heart className="w-4 h-4 fill-current animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-sm font-medium mb-8 uppercase tracking-wider shadow-sm border border-blue-200 dark:border-blue-500/20">
+            <Heart className="w-4 h-4" />
             <span>Sponsor the Project</span>
           </div>
-          
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-sm">
-            Plans & Pricing
+
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight font-inter">
+            Plans and Pricing
           </h1>
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-4">
-            Transparent pricing for all stages of your development—from experimentation to full-scale deployment.
+          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-4">
+            Choose a plan that fits your usage needs.
           </p>
 
           {/* Pricing Cards */}
-          <div className="mt-20 grid md:grid-cols-3 gap-8 max-w-8xl mx-auto text-left">
-            
-            {/* Free Tier */}
-            <div className="group relative overflow-hidden rounded-4xl border border-slate-800/60 bg-slate-900/40 p-8 backdrop-blur-xl transition hover:border-slate-700/80">
-              <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-slate-500/5 blur-3xl transition group-hover:bg-slate-500/10"></div>
-              
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800/50 text-slate-400 mb-8 ring-1 ring-white/5">
-                <Rocket className="h-7 w-7" />
+          <div className="mt-16 grid md:grid-cols-3 gap-8 max-w-8xl mx-auto text-left">
+            {/* Free Plan */}
+            <div className="relative group rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900/40 p-10 hover:border-blue-500/50 transition-colors backdrop-blur-xl">
+              <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-8 border border-blue-100 dark:border-blue-500/20">
+                <div className="w-6 h-6 rounded bg-blue-600 dark:bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
               </div>
-              
-              <h3 className="text-xl font-bold text-white/90 mb-1">Free Tier</h3>
-              <p className="text-sm text-slate-500 mb-6 font-medium uppercase tracking-wider italic">Best for testing</p>
-              
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-5xl font-bold text-white tracking-tight">₹0</span>
-                <span className="text-slate-500 font-medium tracking-tight">/month</span>
+
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                Free Tier
+              </h3>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-5xl font-bold text-slate-900 dark:text-white">
+                  ₹0
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
+                  /month
+                </span>
               </div>
-              
-              <button className="w-full py-3.5 px-6 rounded-xl font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-800 transition-all border border-slate-700/50 hover:border-slate-600 mb-10">
+              <p className="text-slate-600 dark:text-slate-400 mb-8 h-12 leading-relaxed">
+                For developers exploring the platform and testing basic
+                functionality.
+              </p>
+
+              <button className="w-full py-4 px-6 rounded-2xl font-semibold text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-200 dark:border-white/10 mb-10">
                 Start for Free
               </button>
-              
-              <div className="space-y-4">
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Core Features</div>
-                <ul className="space-y-3.5">
-                  {[
-                    "50 API requests per month",
-                    "Basic endpoint access",
-                    "Community support",
-                    "Standard rate limits"
-                  ].map((feat, i) => (
-                    <li key={i} className="flex gap-3 text-slate-400 text-sm">
-                      <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
+
+              <div className="space-y-5">
+                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                  Features
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <span>50 API requests per month</span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <span>Basic endpoint access</span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <span>Community support</span>
+                  </li>
                 </ul>
               </div>
             </div>
 
-            {/* Pro Tier */}
-            <div className="group relative overflow-hidden rounded-4xl border border-sky-500/40 bg-slate-900/60 p-8 backdrop-blur-2xl shadow-2xl scale-105 z-10">
-              <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl"></div>
-              
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-1 rounded-full bg-sky-500 text-slate-950 text-xs font-black uppercase tracking-widest shadow-[0_0_20px_rgba(14,165,233,0.4)]">
-                <Star className="w-3.5 h-3.5 fill-current" />
-                Most Popular
+            {/* Pro Plan */}
+            <div className="relative group rounded-[2.5rem] border border-blue-300 dark:border-white/20 bg-white dark:bg-zinc-900 shadow-2xl dark:shadow-[0_0_50px_rgba(255,255,255,0.03)] p-10 transform md:-translate-y-4">
+              <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-wider shadow-lg border border-slate-800 dark:border-white/80">
+                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 drop-shadow-sm" />
+                Popular
               </div>
 
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/20 text-sky-400 mb-8 ring-1 ring-sky-500/30">
-                <Sparkles className="h-7 w-7" />
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center mb-8 border border-slate-200 dark:border-white/10">
+                <div className="w-6 h-6 rounded bg-slate-800 dark:bg-white shadow-[0_0_20px_rgba(0,0,0,0.2)] dark:shadow-[0_0_20px_rgba(255,255,255,0.4)]" />
               </div>
-              
-              <h3 className="text-xl font-bold text-white mb-1">Pro Tier</h3>
-              <p className="text-sm text-sky-400 mb-6 font-medium uppercase tracking-wider">Perfect for power users</p>
-              
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-5xl font-bold text-white tracking-tight">₹20</span>
-                <span className="text-sky-300/60 font-medium tracking-tight">/month</span>
+
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                Pro Tier
+              </h3>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-5xl font-bold text-slate-900 dark:text-white">
+                  ₹20
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
+                  /month
+                </span>
               </div>
-              
-              <button className="w-full py-3.5 px-6 rounded-xl font-bold text-slate-950 bg-white hover:bg-sky-50 shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all mb-10">
-                Upgrade to Pro
+              <p className="text-slate-600 dark:text-slate-400 mb-8 h-12 leading-relaxed">
+                For active developers building projects and scaling
+                applications.
+              </p>
+
+              <button className="w-full py-4 px-6 rounded-2xl font-semibold text-white bg-slate-900 dark:bg-white dark:text-black hover:opacity-90 transition-opacity mb-10 shadow-lg">
+                Get Started
               </button>
-              
-              <div className="space-y-4">
-                <div className="text-[10px] font-bold text-sky-400 uppercase tracking-[0.2em] mb-4">Included Performance</div>
-                <ul className="space-y-3.5">
-                  {[
-                    "1000 API requests per month",
-                    "Priority email support",
-                    "Advanced rate limits",
-                    "Sponsor badge in dashboard",
-                    "Exclusive API beta access"
-                  ].map((feat, i) => (
-                    <li key={i} className="flex gap-3 text-slate-300 text-sm">
-                      <Check className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                      <span className={i === 0 ? "font-semibold text-white" : ""}>{feat}</span>
-                    </li>
-                  ))}
+
+              <div className="space-y-5">
+                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                  Features
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      1000 API requests per month
+                    </span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
+                    <span>Priority email support</span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
+                    <span>Advanced rate limits</span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
+                    <span>Sponsor badge</span>
+                  </li>
                 </ul>
               </div>
             </div>
 
-            {/* Advance Tier */}
-            <div className="group relative overflow-hidden rounded-4xl border border-slate-800/60 bg-slate-900/40 p-8 backdrop-blur-xl transition hover:border-slate-700/80">
-               <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-emerald-500/5 blur-3xl transition group-hover:bg-emerald-500/10"></div>
+            {/* Advance Plan */}
+            <div className="relative group rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900/40 p-10 hover:border-emerald-500/50 transition-colors backdrop-blur-xl">
+              <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 mb-8 ring-1 ring-emerald-500/20">
-                <Zap className="h-7 w-7" />
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-8 border border-emerald-100 dark:border-emerald-500/20">
+                <div className="w-6 h-6 rounded bg-emerald-600 dark:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]" />
               </div>
-              
-              <h3 className="text-xl font-bold text-white/90 mb-1">Advance Plan</h3>
-              <p className="text-sm text-slate-500 mb-6 font-medium uppercase tracking-wider italic">Scale and scale</p>
 
-              <div className="flex items-baseline gap-1 mb-8">
-                <span className="text-5xl font-bold text-white tracking-tight">₹50</span>
-                <span className="text-slate-500 font-medium tracking-tight">/month</span>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                Advance Plan
+              </h3>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-5xl font-bold text-slate-900 dark:text-white">
+                  ₹50
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
+                  /month
+                </span>
               </div>
-              
-              <button className="w-full py-3.5 px-6 rounded-xl font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all border border-emerald-500/30 mb-10">
+              <p className="text-slate-600 dark:text-slate-400 mb-8 h-12 leading-relaxed">
+                For heavy users needing massive request limits and reliability.
+              </p>
+
+              <button className="w-full py-4 px-6 rounded-2xl font-semibold text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-200 dark:border-white/10 mb-10">
                 Go Advance
               </button>
-              
-              <div className="space-y-4">
-                <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-4">Enterprise Specs</div>
-                <ul className="space-y-3.5">
-                  {[
-                    "10k API requests per month",
-                    "Dedicated support line",
-                    "Custom SLAs & availability",
-                    "Premium sponsor recognition",
-                    "Multi-key management"
-                  ].map((feat, i) => (
-                    <li key={i} className="flex gap-3 text-slate-400 text-sm">
-                      <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                      <span className={i === 0 ? "font-semibold text-emerald-200" : ""}>{feat}</span>
-                    </li>
-                  ))}
+
+              <div className="space-y-5">
+                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                  Features
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="font-semibold">
+                      10k API requests per month
+                    </span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span>Dedicated support line</span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span>Custom SLAs</span>
+                  </li>
+                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
+                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span>Premium sponsor recognition</span>
+                  </li>
                 </ul>
               </div>
             </div>
           </div>
-          
-          <div className="mt-20 p-8 rounded-3xl border border-slate-800/40 bg-slate-900/20 backdrop-blur-sm max-w-2xl mx-auto">
-             <p className="text-slate-400 text-sm leading-relaxed">
-              By choosing a premium plan, you&apos;re directly supporting the maintenance and scaling of this open-source project. Thank you for empowering developers! 🚀
-            </p>
-          </div>
 
+          <p className="mt-16 text-slate-500 dark:text-slate-400 text-base max-w-lg mx-auto leading-relaxed">
+            By paying for a premium tier, you are directly helping in sponsoring
+            and sustaining this open-source project. Thank you! 🚀
+          </p>
         </div>
       </main>
     </div>

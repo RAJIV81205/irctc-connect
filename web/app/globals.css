@@ -13,7 +13,7 @@
 }
 
 @theme{
-  --font-noto-sans: var(--font-noto-sans);
+  --font-inter: var(--font-inter);
   --font-jetbrains: var(--font-jetbrains)
 }
 

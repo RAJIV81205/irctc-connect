@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "../lib/firebase";
-import { Header } from "../components/Header";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -40,8 +39,7 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)] text-slate-100">
-      <Header />
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-16 text-center pt-28">
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-24 sm:py-16 text-center">
         <span className="mb-5 rounded-full border border-emerald-300/40 bg-emerald-300/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-200">
           irctc-connect
         </span>
@@ -51,7 +49,8 @@ export default function LandingPage() {
         </h1>
 
         <p className="mt-6 max-w-2xl text-base text-slate-300 sm:text-lg">
-          Complete ticket booking, PNR checks, station search, trains, and seat availability with a clean API and production-focused docs.
+          Complete ticket booking, PNR checks, station search, trains, and seat
+          availability with a clean API and production-focused docs.
         </p>
 
         <div className="mt-10 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
@@ -73,7 +72,6 @@ export default function LandingPage() {
         </div>
 
         <p className="mt-4 text-xs text-slate-400">{authMessage}</p>
-
       </div>
     </main>
   );
