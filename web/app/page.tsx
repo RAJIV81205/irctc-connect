@@ -3,16 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, signInWithPopup, User } from "firebase/auth";
-import { auth, googleProvider } from "../lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "../lib/firebase";
 
 export default function LandingPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -29,9 +26,7 @@ export default function LandingPage() {
     return "Not signed in";
   }, [authReady, user]);
 
-  const onGetApiKey = async () => {
-    setError(null);
-
+  const onGetApiKey = () => {
     if (!authReady) return;
 
     if (user) {
@@ -39,21 +34,7 @@ export default function LandingPage() {
       return;
     }
 
-    setShowLogin(true);
-  };
-
-  const onGoogleLogin = async () => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      await signInWithPopup(auth, googleProvider);
-      router.push("/dashboard");
-    } catch {
-      setError("Google login failed. Please check your Firebase config and try again.");
-    } finally {
-      setLoading(false);
-    }
+    router.push("/auth");
   };
 
   return (
@@ -91,20 +72,6 @@ export default function LandingPage() {
 
         <p className="mt-4 text-xs text-slate-400">{authMessage}</p>
 
-        {showLogin && !user && (
-          <div className="mt-8 w-full max-w-md rounded-2xl border border-slate-300/20 bg-slate-900/60 p-6 backdrop-blur">
-            <p className="mb-4 text-sm text-slate-300">Please sign in to continue to your API dashboard.</p>
-            <button
-              type="button"
-              onClick={onGoogleLogin}
-              disabled={loading}
-              className="w-full rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Signing in..." : "Continue with Google"}
-            </button>
-            {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
-          </div>
-        )}
       </div>
     </main>
   );
