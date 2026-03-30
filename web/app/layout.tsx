@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono , Inter} from "next/font/google";
+import { JetBrains_Mono , Noto_Sans} from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./ThemeProvider";
 
@@ -9,9 +9,10 @@ const jetBrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const notoSans = Noto_Sans({
+  variable: "--font-noto-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -59,7 +60,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${jetBrainsMono.variable} antialiased`}
+        className={`${notoSans.variable} ${jetBrainsMono.variable} antialiased`}
       >
         <ThemeProvider>{children}</ThemeProvider>
       </body>

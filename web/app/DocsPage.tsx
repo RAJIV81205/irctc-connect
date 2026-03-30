@@ -37,7 +37,7 @@ const IRCTCConnectDocs = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 antialiased font-inter transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 antialiased font-noto-sans transition-colors duration-300">
       {/* Top Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="max-w-full lg:max-w-[80%] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
@@ -107,6 +107,18 @@ const IRCTCConnectDocs = () => {
             </div>
 
             <div className="flex items-center gap-2 lg:gap-3">
+              {/* Pricing Button */}
+              <a
+                href="/pricing"
+                title="pricing"
+                className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 text-xs lg:text-sm font-medium 
+    bg-slate-100 text-slate-900 dark:bg-slate-700 dark:text-white
+    rounded-lg border border-slate-200 dark:border-slate-600  
+    hover:opacity-90 transition-all"
+              >
+                Pricing
+              </a>
+
               {/* NPM Button */}
               <a
                 href="https://www.npmjs.com/package/irctc-connect"
