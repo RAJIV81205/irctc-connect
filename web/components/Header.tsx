@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
@@ -46,7 +47,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/60 bg-slate-950/50 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <div className="flex items-center gap-4">
           {pathname === "/docs" && (
@@ -59,10 +60,10 @@ export function Header() {
             </button>
           )}
           <Link href="/" className="flex items-center gap-2 transition hover:opacity-80">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
-              <Train className="h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+              <Image src="/icon.png" alt="IRCTC Connect Logo" width={24} height={24} className="h-6 w-6 object-contain" />
             </div>
-            <span className="font-jetbrains font-bold text-slate-100 tracking-tight">irctc-connect</span>
+            <span className="font-jetbrains font-bold text-slate-100 tracking-tight">Irctc-connect</span>
           </Link>
 
           {pathname === "/docs" && (
@@ -88,10 +89,9 @@ export function Header() {
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
               </svg>
             </a>
-            <a href="https://www.npmberry.com/package/irctc-connect" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors" title="NPM">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M0 7.334v8h2v-6h2v6h2v-6h2v6h2v-8H0zM12.667 7.334v10.666h2v-10.666h-2zM16.667 7.334v8h2v-6h2v6h2v-6h2v6h2v-8h-10z" />
-              </svg>
+            <a href="https://www.npmjs.com/package/irctc-connect" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors" title="NPM">
+              
+              <svg className="h-5 w-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/></svg>
             </a>
           </div>
 

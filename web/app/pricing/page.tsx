@@ -1,11 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, ArrowLeft, Star, Heart } from "lucide-react";
-import Link from "next/link";
-
-type PaidPlanType = "pro" | "advance";
+import { Check, Star, Heart, Terminal } from "lucide-react";
+import { PRICING_PLANS, PaidPlanType } from "../../lib/constants";
 
 type Notice = {
   kind: "success" | "error" | "info";
@@ -29,7 +27,7 @@ export default function PricingPage() {
 
 function PricingPageFallback() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black" aria-busy="true" />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)]" aria-busy="true" />
   );
 }
 
@@ -116,19 +114,9 @@ function PricingPageContent() {
     syncOrder();
   }, [isPaymentReturn, orderIdFromQuery, isCheckingAuth, isAuthenticated]);
 
-  const proButtonLabel = useMemo(() => {
-    if (isCheckingAuth) return "Checking login...";
-    if (!isAuthenticated) return "Login to Continue";
-    return "Get Started";
-  }, [isCheckingAuth, isAuthenticated]);
-
-  const advanceButtonLabel = useMemo(() => {
-    if (isCheckingAuth) return "Checking login...";
-    if (!isAuthenticated) return "Login to Continue";
-    return "Go Advance";
-  }, [isCheckingAuth, isAuthenticated]);
-
-  const openPaymentModal = (planType: PaidPlanType) => {
+  const openPaymentModal = (planType: PaidPlanType | "free") => {
+    if (planType === "free") return;
+    
     if (!isAuthenticated || isCheckingAuth) {
       setNotice({
         kind: "info",
@@ -142,9 +130,7 @@ function PricingPageContent() {
   };
 
   const startPayment = async () => {
-    if (!selectedPlan) {
-      return;
-    }
+    if (!selectedPlan) return;
 
     try {
       setIsCreatingOrder(true);
@@ -152,9 +138,7 @@ function PricingPageContent() {
 
       const response = await fetch("/api/user/create-order", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planType: selectedPlan }),
       });
 
@@ -175,232 +159,118 @@ function PricingPageContent() {
 
   const paidButtonDisabled = isCheckingAuth || !isAuthenticated;
 
+  const getButtonLabel = (plan: typeof PRICING_PLANS[0]) => {
+    if (plan.planType === "free") return plan.buttonText;
+    if (isCheckingAuth) return "Checking login...";
+    if (!isAuthenticated) return "Login to Continue";
+    return plan.buttonText;
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black font-inter selection:bg-blue-500/30 transition-colors duration-300">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center">
-          <Link
-            href="/docs"
-            className="flex items-center gap-2 group"
-            title="Back to Docs"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-400 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-              Back to Docs
-            </span>
-          </Link>
-        </div>
-      </nav>
-
+    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)] text-slate-100 selection:bg-emerald-500/30 font-sans">
       <main className="pt-32 pb-24 px-6 relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[400px] bg-blue-500/10 dark:bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
-
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-sm font-medium mb-8 uppercase tracking-wider shadow-sm border border-blue-200 dark:border-blue-500/20">
-            <Heart className="w-4 h-4" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-300/40 bg-emerald-300/15 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-8 shadow-sm">
+            <Heart className="w-4 h-4 fill-emerald-400" />
             <span>Sponsor the Project</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight font-inter">
+          <h1 className="max-w-4xl mx-auto font-jetbrains text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl tracking-tight mb-6">
             Plans and Pricing
           </h1>
-          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-4">
-            Choose a plan that fits your usage needs.
+          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-4 leading-relaxed">
+            Choose a plan that fits your usage needs and help sustain this open-source project.
           </p>
 
           {notice && (
             <div
-              className={`mb-8 mx-auto max-w-3xl rounded-2xl border px-5 py-4 text-left ${
+              className={`mb-8 mx-auto max-w-3xl rounded-xl border px-5 py-4 text-left ${
                 notice.kind === "success"
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-200"
                   : notice.kind === "error"
-                    ? "border-red-300 bg-red-50 text-red-700"
-                    : "border-blue-300 bg-blue-50 text-blue-800"
+                    ? "border-red-500/50 bg-red-500/10 text-red-200"
+                    : "border-cyan-500/50 bg-cyan-500/10 text-cyan-200"
               }`}
             >
               {notice.text}
             </div>
           )}
 
-          <div className="mt-16 grid md:grid-cols-3 gap-8 max-w-8xl mx-auto text-left">
-            <div className="relative group rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900/40 p-10 hover:border-blue-500/50 transition-colors backdrop-blur-xl">
-              <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="mt-16 grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto text-left items-start">
+            {PRICING_PLANS.map((plan) => {
+              const Icon = plan.colorTheme === "emerald" ? Terminal : plan.popular ? Star : Check;
+              return (
+                <div 
+                  key={plan.id}
+                  className={`relative group rounded-3xl border bg-slate-900/50 p-8 transition-all hover:bg-slate-800 ${
+                    plan.popular 
+                      ? 'border-emerald-500/50 shadow-[0_0_30px_rgba(52,211,153,0.15)] transform lg:-translate-y-4' 
+                      : 'border-slate-800 hover:border-slate-600'
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 bg-emerald-400 text-emerald-950 text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
+                      <Star className="w-3.5 h-3.5 fill-current" />
+                      Popular
+                    </div>
+                  )}
 
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-8 border border-blue-100 dark:border-blue-500/20">
-                <div className="w-6 h-6 rounded bg-blue-600 dark:bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-              </div>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-8 border ${
+                    plan.popular ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-slate-800 border-slate-700'
+                  }`}>
+                    <Icon className={`w-6 h-6 ${plan.popular ? 'text-emerald-400' : 'text-slate-300'}`} />
+                  </div>
 
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                Free Tier
-              </h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-5xl font-bold text-slate-900 dark:text-white">
-                  ₹0
-                </span>
-                <span className="text-slate-500 dark:text-slate-400 font-medium">
-                  /month
-                </span>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 mb-8 h-12 leading-relaxed">
-                For developers exploring the platform and testing basic
-                functionality.
-              </p>
-
-              <button className="w-full py-4 px-6 rounded-2xl font-semibold text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-200 dark:border-white/10 mb-10">
-                Start for Free
-              </button>
-
-              <div className="space-y-5">
-                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
-                  Features
-                </div>
-                <ul className="space-y-4">
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                    <span>50 API requests per month</span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                    <span>Basic endpoint access</span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                    <span>Community support</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="relative group rounded-[2.5rem] border border-blue-300 dark:border-white/20 bg-white dark:bg-zinc-900 shadow-2xl dark:shadow-[0_0_50px_rgba(255,255,255,0.03)] p-10 transform md:-translate-y-4">
-              <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
-
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-wider shadow-lg border border-slate-800 dark:border-white/80">
-                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 drop-shadow-sm" />
-                Popular
-              </div>
-
-              <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center mb-8 border border-slate-200 dark:border-white/10">
-                <div className="w-6 h-6 rounded bg-slate-800 dark:bg-white shadow-[0_0_20px_rgba(0,0,0,0.2)] dark:shadow-[0_0_20px_rgba(255,255,255,0.4)]" />
-              </div>
-
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                Pro Tier
-              </h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-5xl font-bold text-slate-900 dark:text-white">
-                  ₹30
-                </span>
-                <span className="text-slate-500 dark:text-slate-400 font-medium">
-                  /month
-                </span>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 mb-8 h-12 leading-relaxed">
-                For active developers building projects and scaling
-                applications.
-              </p>
-
-              <button
-                onClick={() => openPaymentModal("pro")}
-                disabled={paidButtonDisabled}
-                className={`w-full py-4 px-6 rounded-2xl font-semibold mb-10 shadow-lg transition-opacity ${
-                  paidButtonDisabled
-                    ? "bg-slate-400 text-white cursor-not-allowed"
-                    : "text-white bg-slate-900 dark:bg-white dark:text-black hover:opacity-90"
-                }`}
-              >
-                {proButtonLabel}
-              </button>
-
-              <div className="space-y-5">
-                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
-                  Features
-                </div>
-                <ul className="space-y-4">
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
-                    <span className="font-semibold text-slate-900 dark:text-white">
-                      1000 API requests per month
+                  <h3 className="text-2xl font-bold text-white mb-2 font-jetbrains">
+                    {plan.name}
+                  </h3>
+                  <div className="flex items-baseline gap-1 mb-4">
+                    <span className="text-5xl font-extrabold text-white">
+                      {plan.price}
                     </span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
-                    <span>Priority email support</span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
-                    <span>Advanced rate limits</span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-slate-900 dark:text-white shrink-0 mt-0.5" />
-                    <span>Sponsor badge</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="relative group rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900/40 p-10 hover:border-emerald-500/50 transition-colors backdrop-blur-xl">
-              <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-8 border border-emerald-100 dark:border-emerald-500/20">
-                <div className="w-6 h-6 rounded bg-emerald-600 dark:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]" />
-              </div>
-
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                Advance Plan
-              </h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-5xl font-bold text-slate-900 dark:text-white">
-                  ₹50
-                </span>
-                <span className="text-slate-500 dark:text-slate-400 font-medium">
-                  /month
-                </span>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 mb-8 h-12 leading-relaxed">
-                For heavy users needing massive request limits and reliability.
-              </p>
-
-              <button
-                onClick={() => openPaymentModal("advance")}
-                disabled={paidButtonDisabled}
-                className={`w-full py-4 px-6 rounded-2xl font-semibold mb-10 transition-colors border ${
-                  paidButtonDisabled
-                    ? "text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed"
-                    : "text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border-slate-200 dark:border-white/10"
-                }`}
-              >
-                {advanceButtonLabel}
-              </button>
-
-              <div className="space-y-5">
-                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
-                  Features
-                </div>
-                <ul className="space-y-4">
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <span className="font-semibold">
-                      10k API requests per month
+                    <span className="text-slate-400 font-medium">
+                      {plan.period}
                     </span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>Dedicated support line</span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>Custom SLAs</span>
-                  </li>
-                  <li className="flex gap-4 text-slate-600 dark:text-slate-300">
-                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>Premium sponsor recognition</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
+                  </div>
+                  <p className="text-slate-400 mb-8 h-12 leading-relaxed text-sm">
+                    {plan.description}
+                  </p>
+
+                  <button
+                    onClick={() => openPaymentModal(plan.planType)}
+                    disabled={plan.planType !== "free" && paidButtonDisabled}
+                    className={`w-full py-3.5 px-6 rounded-xl font-bold mb-10 transition-all ${
+                      plan.planType !== "free" && paidButtonDisabled
+                        ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                        : plan.popular 
+                          ? "bg-emerald-400 text-emerald-950 hover:bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.2)]"
+                          : "bg-slate-800 text-white hover:bg-slate-700 border border-slate-700"
+                    }`}
+                  >
+                    {getButtonLabel(plan)}
+                  </button>
+
+                  <div className="space-y-4">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
+                      Features
+                    </div>
+                    <ul className="space-y-3">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className={`w-5 h-5 shrink-0 ${plan.popular ? 'text-emerald-400' : 'text-slate-400'}`} />
+                          <span className={`text-sm ${feature.highlight ? 'text-white font-semibold' : 'text-slate-300'}`}>
+                            {feature.text}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          <p className="mt-16 text-slate-500 dark:text-slate-400 text-base max-w-lg mx-auto leading-relaxed">
+          
+          <p className="mt-16 text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
             By paying for a premium tier, you are directly helping in sponsoring
             and sustaining this open-source project. Thank you! 🚀
           </p>
@@ -408,42 +278,38 @@ function PricingPageContent() {
       </main>
 
       {showPaymentNotice && selectedPlan && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center px-6">
-          <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl">
-            <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-              Payment Gateway Update
+        <div className="fixed inset-0 z-[80] bg-slate-950/80 backdrop-blur-md flex items-center justify-center px-6">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
+            <h3 className="text-2xl font-bold text-white mb-4 font-jetbrains">
+              Secure Checkout
             </h3>
-            <p className="text-slate-700 leading-relaxed mb-6">
-              Our in-app payment gateway setup is currently in process. You will
-              now be redirected to another website to complete payment securely.
-            </p>
-            <p className="text-slate-600 mb-8">
-              Selected plan: <span className="font-semibold uppercase">{selectedPlan}</span>
+            <p className="text-slate-300 leading-relaxed mb-6">
+              You will be redirected securely to complete the payment for the <span className="font-semibold text-emerald-400 uppercase">{selectedPlan}</span> plan.
             </p>
 
-            <div className="flex flex-wrap gap-3 justify-end">
+            <div className="flex flex-col sm:flex-row gap-3 justify-end mt-8">
               <button
                 onClick={() => {
                   setShowPaymentNotice(false);
                   setSelectedPlan(null);
                 }}
                 disabled={isCreatingOrder}
-                className="px-5 py-3 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"
+                className="px-5 py-3 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors font-medium"
               >
                 Cancel
               </button>
-              <a
-                href={contactUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="px-5 py-3 rounded-xl border border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors"
-              >
-                Contact Me
-              </a>
+               <a
+                  href={contactUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-5 py-3 text-center rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors font-medium sm:hidden"
+                >
+                  Contact Me
+               </a>
               <button
                 onClick={startPayment}
                 disabled={isCreatingOrder}
-                className="px-5 py-3 rounded-xl bg-slate-900 text-white hover:opacity-90 transition-opacity disabled:opacity-60"
+                className="px-5 py-3 rounded-xl bg-emerald-400 text-emerald-950 hover:bg-emerald-300 transition-colors font-bold disabled:opacity-60 flex justify-center items-center gap-2"
               >
                 {isCreatingOrder ? "Creating Order..." : "Proceed to Payment"}
               </button>
