@@ -145,7 +145,14 @@ export const installation = {
 };
 
 export const quickStartCode = {
-  basic: `// Import the functions you need
+  basic: `// .env
+// IRCTC_API_KEY=your_api_key_here
+
+if (!process.env.IRCTC_API_KEY) {
+  throw new Error('IRCTC_API_KEY is required in environment variables');
+}
+
+// Import the functions you need
 import { checkPNRStatus, getTrainInfo } from 'irctc-connect';
 
 // Check PNR status

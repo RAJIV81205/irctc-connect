@@ -173,7 +173,8 @@ const Playground = () => {
       </h2>
       <p className="text-slate-600 dark:text-slate-300 mb-6">
         Test the API functions with your own data. See live JSON response,
-        status code, and response time.
+        status code, and response time. Make sure `IRCTC_API_KEY` is set in
+        your environment variables first.
       </p>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">

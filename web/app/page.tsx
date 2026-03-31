@@ -50,7 +50,9 @@ export default function LandingPage() {
 
         <p className="mt-6 max-w-2xl text-base text-slate-300 sm:text-lg">
           Complete ticket booking, PNR checks, station search, trains, and seat
-          availability with a clean API and production-focused docs.
+          availability with a clean API and production-focused docs. API key is
+          required now. Add it in your environment variables before calling the
+          API.
         </p>
 
         <div className="mt-10 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">

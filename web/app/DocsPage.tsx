@@ -104,7 +104,7 @@ const IRCTCConnectDocs = () => {
                   Introducing the new IRCTC Connect documentation
                 </h1>
                 <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
-                  Find all the guides and resources you need to develop with IRCTC Connect. Explore interactive examples and production components.
+                  Find all the guides and resources you need to develop with IRCTC Connect. API key is required now, and you must add it in your environment variables for requests to work.
                 </p>
               </div>
 
@@ -225,8 +225,8 @@ const IRCTCConnectDocs = () => {
                       connection
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span> Valid
-                      credentials
+                      <span className="text-green-500">✓</span> Valid API key
+                      added in `.env` (for example `IRCTC_API_KEY`)
                     </li>
                   </ul>
                 </div>
@@ -259,6 +259,9 @@ const IRCTCConnectDocs = () => {
               <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
                 <Rocket /> Quick Start
               </h2>
+              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
+                API key is required now. Add your key in environment variables first, then run your code.
+              </div>
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-400"></div>
@@ -270,7 +273,14 @@ const IRCTCConnectDocs = () => {
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
                   <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`import {   
+                    {`// .env
+// IRCTC_API_KEY=your_api_key_here
+
+if (!process.env.IRCTC_API_KEY) {
+  throw new Error('IRCTC_API_KEY is required in environment variables');
+}
+
+import {   
   checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations, getAvailability 
 } from 'irctc-connect';
 

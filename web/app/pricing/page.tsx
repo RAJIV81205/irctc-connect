@@ -1,17 +1,170 @@
 "use client";
-import React from "react";
+
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Check, ArrowLeft, Star, Heart } from "lucide-react";
 import Link from "next/link";
-import { useTheme } from "../ThemeProvider";
+
+type PaidPlanType = "pro" | "advance";
+
+type Notice = {
+  kind: "success" | "error" | "info";
+  text: string;
+} | null;
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return fallback;
+}
 
 export default function PricingPage() {
-  const { theme, toggleTheme } = useTheme();
+  const searchParams = useSearchParams();
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [showPaymentNotice, setShowPaymentNotice] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PaidPlanType | null>(null);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
+
+  const contactUrl =
+    process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL ||
+    "mailto:rajivdubey.dev@gmail.com?subject=IRCTC Connect Payment Help";
+
+  const orderIdFromQuery = searchParams.get("order_id");
+  const isPaymentReturn = searchParams.get("payment_return") === "1";
+
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        const response = await fetch("/api/user/verify", {
+          method: "GET",
+          cache: "no-store",
+        });
+        setIsAuthenticated(response.ok);
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    verifyAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isPaymentReturn || !orderIdFromQuery || isCheckingAuth || !isAuthenticated) {
+      return;
+    }
+
+    const syncOrder = async () => {
+      try {
+        setNotice({ kind: "info", text: "Checking payment status..." });
+
+        const response = await fetch(
+          `/api/user/get-order?orderId=${encodeURIComponent(orderIdFromQuery)}&sync=true`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.message || "Unable to verify payment status");
+        }
+
+        if (data?.order?.credited) {
+          setNotice({
+            kind: "success",
+            text: "Payment successful. Your plan benefits are now active.",
+          });
+          return;
+        }
+
+        setNotice({
+          kind: "info",
+          text: "Payment is still processing. We will update your plan once webhook/status confirms success.",
+        });
+      } catch (error: unknown) {
+        setNotice({
+          kind: "error",
+          text: getErrorMessage(
+            error,
+            "Unable to verify payment status right now."
+          ),
+        });
+      }
+    };
+
+    syncOrder();
+  }, [isPaymentReturn, orderIdFromQuery, isCheckingAuth, isAuthenticated]);
+
+  const proButtonLabel = useMemo(() => {
+    if (isCheckingAuth) return "Checking login...";
+    if (!isAuthenticated) return "Login to Continue";
+    return "Get Started";
+  }, [isCheckingAuth, isAuthenticated]);
+
+  const advanceButtonLabel = useMemo(() => {
+    if (isCheckingAuth) return "Checking login...";
+    if (!isAuthenticated) return "Login to Continue";
+    return "Go Advance";
+  }, [isCheckingAuth, isAuthenticated]);
+
+  const openPaymentModal = (planType: PaidPlanType) => {
+    if (!isAuthenticated || isCheckingAuth) {
+      setNotice({
+        kind: "info",
+        text: "Please login first to continue with payment.",
+      });
+      return;
+    }
+
+    setSelectedPlan(planType);
+    setShowPaymentNotice(true);
+  };
+
+  const startPayment = async () => {
+    if (!selectedPlan) {
+      return;
+    }
+
+    try {
+      setIsCreatingOrder(true);
+      setNotice(null);
+
+      const response = await fetch("/api/user/create-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ planType: selectedPlan }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.redirectUrl) {
+        throw new Error(data?.message || "Unable to create order");
+      }
+
+      window.location.href = data.redirectUrl;
+    } catch (error: unknown) {
+      setNotice({
+        kind: "error",
+        text: getErrorMessage(error, "Unable to create order right now."),
+      });
+      setIsCreatingOrder(false);
+    }
+  };
+
+  const paidButtonDisabled = isCheckingAuth || !isAuthenticated;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black font-inter selection:bg-blue-500/30 transition-colors duration-300">
-      {/* Simple Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center">
           <Link
             href="/docs"
             className="flex items-center gap-2 group"
@@ -22,51 +175,10 @@ export default function PricingPage() {
               Back to Docs
             </span>
           </Link>
-
-          <div className="flex items-center gap-4">
-            {/* Dark mode toggle copied */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <svg
-                  className="w-5 h-5 text-yellow-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-5 h-5 text-slate-700"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="pt-32 pb-24 px-6 relative">
-        {/* Background glow effects */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[400px] bg-blue-500/10 dark:bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
 
         <div className="max-w-6xl mx-auto text-center relative z-10">
@@ -82,9 +194,21 @@ export default function PricingPage() {
             Choose a plan that fits your usage needs.
           </p>
 
-          {/* Pricing Cards */}
+          {notice && (
+            <div
+              className={`mb-8 mx-auto max-w-3xl rounded-2xl border px-5 py-4 text-left ${
+                notice.kind === "success"
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : notice.kind === "error"
+                    ? "border-red-300 bg-red-50 text-red-700"
+                    : "border-blue-300 bg-blue-50 text-blue-800"
+              }`}
+            >
+              {notice.text}
+            </div>
+          )}
+
           <div className="mt-16 grid md:grid-cols-3 gap-8 max-w-8xl mx-auto text-left">
-            {/* Free Plan */}
             <div className="relative group rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900/40 p-10 hover:border-blue-500/50 transition-colors backdrop-blur-xl">
               <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
@@ -133,7 +257,6 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Pro Plan */}
             <div className="relative group rounded-[2.5rem] border border-blue-300 dark:border-white/20 bg-white dark:bg-zinc-900 shadow-2xl dark:shadow-[0_0_50px_rgba(255,255,255,0.03)] p-10 transform md:-translate-y-4">
               <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
@@ -151,7 +274,7 @@ export default function PricingPage() {
               </h3>
               <div className="flex items-baseline gap-1 mb-4">
                 <span className="text-5xl font-bold text-slate-900 dark:text-white">
-                  ₹20
+                  ₹30
                 </span>
                 <span className="text-slate-500 dark:text-slate-400 font-medium">
                   /month
@@ -162,8 +285,16 @@ export default function PricingPage() {
                 applications.
               </p>
 
-              <button className="w-full py-4 px-6 rounded-2xl font-semibold text-white bg-slate-900 dark:bg-white dark:text-black hover:opacity-90 transition-opacity mb-10 shadow-lg">
-                Get Started
+              <button
+                onClick={() => openPaymentModal("pro")}
+                disabled={paidButtonDisabled}
+                className={`w-full py-4 px-6 rounded-2xl font-semibold mb-10 shadow-lg transition-opacity ${
+                  paidButtonDisabled
+                    ? "bg-slate-400 text-white cursor-not-allowed"
+                    : "text-white bg-slate-900 dark:bg-white dark:text-black hover:opacity-90"
+                }`}
+              >
+                {proButtonLabel}
               </button>
 
               <div className="space-y-5">
@@ -193,7 +324,6 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Advance Plan */}
             <div className="relative group rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900/40 p-10 hover:border-emerald-500/50 transition-colors backdrop-blur-xl">
               <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
@@ -216,8 +346,16 @@ export default function PricingPage() {
                 For heavy users needing massive request limits and reliability.
               </p>
 
-              <button className="w-full py-4 px-6 rounded-2xl font-semibold text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-200 dark:border-white/10 mb-10">
-                Go Advance
+              <button
+                onClick={() => openPaymentModal("advance")}
+                disabled={paidButtonDisabled}
+                className={`w-full py-4 px-6 rounded-2xl font-semibold mb-10 transition-colors border ${
+                  paidButtonDisabled
+                    ? "text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed"
+                    : "text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border-slate-200 dark:border-white/10"
+                }`}
+              >
+                {advanceButtonLabel}
               </button>
 
               <div className="space-y-5">
@@ -254,6 +392,51 @@ export default function PricingPage() {
           </p>
         </div>
       </main>
+
+      {showPaymentNotice && selectedPlan && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center px-6">
+          <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl">
+            <h3 className="text-2xl font-semibold text-slate-900 mb-4">
+              Payment Gateway Update
+            </h3>
+            <p className="text-slate-700 leading-relaxed mb-6">
+              Our in-app payment gateway setup is currently in process. You will
+              now be redirected to another website to complete payment securely.
+            </p>
+            <p className="text-slate-600 mb-8">
+              Selected plan: <span className="font-semibold uppercase">{selectedPlan}</span>
+            </p>
+
+            <div className="flex flex-wrap gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowPaymentNotice(false);
+                  setSelectedPlan(null);
+                }}
+                disabled={isCreatingOrder}
+                className="px-5 py-3 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <a
+                href={contactUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-5 py-3 rounded-xl border border-blue-300 text-blue-700 hover:bg-blue-50 transition-colors"
+              >
+                Contact Me
+              </a>
+              <button
+                onClick={startPayment}
+                disabled={isCreatingOrder}
+                className="px-5 py-3 rounded-xl bg-slate-900 text-white hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                {isCreatingOrder ? "Creating Order..." : "Proceed to Payment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

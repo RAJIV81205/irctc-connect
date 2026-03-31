@@ -2,7 +2,14 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+API key is required now. Add it to your env file before starting:
+
+```bash
+# web/.env.local
+IRCTC_API_KEY=your_api_key_here
+```
+
+Then run the development server:
 
 ```bash
 npm run dev

@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Inter } from "next/font/google";
+import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./ThemeProvider";
 import { Header } from "../components/Header";
 
-const jetBrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains",
+const notoSans = Noto_Sans({
+  variable: "--font-noto",
   subsets: ["latin"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -56,9 +52,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${inter.variable} ${jetBrainsMono.variable} antialiased`}
-      >
+      <body className={`${notoSans.variable} antialiased`}>
         <ThemeProvider>
           <Header />
           {children}

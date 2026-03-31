@@ -56,7 +56,9 @@ export default function AuthPage() {
         <div className="w-full rounded-3xl border border-slate-300/20 bg-slate-900/60 p-8 text-center shadow-2xl backdrop-blur">
           <h1 className="font-jetbrains text-3xl font-bold">Sign in to get your API key</h1>
           <p className="mt-3 text-sm text-slate-300">
-            Continue with Google to login/register and create your secure session.
+            Continue with Google to login/register and create your secure
+            session. After getting your key, add it in `.env` as
+            `IRCTC_API_KEY` to make requests work.
           </p>
 
           <button

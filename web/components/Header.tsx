@@ -12,7 +12,7 @@ import SearchCommand from "./SearchCommand";
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, sidebarOpen, setSidebarOpen } = useTheme();
+  const { sidebarOpen, setSidebarOpen } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 

@@ -206,8 +206,9 @@ export default function DashboardPage() {
             </h2>
           </div>
           <p className="mb-6 text-sm text-slate-400 max-w-2xl relative z-10">
-            Include this key in your requests to authenticate with the API. Keep
-            it safe and do not share it publicly.
+            Include this key in your requests to authenticate with the API. Add
+            it to your environment variables as `IRCTC_API_KEY`, keep it safe,
+            and do not share it publicly.
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
