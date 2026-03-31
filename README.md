@@ -1,24 +1,28 @@
 # IRCTC Connect
+
 [![npm version](https://badge.fury.io/js/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
 [![Downloads](https://img.shields.io/npm/dm/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
 [![License](https://img.shields.io/npm/l/irctc-connect.svg)](https://github.com/RAJIV81205/irctc-connect/blob/main/LICENSE)
 
-<img width="1536" height="657" alt="ChatGPT Image Jul 15, 2025, 11_30_02 AM" src="https://github.com/user-attachments/assets/39c770a2-639c-443c-93b6-4e78889e78b0" />
+<img width="1536" height="657" alt="IRCTC Connect Banner" src="https://github.com/user-attachments/assets/39c770a2-639c-443c-93b6-4e78889e78b0" />
 
+A comprehensive Node.js SDK for Indian Railways. Get real-time PNR status, train information, live tracking, station updates, train search, and seat availability — all through a single, clean API.
 
+> **v3.0.0** — The SDK now routes all requests through the hosted IRCTC Connect backend. An API key is required.
 
-A comprehensive Node.js package for Indian Railways services. Get real-time PNR status, detailed train information, live train tracking, station updates, search trains between stations, and check seat availability with fare information.
+---
 
 ## ✨ Features
 
-- 🎫 **PNR Status Checking** - Real-time PNR status with passenger details
-- 🚂 **Train Information** - Complete train details with route information  
-- 📍 **Live Train Tracking** - Real-time train status and location tracking
-- 🚉 **Live Station Updates** - Current trains at any station
-- 🔍 **Train Search** - Find trains between any two stations
-- 💺 **Seat Availability** - Check availability with fare breakdown for multiple dates
-- 🗺️ **Route Details** - Station-wise route with timings and coordinates
-- ⚡ **Fast & Reliable** - Built-in timeout handling and validation
+- 🎫 **PNR Status** — Real-time PNR status with full passenger details
+- 🚂 **Train Information** — Complete train details with station-by-station route
+- 📍 **Live Train Tracking** — Real-time position and delay info for any train
+- 🚉 **Live Station Board** — Upcoming trains at any station right now
+- 🔍 **Train Search** — Find all direct trains between two stations
+- 💺 **Seat Availability** — Check availability and fare for any class and quota
+- ⚡ **Fast & Reliable** — Built-in timeout handling, input validation, and caching
+
+---
 
 ## 📦 Installation
 
@@ -26,60 +30,140 @@ A comprehensive Node.js package for Indian Railways services. Get real-time PNR 
 npm install irctc-connect
 ```
 
+---
+
+## 🔑 Getting an API Key
+
+1. Visit **[irctc.rajivdubey.tech](https://irctc.rajivdubey.tech)**
+2. Sign up and navigate to your Dashboard
+3. Generate an API key from the **API Keys** section
+4. Copy the key — you'll use it in the next step
+
+---
+
 ## 🚀 Quick Start
 
+### Step 1 — Add your API key to `.env`
+
+```bash
+# .env
+IRCTC_API_KEY=your_api_key_here
+```
+
+> ⚠️ Never commit your API key to version control. Add `.env` to `.gitignore`.
+
+### Step 2 — Configure the SDK once at startup
+
 ```javascript
-import { 
-    checkPNRStatus, 
-    getTrainInfo, 
-    trackTrain, 
-    liveAtStation, 
-    searchTrainBetweenStations,
-    getAvailability
+import { configure } from 'irctc-connect';
+
+configure(process.env.IRCTC_API_KEY);
+```
+
+Call `configure()` **once** at the top of your app before using any other function. It stores your key globally for all subsequent calls.
+
+### Step 3 — Use any function
+
+```javascript
+import {
+  configure,
+  checkPNRStatus,
+  getTrainInfo,
+  trackTrain,
+  liveAtStation,
+  searchTrainBetweenStations,
+  getAvailability,
 } from 'irctc-connect';
+
+// Configure once
+configure(process.env.IRCTC_API_KEY);
 
 // Check PNR status
 const pnrResult = await checkPNRStatus('1234567890');
 
 // Get train information
-const trainResult = await getTrainInfo('12345');
+const trainResult = await getTrainInfo('12301');
 
-// Track live train status
-const trackResult = await trackTrain('12345', '03-12-2025');
+// Track live train status (date optional, defaults to today)
+const trackResult = await trackTrain('12301', '31-03-2026');
 
-// Get live trains at station
+// Get live trains at a station
 const stationResult = await liveAtStation('NDLS');
 
 // Search trains between stations
 const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');
 
-// Get seat availability with fare
-const availabilityResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');
+// Get seat availability with fare breakdown
+const availResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');
 ```
 
+---
+
 ## 📖 API Reference
+
+### `configure(apiKey)`
+
+Configure the SDK with your API key. **Must be called once before any other function.**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `apiKey` | string | Your API key from the dashboard |
+
+```javascript
+import { configure } from 'irctc-connect';
+
+configure(process.env.IRCTC_API_KEY);
+```
+
+---
 
 ### 1. `checkPNRStatus(pnr)`
 
 Get comprehensive PNR status with passenger details and journey information.
 
 **Parameters:**
-- `pnr` (string): 10-digit PNR number
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `pnr` | string | 10-digit PNR number |
 
 **Example:**
 ```javascript
 const result = await checkPNRStatus('1234567890');
 
 if (result.success) {
-    console.log('PNR:', result.data.pnr);
-    console.log('Status:', result.data.status);
-    console.log('Train:', result.data.train.name);
-    console.log('Journey:', `${result.data.journey.from.name} → ${result.data.journey.to.name}`);
-    
-    // Show all passengers
-    result.data.passengers.forEach(passenger => {
-        console.log(`${passenger.name}: ${passenger.status} - ${passenger.seat}`);
-    });
+  console.log('PNR:', result.data.pnr);
+  console.log('Status:', result.data.status);
+  console.log('Train:', result.data.train.name);
+  console.log('Journey:', `${result.data.journey.from.name} → ${result.data.journey.to.name}`);
+
+  result.data.passengers.forEach(p => {
+    console.log(`${p.name}: ${p.status} — ${p.seat} (${p.berthType})`);
+  });
+}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  data: {
+    pnr: "1234567890",
+    status: "CNF",
+    train: { number: "12301", name: "Howrah Rajdhani", class: "3A" },
+    journey: {
+      from: { name: "New Delhi", code: "NDLS", platform: "16" },
+      to:   { name: "Howrah Junction", code: "HWH", platform: "9" },
+      departure: "16/08/25 5:00 PM",
+      arrival:   "17/08/25 9:55 AM",
+      duration:  "16h 55m"
+    },
+    chart: { status: "Prepared", message: "Chart prepared" },
+    passengers: [
+      { name: "JOHN DOE", status: "CNF", seat: "B2-34", berthType: "SL", confirmationProbability: 99 }
+    ],
+    lastUpdated: "2025-08-16T12:00:00Z"
+  }
 }
 ```
 
@@ -90,455 +174,379 @@ if (result.success) {
 Get detailed train information including complete route with station coordinates.
 
 **Parameters:**
-- `trainNumber` (string): 5-digit train number
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `trainNumber` | string | 5-digit train number |
 
 **Example:**
 ```javascript
-const result = await getTrainInfo('12345');
+const result = await getTrainInfo('12301');
 
 if (result.success) {
-    const { trainInfo, route } = result.data;
-    
-    console.log(`🚂 ${trainInfo.train_name} (${trainInfo.train_no})`);
-    console.log(`📍 ${trainInfo.from_stn_name} → ${trainInfo.to_stn_name}`);
-    console.log(`⏱️ ${trainInfo.from_time} - ${trainInfo.to_time} (${trainInfo.travel_time})`);
-    console.log(`📅 Running Days: ${trainInfo.running_days}`);
-    
-    // Show route (first 5 stations)
-    console.log('\n🛤️ Route:');
-    route.slice(0, 5).forEach(station => {
-        console.log(`  ${station.stnName} (${station.stnCode}) - ${station.departure}`);
-    });
+  const { trainInfo, route } = result.data;
+
+  console.log(`🚂 ${trainInfo.train_name} (${trainInfo.train_no})`);
+  console.log(`📍 ${trainInfo.from_stn_name} → ${trainInfo.to_stn_name}`);
+  console.log(`⏱️ ${trainInfo.from_time} → ${trainInfo.to_time} (${trainInfo.travel_time})`);
+  console.log(`📅 Running days: ${trainInfo.running_days}`);
+
+  route.slice(0, 5).forEach(stn => {
+    console.log(`  ${stn.stnName} (${stn.stnCode}) — dep: ${stn.departure}`);
+  });
 }
 ```
 
----
-
-### 3. `trackTrain(trainNumber, date)`
-
-Get real-time train status and tracking for a specific date with detailed station-wise information including delays and coach positions.
-
-**Parameters:**
-- `trainNumber` (string): 5-digit train number
-- `date` (string): Date in dd-mm-yyyy format
-
-**Example:**
-```javascript
-const result = await trackTrain('12342', '03-12-2025');
-
-if (result.success) {
-    const { trainNo, trainName, date, statusNote, lastUpdate, totalStations, stations } = result.data;
-    
-    console.log(`🚂 ${trainName} (${trainNo})`);
-    console.log(`📅 Date: ${date}`);
-    console.log(`📍 Status: ${statusNote}`);
-    console.log(`🕐 Last Update: ${lastUpdate}`);
-    console.log(`🛤️ Total Stations: ${totalStations}`);
-    
-    // Show station details with delays
-    console.log('\n📋 Station Details:');
-    stations.forEach(station => {
-        console.log(`\n  🚉 ${station.stationName} (${station.stationCode})`);
-        console.log(`     Platform: ${station.platform} | Distance: ${station.distanceKm} km`);
-        console.log(`     Arrival: ${station.arrival.scheduled} → ${station.arrival.actual}`);
-        if (station.arrival.delay) {
-            console.log(`     ⚠️ Arrival Delay: ${station.arrival.delay}`);
-        }
-        console.log(`     Departure: ${station.departure.scheduled} → ${station.departure.actual}`);
-        if (station.departure.delay) {
-            console.log(`     ⚠️ Departure Delay: ${station.departure.delay}`);
-        }
-        
-        // Show coach composition
-        if (station.coachPosition && station.coachPosition.length > 0) {
-            const coaches = station.coachPosition.map(c => c.type).join(' - ');
-            console.log(`     🚃 Coaches: ${coaches}`);
-        }
-    });
-}
-```
-
-**Response Structure:**
+**Response:**
 ```javascript
 {
-    success: true,
-    data: {
-        trainNo: "12342",
-        trainName: "AGNIVEENA EXP",
-        date: "03-Dec-2025",
-        statusNote: "Arrived at HOWRAH JN(HWH) at 09:06 03-Dec (Delay: 00:06)",
-        lastUpdate: "03-Dec-2025 09:11",
-        totalStations: 8,
-        stations: [
-            {
-                stationCode: "ASN",
-                stationName: "ASANSOL JN.",
-                platform: "5",
-                distanceKm: "",
-                arrival: {
-                    scheduled: "SRC",
-                    actual: "SRC",
-                    delay: ""
-                },
-                departure: {
-                    scheduled: "05:30 03-Dec",
-                    actual: "05:30 03-Dec",
-                    delay: "On Time"
-                },
-                coachPosition: [
-                    { type: "ENG", number: "ENG", position: "0" },
-                    { type: "LPR", number: "LPR", position: "1" },
-                    { type: "GEN", number: "GEN", position: "2" },
-                    { type: "2S", number: "D5", position: "4" },
-                    { type: "CC", number: "C2", position: "9" }
-                    // ... more coaches
-                ]
-            },
-            {
-                stationCode: "RNG",
-                stationName: "RANIGANJ",
-                platform: "4",
-                distanceKm: "18",
-                arrival: {
-                    scheduled: "05:41 03-Dec",
-                    actual: "05:50 03-Dec",
-                    delay: "9 Min"
-                },
-                departure: {
-                    scheduled: "05:43 03-Dec",
-                    actual: "05:52 03-Dec",
-                    delay: "9 Min"
-                },
-                coachPosition: [
-                    // ... coach details
-                ]
-            }
-            // ... more stations
-        ]
-    }
+  success: true,
+  data: {
+    trainInfo: {
+      train_no: "12301",
+      train_name: "HOWRAH RAJDHANI",
+      from_stn_name: "NEW DELHI",
+      from_stn_code: "NDLS",
+      to_stn_name: "HOWRAH JN",
+      to_stn_code: "HWH",
+      from_time: "17:00",
+      to_time: "09:55",
+      travel_time: "16:55 hrs",
+      running_days: "1111111",
+      type: "RAJDHANI"
+    },
+    route: [
+      {
+        stnCode: "NDLS", stnName: "NEW DELHI",
+        arrival: "--", departure: "17:00",
+        halt: "0 min", distance: "0", day: "1",
+        coordinates: { latitude: 28.6431, longitude: 77.2201 }
+      }
+      // ... more stations
+    ]
+  }
 }
 ```
 
 ---
 
-### 4. `liveAtStation(stationCode)` 🆕
+### 3. `trackTrain(trainNumber, date?)`
 
-Get list of upcoming trains at any station with real-time information.
+Get real-time live status of a train on a given date, including station-wise delays and coach positions.
 
 **Parameters:**
-- `stationCode` (string): Station code (e.g., 'NDLS', 'BCT', 'HWH')
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `trainNumber` | string | 5-digit train number |
+| `date` | string *(optional)* | Date in `DD-MM-YYYY` format. Defaults to today if omitted. |
+
+**Example:**
+```javascript
+const result = await trackTrain('12301', '31-03-2026');
+
+if (result.success) {
+  const { trainNo, trainName, statusNote, stations } = result.data;
+
+  console.log(`🚂 ${trainName} (${trainNo})`);
+  console.log(`📍 Status: ${statusNote}`);
+
+  stations.forEach(stn => {
+    console.log(`\n🚉 ${stn.stationName} (${stn.stationCode}) — PF ${stn.platform}`);
+    console.log(`   Arr: ${stn.arrival.scheduled} → ${stn.arrival.actual} ${stn.arrival.delay}`);
+    console.log(`   Dep: ${stn.departure.scheduled} → ${stn.departure.actual} ${stn.departure.delay}`);
+  });
+}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  data: {
+    trainNo: "12301",
+    trainName: "HOWRAH RAJDHANI",
+    date: "31-Mar-2026",
+    statusNote: "Arrived at HOWRAH JN(HWH) — On Time",
+    lastUpdate: "31-Mar-2026 10:01",
+    totalStations: 8,
+    stations: [
+      {
+        stationCode: "NDLS", stationName: "NEW DELHI",
+        platform: "16", distanceKm: "0",
+        arrival:   { scheduled: "SRC", actual: "SRC",        delay: ""        },
+        departure: { scheduled: "17:00", actual: "17:00",    delay: "On Time" },
+        coachPosition: [
+          { type: "ENG", number: "ENG", position: "0" },
+          { type: "3A",  number: "B1",  position: "5" }
+          // ...
+        ]
+      }
+      // ... more stations
+    ]
+  }
+}
+```
+
+---
+
+### 4. `liveAtStation(stnCode)`
+
+Get the list of upcoming trains at a station right now.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `stnCode` | string | Station code (e.g., `'NDLS'`, `'BCT'`, `'HWH'`) |
 
 **Example:**
 ```javascript
 const result = await liveAtStation('NDLS');
 
 if (result.success) {
-    console.log(`🚉 Live trains at ${result.data.stationName}:`);
-    
-    result.data.trains.forEach(train => {
-        console.log(`🚂 ${train.trainName} (${train.trainNumber})`);
-        console.log(`   📍 ${train.source} → ${train.destination}`);
-        console.log(`   ⏰ Expected: ${train.expectedTime}`);
-        console.log(`   📊 Status: ${train.status}`);
-        if (train.delay) {
-            console.log(`   ⚠️ Delay: ${train.delay}`);
-        }
-        console.log('   ---');
-    });
+  result.data.forEach(train => {
+    console.log(`🚂 ${train.trainno} — ${train.trainname}`);
+    console.log(`   📍 ${train.source} → ${train.dest}`);
+    console.log(`   ⏰ At station: ${train.timeat}`);
+  });
 }
 ```
 
-**Response Structure:**
+**Response:**
 ```javascript
 {
-    success: true,
-    data: {
-        stationName: "New Delhi",
-        stationCode: "NDLS",
-        lastUpdated: "2025-06-28 14:30:00",
-        trains: [
-            {
-                trainNumber: "12345",
-                trainName: "Rajdhani Express",
-                source: "New Delhi",
-                destination: "Mumbai Central",
-                expectedTime: "20:05",
-                actualTime: "20:10",
-                status: "On Time",
-                delay: "5 min",
-                platform: "16"
-            }
-            // ... more trains
-        ]
+  success: true,
+  data: [
+    {
+      i: 0,
+      trainno: "12301",
+      trainname: "HOWRAH RAJDHANI",
+      source: "NEW DELHI",
+      dest: "HOWRAH JN",
+      timeat: "17:00"
     }
+    // ... more trains
+  ]
 }
 ```
 
 ---
 
-### 5. `searchTrainBetweenStations(fromStationCode, toStationCode)` 🆕
+### 5. `searchTrainBetweenStations(fromStnCode, toStnCode)`
 
-Find all trains running between two stations with timing and availability.
+Find all direct trains running between two stations.
 
 **Parameters:**
-- `fromStationCode` (string): Origin station code
-- `toStationCode` (string): Destination station code
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `fromStnCode` | string | Origin station code |
+| `toStnCode` | string | Destination station code |
 
 **Example:**
 ```javascript
 const result = await searchTrainBetweenStations('NDLS', 'BCT');
 
 if (result.success) {
-    console.log(`🔍 Trains from ${result.data.from} to ${result.data.to}:`);
-    console.log(`📊 Found ${result.data.trains.length} trains\n`);
-    
-    result.data.trains.forEach(train => {
-        console.log(`🚂 ${train.trainName} (${train.trainNumber})`);
-        console.log(`   ⏰ Departure: ${train.departure} | Arrival: ${train.arrival}`);
-        console.log(`   ⏱️ Duration: ${train.duration}`);
-        console.log(`   📅 Days: ${train.runningDays}`);
-        console.log(`   💺 Classes: ${train.availableClasses.join(', ')}`);
-        console.log('   ---');
-    });
+  console.log(`Found ${result.data.length} trains\n`);
+
+  result.data.forEach(train => {
+    console.log(`🚂 ${train.train_name} (${train.train_no})`);
+    console.log(`   📍 ${train.from_stn_name} → ${train.to_stn_name}`);
+    console.log(`   ⏰ ${train.from_time} → ${train.to_time} (${train.travel_time})`);
+    console.log(`   📏 Distance: ${train.distance} km`);
+    console.log(`   📅 Days: ${train.running_days}`);
+  });
 }
 ```
 
-**Response Structure:**
+**Response:**
 ```javascript
 {
-    success: true,
-    data: {
-        from: "New Delhi (NDLS)",
-        to: "Mumbai Central (BCT)", 
-        totalTrains: 15,
-        trains: [
-            {
-                trainNumber: "12345",
-                trainName: "Rajdhani Express",
-                departure: "20:05",
-                arrival: "08:35",
-                duration: "12h 30m",
-                runningDays: "Daily",
-                availableClasses: ["1A", "2A", "3A"],
-                trainType: "Superfast"
-            }
-            // ... more trains
-        ]
+  success: true,
+  data: [
+    {
+      train_no: "12951",
+      train_name: "MUMBAI RAJDHANI",
+      source_stn_name: "NEW DELHI",
+      source_stn_code: "NDLS",
+      dstn_stn_name: "MUMBAI CENTRAL",
+      dstn_stn_code: "BCT",
+      from_stn_name: "NEW DELHI",
+      from_stn_code: "NDLS",
+      to_stn_name: "MUMBAI CENTRAL",
+      to_stn_code: "BCT",
+      from_time: "16:55",
+      to_time: "08:35",
+      travel_time: "15:40 hrs",
+      running_days: "1111111",
+      distance: "1384",
+      halts: 8
     }
+    // ... more trains (sorted by departure time)
+  ]
 }
 ```
 
 ---
 
-### 6. `getAvailability(trainNo, fromStnCode, toStnCode, date, coach, quota)` 🆕
+### 6. `getAvailability(trainNo, fromStnCode, toStnCode, date, coach, quota)`
 
-Get seat availability with fare information for a train journey. Returns availability status for multiple dates along with detailed fare breakdown.
+Check seat availability and fare breakdown for a specific train, class, and date.
 
 **Parameters:**
-- `trainNo` (string): 5-digit train number
-- `fromStnCode` (string): Origin station code (e.g., 'ASN', 'NDLS')
-- `toStnCode` (string): Destination station code (e.g., 'DDU', 'BCT')
-- `date` (string): Date in DD-MM-YYYY format (e.g., "27-12-2025")
-- `coach` (string): Travel class - one of: "2S", "SL", "3A", "3E", "2A", "1A", "CC", "EC"
-- `quota` (string): Booking quota - one of: "GN" (General), "LD" (Ladies), "SS" (Senior Citizen), "TQ" (Tatkal)
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `trainNo` | string | 5-digit train number |
+| `fromStnCode` | string | Origin station code (e.g., `'NDLS'`) |
+| `toStnCode` | string | Destination station code (e.g., `'BCT'`) |
+| `date` | string | Journey date in `DD-MM-YYYY` format |
+| `coach` | string | `2S` \| `SL` \| `3A` \| `3E` \| `2A` \| `1A` \| `CC` \| `EC` |
+| `quota` | string | `GN` \| `LD` \| `SS` \| `TQ` |
+
+**Coach Types:**
+
+| Code | Class |
+|------|-------|
+| `2S` | Second Seating |
+| `SL` | Sleeper Class |
+| `3A` | Third AC |
+| `3E` | Third AC Economy |
+| `2A` | Second AC |
+| `1A` | First AC |
+| `CC` | Chair Car |
+| `EC` | Executive Chair Car |
+
+**Quota Types:**
+
+| Code | Quota |
+|------|-------|
+| `GN` | General |
+| `LD` | Ladies |
+| `SS` | Senior Citizen |
+| `TQ` | Tatkal |
 
 **Example:**
 ```javascript
-const result = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');
+const result = await getAvailability('12301', 'NDLS', 'HWH', '27-12-2025', '3A', 'GN');
 
 if (result.success) {
-    const { train, fare, availability } = result.data;
-    
-    console.log(`🚂 ${train.trainName} (${train.trainNo})`);
-    console.log(`📍 ${train.fromStationName} (${train.from}) → ${train.toStationName} (${train.to})`);
-    console.log(`📏 Distance: ${train.distance} km`);
-    console.log(`💺 Class: ${train.travelClass} | Quota: ${train.quota}`);
-    
-    // Fare breakdown
-    console.log('\n💰 Fare Breakdown:');
-    console.log(`   Base Fare: ₹${fare.baseFare}`);
-    console.log(`   Reservation Charge: ₹${fare.reservationCharge}`);
-    console.log(`   Superfast Charge: ₹${fare.superfastCharge}`);
-    console.log(`   Service Tax: ₹${fare.serviceTax}`);
-    console.log(`   Total Fare: ₹${fare.totalFare}`);
-    
-    // Availability for multiple dates
-    console.log('\n📅 Availability:');
-    availability.forEach(avail => {
-        console.log(`\n   📆 ${avail.date}`);
-        console.log(`      Status: ${avail.status}`);
-        console.log(`      Availability: ${avail.availabilityText}`);
-        console.log(`      Prediction: ${avail.prediction} (${avail.predictionPercentage}%)`);
-        console.log(`      Can Book: ${avail.canBook ? '✅ Yes' : '❌ No'}`);
-    });
+  const { train, fare, availability } = result.data;
+
+  console.log(`🚂 ${train.trainName} (${train.trainNo})`);
+  console.log(`📍 ${train.fromStationName} → ${train.toStationName}`);
+
+  console.log('\n💰 Fare Breakdown:');
+  console.log(`   Base Fare:    ₹${fare.baseFare}`);
+  console.log(`   Reservation:  ₹${fare.reservationCharge}`);
+  console.log(`   Superfast:    ₹${fare.superfastCharge}`);
+  console.log(`   Total:        ₹${fare.totalFare}`);
+
+  console.log('\n📅 Availability:');
+  availability.forEach(day => {
+    console.log(`   ${day.date}: ${day.availabilityText} — ${day.prediction}`);
+  });
 }
 ```
 
-**Response Structure:**
+---
+
+## ⚠️ Error Handling
+
+All functions return a consistent response structure. Always check `success` before accessing `data`.
+
 ```javascript
-{
-    success: true,
-    data: {
-        train: {
-            trainNo: "12496",
-            trainName: "PRATAP EXPRESS",
-            from: "ASN",
-            to: "DDU",
-            fromStationName: "Asansol Junction",
-            toStationName: "Pt. Deen Dayal Upadhyaya Junction",
-            distance: 461,
-            travelClass: "2A",
-            quota: "GN"
-        },
-        fare: {
-            baseFare: 981,
-            reservationCharge: 50,
-            superfastCharge: 45,
-            serviceTax: 54,
-            totalFare: 1130
-        },
-        availability: [
-            {
-                date: "27-12-2025",
-                status: "WAITLIST",
-                availabilityText: "Regret",
-                rawStatus: "REGRET",
-                prediction: "No More Booking",
-                predictionPercentage: 0,
-                canBook: false
-            },
-            {
-                date: "17-1-2026",
-                status: "WAITLIST",
-                availabilityText: "WL 2",
-                rawStatus: "PQWL9/WL2",
-                prediction: "90% Chance",
-                predictionPercentage: 90,
-                canBook: true
-            }
-            // ... more dates
-        ]
-    }
-}
+// ✅ Success
+{ success: true, data: { /* ... */ } }
+
+// ❌ Failure
+{ success: false, error: "Description of what went wrong" }
 ```
 
-**Coach Types:**
-- `2S` - Second Seating
-- `SL` - Sleeper Class
-- `3A` - Third AC
-- `3E` - Third AC Economy
-- `2A` - Second AC
-- `1A` - First AC
-- `CC` - Chair Car
-- `EC` - Executive Chair Car
+**Common error scenarios:**
 
-**Quota Types:**
-- `GN` - General Quota
-- `LD` - Ladies Quota
-- `SS` - Senior Citizen Quota
-- `TQ` - Tatkal Quota
+| Error | Cause |
+|-------|-------|
+| `irctc-connect is not configured` | `configure()` was not called |
+| `Invalid API key` (401) | Key doesn't exist in the system |
+| `API key is inactive` (403) | Key has been deactivated |
+| `Usage limit exceeded` (429) | Monthly request quota reached |
+| `PNR number must be exactly 10 digits` | Bad input |
+| `Invalid train number` | Train number not 5 digits |
+| `Invalid date format. Use DD-MM-YYYY.` | Wrong date format |
+| `Request timed out` | Upstream service too slow |
 
 ---
 
 ## 🛡️ Input Validation
 
-### PNR Number
-- ✅ Must be exactly 10 digits
-- ✅ Automatically removes non-numeric characters
-- ✅ Validates format before API call
+The SDK validates inputs locally before making any network call:
 
-### Train Number  
-- ✅ Must be exactly 5 characters
-- ✅ Should be valid train number string
-
-### Date Format
-- ✅ Must be dd-mm-yyyy format (e.g., "28-06-2025")
-- ✅ Validates actual date values
-- ✅ No invalid dates like 32-01-2025
-
-### Station Codes
-- ✅ Must be valid station code strings
-- ✅ Common codes: NDLS, BCT, HWH, CSTM, SBC, etc.
-
-## 📊 Common Status Codes
-
-| PNR Status | Description |
-|------------|-------------|
-| **CNF** | Confirmed - Seat confirmed |
-| **WL** | Waiting List - Not confirmed yet |
-| **RAC** | Reservation Against Cancellation |
-| **CAN** | Cancelled |
-| **PQWL** | Pooled Quota Waiting List |
-| **TQWL** | Tatkal Quota Waiting List |
-
-| Train Status | Description |
-|-------------|-------------|
-| **On Time** | Running as scheduled |
-| **Delayed** | Running behind schedule |
-| **Cancelled** | Train service cancelled |
-| **Diverted** | Route changed |
-
-## ⚠️ Error Handling
-
-All functions return consistent response structure:
-
-```javascript
-// ✅ Success
-{
-    success: true,
-    data: { /* response data */ }
-}
-
-// ❌ Error  
-{
-    success: false,
-    error: "Description of what went wrong"
-}
-```
-
-**Always check the `success` field before accessing `data`!**
-
-## 🔧 Requirements
-
-- **Node.js 14+** (for native fetch support)
-- **Internet connection** for API calls
-- **Valid inputs** (PNR numbers, train numbers, station codes)
-
-## 📱 Platform Support
-
-- ✅ Node.js applications
-- ✅ Express.js servers  
-- ✅ Next.js applications
-- ✅ React Native (with polyfills)
-- ✅ Electron apps
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-1. 🍴 Fork the repository
-2. 🌟 Create a feature branch
-3. 💻 Make your changes
-4. ✅ Add tests if applicable
-5. 📝 Update documentation
-6. 🚀 Submit a pull request
-
-## 📄 License
-
-MIT License - feel free to use in your projects!
-
-## 🙋‍♂️ Support
-
-- 📧 **Issues**: [GitHub Issues](https://github.com/RAJIV81205/irctc-connect/issues)
-- 📚 **Documentation**: This README
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/RAJIV81205/irctc-connect/discussions)
-
-## 🌟 Star History
-
-If this package helped you, please give it a ⭐ on GitHub!
+- **PNR** — must be exactly 10 digits (non-numerics auto-stripped)
+- **Train number** — must be exactly 5 characters
+- **Station codes** — must be uppercase alphabetic, 1–5 chars
+- **Date** — must be `DD-MM-YYYY`, validated for real calendar dates
+- **Coach** — must be one of: `2S`, `SL`, `3A`, `3E`, `2A`, `1A`, `CC`, `EC`
+- **Quota** — must be one of: `GN`, `LD`, `SS`, `TQ`
 
 ---
 
-**Built with ❤️ for Indian Railways enthusiasts**
+## 📊 PNR Status Codes
 
-*Happy Journey! 🚂*
+| Code | Meaning |
+|------|---------|
+| `CNF` | Confirmed |
+| `WL` | Waiting List |
+| `RAC` | Reservation Against Cancellation |
+| `CAN` | Cancelled |
+| `PQWL` | Pooled Quota Waiting List |
+| `TQWL` | Tatkal Quota Waiting List |
+| `GNWL` | General Waiting List |
+
+---
+
+## 🔧 Requirements
+
+- Node.js 18+ (native `fetch` required)
+- Internet connection for API calls
+- A valid IRCTC Connect API key
+
+---
+
+## 📱 Platform Support
+
+| Platform | Supported |
+|----------|-----------|
+| Node.js | ✅ |
+| Express.js | ✅ |
+| Next.js (server-side) | ✅ |
+| Fastify / Hono | ✅ |
+| React Native | ⚠️ Needs fetch polyfill |
+
+---
+
+## 🤝 Contributing
+
+1. 🍴 Fork the repository
+2. 🌿 Create a feature branch
+3. 💻 Make your changes
+4. 📝 Update documentation
+5. 🚀 Submit a pull request
+
+---
+
+## 📄 License
+
+ISC License — free to use in personal and commercial projects.
+
+## 🙋 Support
+
+- **Issues:** [GitHub Issues](https://github.com/RAJIV81205/irctc-connect/issues)
+- **Docs:** [irctc.rajivdubey.tech/docs](https://irctc.rajivdubey.tech/docs)
+- **Discussions:** [GitHub Discussions](https://github.com/RAJIV81205/irctc-connect/discussions)
+
+---
+
+*Built with ❤️ for Indian Railways enthusiasts. Happy journey! 🚂*
