@@ -104,7 +104,7 @@ const IRCTCConnectDocs = () => {
                   Introducing the new IRCTC Connect documentation
                 </h1>
                 <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
-                  Find all the guides and resources you need to develop with IRCTC Connect. API key is required now, and you must add it in your environment variables for requests to work.
+                  Find all the guides and resources you need to develop with IRCTC Connect. An API key is required — call <code className="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">configure(apiKey)</code> once at startup and all functions will automatically authenticate with the backend.
                 </p>
               </div>
 
@@ -260,7 +260,7 @@ const IRCTCConnectDocs = () => {
                 <Rocket /> Quick Start
               </h2>
               <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
-                API key is required now. Add your key in environment variables first, then run your code.
+                An API key is required. Call <code className="font-mono font-semibold">configure(apiKey)</code> once before using any other function — store your key safely in environment variables.
               </div>
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
@@ -273,16 +273,15 @@ const IRCTCConnectDocs = () => {
                 </div>
                 <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
                   <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`// .env
-// IRCTC_API_KEY=your_api_key_here
-
-if (!process.env.IRCTC_API_KEY) {
-  throw new Error('IRCTC_API_KEY is required in environment variables');
-}
-
-import {   
-  checkPNRStatus, getTrainInfo, trackTrain, liveAtStation, searchTrainBetweenStations, getAvailability 
+                    {`import {
+  configure,
+  checkPNRStatus, getTrainInfo, trackTrain,
+  liveAtStation, searchTrainBetweenStations, getAvailability
 } from 'irctc-connect';
+
+// Step 1: configure once with your API key (store it in .env)
+// .env → IRCTC_API_KEY=your_api_key_here
+configure(process.env.IRCTC_API_KEY);
 
 // Check PNR status
 const pnrResult = await checkPNRStatus('1234567890');
@@ -300,7 +299,7 @@ const stationResult = await liveAtStation('NDLS');
 const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');
 
 // Get seat availability with fare
-const availabilityResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');`}
+const availResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');`}
                   </SyntaxHighlighter>
                 </div>
               </div>
@@ -535,13 +534,10 @@ if (result.success) {
                     {`const result = await liveAtStation('NDLS');
 
 if (result.success) {
-  console.log(\`🚉 Live trains at \${result.data.stationName}:\`);
-  
-  result.data.trains.forEach(train => {
-    console.log(\`🚂 \${train.trainName} (\${train.trainNumber})\`);
-    console.log(\`   📍 \${train.source} → \${train.destination}\`);
-    console.log(\`   ⏰ Expected: \${train.expectedTime}\`);
-    console.log(\`   📊 Status: \${train.status}\`);
+  result.data.forEach(train => {
+    console.log(\`🚂 \${train.trainno} - \${train.trainname}\`);
+    console.log(\`   📍 \${train.source} → \${train.dest}\`);
+    console.log(\`   ⏰ Time: \${train.timeat}\`);
   });
 }`}
                   </SyntaxHighlighter>
@@ -594,13 +590,13 @@ if (result.success) {
                     {`const result = await searchTrainBetweenStations('NDLS', 'BCT');
 
 if (result.success) {
-  console.log(\`🔍 Trains from \${result.data.from} to \${result.data.to}:\`);
-  
-  result.data.trains.forEach(train => {
-    console.log(\`🚂 \${train.trainName} (\${train.trainNumber})\`);
-    console.log(\`   ⏰ \${train.departure} → \${train.arrival}\`);
-    console.log(\`   ⏱️ Duration: \${train.duration}\`);
-    console.log(\`   📅 Days: \${train.runningDays}\`);
+  result.data.forEach(train => {
+    console.log(\`🚂 \${train.train_name} (\${train.train_no})\`);
+    console.log(\`   📍 \${train.from_stn_name} → \${train.to_stn_name}\`);
+    console.log(\`   ⏰ \${train.from_time} → \${train.to_time}\`);
+    console.log(\`   ⏱️ Duration: \${train.travel_time}\`);
+    console.log(\`   📏 Distance: \${train.distance} km\`);
+    console.log(\`   📅 Days: \${train.running_days}\`);
   });
 }`}
                   </SyntaxHighlighter>
@@ -886,6 +882,10 @@ if (result.success) {
                   Common Error Scenarios
                 </h4>
                 <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-200">
+                  <li>• Missing API key — <code className="font-mono">configure(apiKey)</code> not called</li>
+                  <li>• Invalid or expired API key (401 Unauthorized)</li>
+                  <li>• API key inactive (403 Forbidden)</li>
+                  <li>• Monthly usage limit exceeded (429 Too Many Requests)</li>
                   <li>• Invalid input parameters</li>
                   <li>• Network timeouts (10-second timeout)</li>
                   <li>• API service unavailable</li>
