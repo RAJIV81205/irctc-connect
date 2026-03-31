@@ -3,6 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import {
+  configure,
   checkPNRStatus,
   getTrainInfo,
   trackTrain,
@@ -30,6 +31,7 @@ const Playground = () => {
   const [stationInput, setStationInput] = useState("");
   const [fromStationInput, setFromStationInput] = useState("");
   const [toStationInput, setToStationInput] = useState("");
+  const [apiKey, setApiKey] = useState("");
 
   const [playgroundResult, setPlaygroundResult] = useState<any>(null);
   const [rawJSON, setRawJSON] = useState<string>("");
@@ -61,6 +63,11 @@ const Playground = () => {
     const start = performance.now();
 
     try {
+      if (!apiKey.trim()) {
+        throw new Error("API Key is required");
+      }
+      configure(apiKey.trim());
+
       let result: any;
 
       switch (playgroundTab) {
@@ -173,9 +180,21 @@ const Playground = () => {
       </h2>
       <p className="text-slate-600 dark:text-slate-300 mb-6">
         Test the API functions with your own data. See live JSON response,
-        status code, and response time. Make sure `IRCTC_API_KEY` is set in
-        your environment variables first.
+        status code, and response time. Get your API key by signing in.
       </p>
+
+      <div className="mb-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+          Your API Key
+        </label>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="irctc..."
+          className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        />
+      </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">
         {/* Tabs */}
