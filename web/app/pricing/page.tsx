@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check, ArrowLeft, Star, Heart } from "lucide-react";
 import Link from "next/link";
@@ -20,6 +20,20 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function PricingPage() {
+  return (
+    <Suspense fallback={<PricingPageFallback />}>
+      <PricingPageContent />
+    </Suspense>
+  );
+}
+
+function PricingPageFallback() {
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-black" aria-busy="true" />
+  );
+}
+
+function PricingPageContent() {
   const searchParams = useSearchParams();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
