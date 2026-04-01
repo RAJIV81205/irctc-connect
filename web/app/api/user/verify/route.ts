@@ -20,6 +20,14 @@ export async function GET() {
     }
 
     const payload = verifyAuthToken(token);
+
+    if (!payload || !payload.userId) {
+      return NextResponse.json(
+        { success: false, message: "unauthorized: invalid token payload" },
+        { status: 401 }
+      );
+    }
+
     const user = await User.findById(payload.userId).lean();
 
     if (!user || !user.active) {

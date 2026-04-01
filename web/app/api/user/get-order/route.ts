@@ -35,6 +35,10 @@ export async function GET(request: Request) {
     }
 
     const payload = verifyAuthToken(token);
+
+    if (!payload || !payload.userId) {
+      return unauthorizedResponse();
+    }
     const user = await User.findById(payload.userId).lean();
     if (!user || !user.active) {
       return unauthorizedResponse();
