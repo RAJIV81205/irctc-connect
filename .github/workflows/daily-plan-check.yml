@@ -1,0 +1,35 @@
+name: Daily Plan Check
+
+on:
+  schedule:
+    # Run at midnight UTC every day (0:00 UTC = 5:30 AM IST)
+    # Adjust the cron expression based on your timezone preference
+    - cron: '0 0 * * *'
+  
+  # Allow manual trigger for testing
+  workflow_dispatch:
+
+jobs:
+  check-plans:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger plan check endpoint
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.API_URL }}/api/cron/check-plans" \
+            -d '{}' \
+            --max-time 60
+        env:
+          # Make sure these secrets are set in your GitHub repository settings:
+          # - CRON_SECRET: The secret key matching your CRON_SECRET environment variable
+          # - API_URL: Your deployment URL (e.g., https://yourdomain.com)
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ secrets.API_URL }}
+
+      - name: Log result
+        if: always()
+        run: |
+          echo "Plan check job completed"
