@@ -22,6 +22,10 @@ export function Header() {
   const [user, setUser] = useState<VerifiedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  if (pathname === "/admin") {
+    return null;
+  }
+
   useEffect(() => {
     let mounted = true;
 
