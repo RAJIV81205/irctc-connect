@@ -65,10 +65,9 @@ export const PRICING_PLANS: PricingPlan[] = [
     colorTheme: "emerald",
     features: [
       { text: "10k API requests per month", highlight: true },
-      { text: "Dedicated support line" },
+      { text: "API endpoint access", highlight: true },
       { text: "Request to upgrade limit", highlight: true },
-      { text: "Sponsor badge", highlight: true },
-      { text: "Premium sponsor recognition" },
+      { text: "Sponsor badge", highlight: true }
     ],
   },
 ];

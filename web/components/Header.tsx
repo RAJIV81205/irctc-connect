@@ -4,32 +4,66 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { auth } from "../lib/firebase";
-import { Train, ChevronRight, LogOut, Menu } from "lucide-react";
+import { ChevronRight, LogOut, Menu } from "lucide-react";
 import { useTheme } from "../app/ThemeProvider";
 import SearchCommand from "./SearchCommand";
+
+type VerifiedUser = {
+  id: string;
+  name: string;
+  email: string;
+  active: boolean;
+};
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { sidebarOpen, setSidebarOpen } = useTheme();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<VerifiedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsub();
+    let mounted = true;
+
+    const checkAuthFromToken = async () => {
+      try {
+        const response = await fetch("/api/user/verify", { method: "GET" });
+        if (!response.ok) {
+          if (mounted) {
+            setUser(null);
+          }
+          return;
+        }
+
+        const data = await response.json();
+        if (mounted) {
+          setUser(data?.success ? data.user : null);
+        }
+      } catch (error) {
+        console.error(error);
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    checkAuthFromToken();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
       await fetch("/api/user/verify", { method: "DELETE" });
+      setUser(null);
       router.push("/");
+      router.refresh();
     } catch (err) {
       console.error(err);
     }

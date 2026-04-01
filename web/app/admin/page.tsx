@@ -3,232 +3,725 @@
 import { useEffect, useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import useSWR, { mutate as globalMutate } from "swr";
 
+// ─── SWR Fetcher ──────────────────────────────────────────────────────────────
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || "Request failed");
+  return data;
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface User {
+  _id: string;
+  email: string;
+  name: string;
+  plan: "free" | "pro" | "enterprise";
+  active: boolean;
+  usage: number;
+  limit: number;
+  apiKey?: string;
+}
+
+interface Order {
+  _id: string;
+  orderId: string;
+  userId?: { email: string };
+  amount: number;
+  currency: string;
+  status: string;
+  credited: boolean;
+  createdAt?: string;
+}
+
+// ─── Loader ───────────────────────────────────────────────────────────────────
+function Loader({ text = "Loading..." }: { text?: string }) {
+  return (
+    <div className="fixed inset-0 bg-[#0a0c10] flex flex-col items-center justify-center z-50">
+      <div className="relative mb-6">
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            border: "2px solid #1e2330",
+            borderTop: "2px solid #6ee7b7",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 6,
+            borderRadius: "50%",
+            border: "2px solid #1e2330",
+            borderBottom: "2px solid #34d399",
+            animation: "spin 1.2s linear infinite reverse",
+          }}
+        />
+      </div>
+      <p style={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, letterSpacing: "0.08em" }}>
+        {text}
+      </p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+const IconEdit = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+const IconCheck = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const IconX = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const IconEye = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+const IconGoogle = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+  </svg>
+);
+
+// ─── Plan Badge ───────────────────────────────────────────────────────────────
+const PlanBadge = ({ plan }: { plan: string }) => {
+  const styles: Record<string, { bg: string; text: string; border: string }> = {
+    free:       { bg: "#1e2330", text: "#94a3b8", border: "#2d3548" },
+    pro:        { bg: "#0f2a1d", text: "#6ee7b7", border: "#1a4731" },
+    enterprise: { bg: "#1a1060", text: "#a78bfa", border: "#2d1f8a" },
+  };
+  const s = styles[plan] || styles.free;
+  return (
+    <span style={{
+      background: s.bg, color: s.text, border: `1px solid ${s.border}`,
+      padding: "2px 8px", borderRadius: 4, fontSize: 11,
+      fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, letterSpacing: "0.05em",
+      textTransform: "uppercase",
+    }}>{plan}</span>
+  );
+};
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+const StatusBadge = ({ status }: { status: string }) => {
+  const styles: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+    paid:      { bg: "#0f2a1d", text: "#6ee7b7", border: "#1a4731", dot: "#34d399" },
+    active:    { bg: "#0f2233", text: "#60a5fa", border: "#1a3a5c", dot: "#3b82f6" },
+    created:   { bg: "#1e2330", text: "#94a3b8", border: "#2d3548", dot: "#64748b" },
+    failed:    { bg: "#2a0f0f", text: "#f87171", border: "#4a1f1f", dot: "#ef4444" },
+    cancelled: { bg: "#2a1f0f", text: "#fb923c", border: "#4a3a1f", dot: "#f97316" },
+    expired:   { bg: "#1e2330", text: "#64748b", border: "#2d3548", dot: "#475569" },
+  };
+  const s = styles[status] || styles.created;
+  return (
+    <span style={{
+      background: s.bg, color: s.text, border: `1px solid ${s.border}`,
+      padding: "3px 10px", borderRadius: 4, fontSize: 11,
+      fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+      display: "inline-flex", alignItems: "center", gap: 5,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
+      {status.toUpperCase()}
+    </span>
+  );
+};
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100,
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#0f1117", border: "1px solid #1e2330",
+          borderRadius: 12, padding: 28, width: "100%", maxWidth: 480,
+          fontFamily: "'JetBrains Mono', monospace",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 14 }}>Order Details</span>
+          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            <IconX />
+          </button>
+        </div>
+        {Object.entries(order).map(([k, v]) => (
+          <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1a1f2e" }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</span>
+            <span style={{ color: "#cbd5e1", fontSize: 12, maxWidth: "60%", textAlign: "right", wordBreak: "break-all" }}>
+              {typeof v === "object" ? JSON.stringify(v) : String(v)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit User Modal ──────────────────────────────────────────────────────────
+function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: string, updates: Partial<User>) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState({ ...user });
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100,
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#0f1117", border: "1px solid #1e2330",
+          borderRadius: 12, padding: 28, width: "100%", maxWidth: 440,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <div>
+            <p style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 15, margin: 0 }}>Edit User</p>
+            <p style={{ color: "#64748b", fontSize: 12, margin: "4px 0 0", fontFamily: "'JetBrains Mono', monospace" }}>{user.email}</p>
+          </div>
+          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            <IconX />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Plan */}
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Plan</span>
+            <select
+              value={draft.plan}
+              onChange={(e) => setDraft({ ...draft, plan: e.target.value as User["plan"] })}
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
+            >
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </label>
+
+          {/* Usage / Limit */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Usage</span>
+              <input
+                type="number"
+                value={draft.usage}
+                onChange={(e) => setDraft({ ...draft, usage: Number(e.target.value) })}
+                style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Limit</span>
+              <input
+                type="number"
+                value={draft.limit}
+                onChange={(e) => setDraft({ ...draft, limit: Number(e.target.value) })}
+                style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
+              />
+            </label>
+          </div>
+
+          {/* Active */}
+          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+            <div
+              onClick={() => setDraft({ ...draft, active: !draft.active })}
+              style={{
+                width: 38, height: 20, borderRadius: 10,
+                background: draft.active ? "#059669" : "#1e2330",
+                border: `1px solid ${draft.active ? "#047857" : "#2d3548"}`,
+                position: "relative", cursor: "pointer", transition: "background 0.2s",
+              }}
+            >
+              <div style={{
+                position: "absolute", top: 2, left: draft.active ? 18 : 2,
+                width: 14, height: 14, borderRadius: "50%",
+                background: draft.active ? "#fff" : "#64748b",
+                transition: "left 0.2s",
+              }} />
+            </div>
+            <span style={{ color: "#94a3b8", fontSize: 13 }}>Account Active</span>
+          </label>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none", border: "1px solid #2d3548", color: "#94a3b8",
+              borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => { onSave(user._id, { plan: draft.plan, active: draft.active, usage: draft.usage, limit: draft.limit }); onClose(); }}
+            style={{
+              background: "#059669", border: "none", color: "#fff",
+              borderRadius: 6, padding: "8px 20px", fontSize: 13, cursor: "pointer", fontWeight: 600,
+            }}
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminPanel() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin]       = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders">("users");
+  const [editingUser, setEditingUser]   = useState<User | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
 
-  const checkAdminAuth = async () => {
-    try {
-      const res = await fetch("/api/admin/verify");
-      if (res.ok) {
-        setIsAdmin(true);
-        fetchData();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ── SWR hooks — only active once authenticated ──────────────────────────────
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    isValidating: usersValidating,
+    mutate: mutateUsers,
+  } = useSWR<{ success: boolean; users: User[] }>(
+    isAdmin ? "/api/admin/users" : null,
+    fetcher,
+    { revalidateOnFocus: true, refreshInterval: 60_000 }
+  );
 
-  const fetchData = async () => {
-    try {
-      const usersRes = await fetch("/api/admin/users");
-      const usersData = await usersRes.json();
-      if (usersData.success) setUsers(usersData.users);
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    isValidating: ordersValidating,
+    mutate: mutateOrders,
+  } = useSWR<{ success: boolean; orders: Order[] }>(
+    isAdmin ? "/api/admin/orders" : null,
+    fetcher,
+    { revalidateOnFocus: true, refreshInterval: 60_000 }
+  );
 
-      const ordersRes = await fetch("/api/admin/orders");
-      const ordersData = await ordersRes.json();
-      if (ordersData.success) setOrders(ordersData.orders);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const users      = usersData?.users ?? [];
+  const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
+  const dataLoading = usersValidating || ordersValidating;
 
+  // ── Check session on mount ──────────────────────────────────────────────────
   useEffect(() => {
-    checkAdminAuth();
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/verify");
+        if (res.ok) setIsAdmin(true);
+      } catch (e) { console.error(e); }
+      finally { setAuthLoading(false); }
+    })();
   }, []);
 
   const onGoogleLogin = async () => {
     setLoginError("");
-    setLoading(true);
+    setAuthLoading(true);
     try {
       const credential = await signInWithPopup(auth, googleProvider);
       const email = credential.user.email?.trim().toLowerCase();
-      const name = credential.user.displayName?.trim();
-
+      const name  = credential.user.displayName?.trim();
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name }),
       });
-
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Admin login failed");
-      }
-
+      if (!response.ok || !result.success) throw new Error(result.message || "Admin login failed");
       setIsAdmin(true);
-      fetchData();
+      // SWR keys become non-null now — data fetches automatically
     } catch (err: any) {
       setLoginError(err.message || "Login failed");
+    } finally { setAuthLoading(false); }
+  };
+
+  // Optimistic update: patch cache instantly, revalidate after PUT
+  const updateUser = async (id: string, updates: Partial<User>) => {
+    // Optimistically update local cache
+    await mutateUsers(
+      (prev) => prev
+        ? { ...prev, users: prev.users.map((u) => u._id === id ? { ...u, ...updates } : u) }
+        : prev,
+      false
+    );
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _id: id, ...updates }),
+      });
+      if (!res.ok) throw new Error("Update failed");
+    } catch (e) {
+      console.error(e);
     } finally {
-      setLoading(false);
+      // Revalidate to sync with server truth
+      mutateUsers();
     }
   };
 
-  const updateUser = async (id: string, updates: any) => {
-    const res = await fetch("/api/admin/users", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ _id: id, ...updates }),
-    });
-    if (res.ok) fetchData();
-  };
+  const refreshAll = () => { mutateUsers(); mutateOrders(); };
 
-  const updateOrder = async (id: string, updates: any) => {
-    const res = await fetch("/api/admin/orders", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ _id: id, ...updates }),
-    });
-    if (res.ok) fetchData();
-  };
+  // ── Loading screen ──────────────────────────────────────────────────────────
+  if (authLoading) return <Loader text="Authenticating..." />;
+  if (isAdmin && (usersLoading || ordersLoading)) return <Loader text="Fetching data..." />;
 
-  if (loading) return <div className="p-8 text-white">Loading...</div>;
-
+  // ── Login screen ────────────────────────────────────────────────────────────
   if (!isAdmin) {
     return (
-      <main className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center">
-        <div className="w-full max-w-sm rounded-xl border border-slate-700 bg-slate-800 p-8 text-center shadow-xl">
-          <h1 className="text-2xl font-bold mb-4">Admin Login</h1>
-          {loginError && <p className="text-red-400 text-sm mb-4">{loginError}</p>}
-          <button
-            onClick={onGoogleLogin}
-            className="w-full rounded bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200"
-          >
-            Login with Google
-          </button>
-        </div>
-      </main>
+      <>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@700;800&display=swap');
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { background: #070910; }
+        `}</style>
+        <main style={{
+          minHeight: "100vh", background: "#070910",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "'Syne', sans-serif",
+        }}>
+          {/* Ambient glow */}
+          <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 600, height: 300, background: "radial-gradient(ellipse, rgba(52,211,153,0.06) 0%, transparent 70%)", borderRadius: "50%" }} />
+          </div>
+
+          <div style={{
+            width: "100%", maxWidth: 380, position: "relative",
+            background: "linear-gradient(145deg, #0f1117 0%, #0a0d13 100%)",
+            border: "1px solid #1e2330", borderRadius: 16, padding: 40,
+            boxShadow: "0 0 0 1px #0d1117, 0 32px 64px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{ textAlign: "center", marginBottom: 32 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: "linear-gradient(135deg, #059669, #047857)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 16px", boxShadow: "0 8px 24px rgba(5,150,105,0.3)",
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f1f5f9", letterSpacing: "-0.02em" }}>Admin Portal</h1>
+              <p style={{ color: "#475569", fontSize: 13, marginTop: 6, fontFamily: "'JetBrains Mono', monospace" }}>Restricted access only</p>
+            </div>
+
+            {loginError && (
+              <div style={{ background: "#2a0f0f", border: "1px solid #4a1f1f", borderRadius: 8, padding: "10px 14px", marginBottom: 20 }}>
+                <p style={{ color: "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>{loginError}</p>
+              </div>
+            )}
+
+            <button
+              onClick={onGoogleLogin}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                background: "#f8fafc", border: "none", borderRadius: 8,
+                padding: "11px 16px", cursor: "pointer", fontFamily: "'Syne', sans-serif",
+                fontSize: 14, fontWeight: 700, color: "#0f172a",
+                transition: "transform 0.1s, box-shadow 0.2s",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
+            >
+              <IconGoogle />
+              Continue with Google
+            </button>
+          </div>
+        </main>
+      </>
     );
   }
 
-  return (
-    <main className="min-h-screen bg-slate-900 text-slate-100 p-8">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-      
-      <div className="mb-12">
-        <h2 className="text-xl font-semibold mb-4">Users ({users.length})</h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-700">
-              <tr>
-                <th className="p-3">Email</th>
-                <th className="p-3">Name</th>
-                <th className="p-3">Plan</th>
-                <th className="p-3">Active</th>
-                <th className="p-3">Usage</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u._id} className="border-t border-slate-700">
-                  <td className="p-3">{u.email}</td>
-                  <td className="p-3">{u.name}</td>
-                  <td className="p-3">
-                    <select 
-                      value={u.plan} 
-                      onChange={(e) => updateUser(u._id, { plan: e.target.value })}
-                      className="bg-slate-900 border border-slate-600 rounded p-1"
-                    >
-                      <option value="free">free</option>
-                      <option value="pro">pro</option>
-                      <option value="enterprise">enterprise</option>
-                    </select>
-                  </td>
-                  <td className="p-3">
-                    <input 
-                      type="checkbox" 
-                      checked={u.active} 
-                      onChange={(e) => updateUser(u._id, { active: e.target.checked })}
-                    />
-                  </td>
-                  <td className="p-3">
-                    <input 
-                      type="number" 
-                      value={u.usage || 0}
-                      onChange={(e) => updateUser(u._id, { usage: Number(e.target.value) })}
-                      className="bg-slate-900 border border-slate-600 rounded p-1 w-16"
-                    />
-                    / 
-                    <input 
-                      type="number" 
-                      value={u.limit || 0}
-                      onChange={(e) => updateUser(u._id, { limit: Number(e.target.value) })}
-                      className="bg-slate-900 border border-slate-600 rounded p-1 w-16 ml-1"
-                    />
-                  </td>
-                  <td className="p-3 text-slate-400 font-mono text-xs max-w-[150px] truncate" title={u.apiKey}>
-                    {u.apiKey}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+  // ── Dashboard ───────────────────────────────────────────────────────────────
+  const totalRevenue  = paidOrders.reduce((acc, o) => acc + o.amount, 0);
+  const creditedCount = paidOrders.filter((o) => o.credited).length;
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Recent Orders ({orders.length})</h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-700">
-              <tr>
-                <th className="p-3">Order ID</th>
-                <th className="p-3">User</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Credited</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o) => (
-                <tr key={o._id} className="border-t border-slate-700">
-                  <td className="p-3 font-mono text-xs">{o.orderId}</td>
-                  <td className="p-3">{o.userId?.email || 'N/A'}</td>
-                  <td className="p-3">{o.amount} {o.currency}</td>
-                  <td className="p-3">
-                    <select 
-                      value={o.status || 'created'} 
-                      onChange={(e) => updateOrder(o._id, { status: e.target.value })}
-                      className="bg-slate-900 border border-slate-600 rounded p-1"
-                    >
-                      <option value="created">created</option>
-                      <option value="active">active</option>
-                      <option value="paid">paid</option>
-                      <option value="failed">failed</option>
-                      <option value="cancelled">cancelled</option>
-                      <option value="expired">expired</option>
-                    </select>
-                  </td>
-                  <td className="p-3">
-                    <input 
-                      type="checkbox" 
-                      checked={o.credited} 
-                      onChange={(e) => updateOrder(o._id, { credited: e.target.checked })}
-                    />
-                  </td>
-                  <td className="p-3">
-                    <button 
-                      onClick={() => alert(JSON.stringify(o, null, 2))}
-                      className="text-blue-400 hover:underline"
-                    >
-                      View All
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #070910; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f1117; }
+        ::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 3px; }
+        .row-hover:hover { background: rgba(255,255,255,0.02) !important; }
+        .action-btn:hover { background: #2d3548 !important; color: #e2e8f0 !important; }
+        .tab-btn { transition: all 0.2s; }
+      `}</style>
+
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onSave={updateUser}
+          onClose={() => setEditingUser(null)}
+        />
+      )}
+      {viewingOrder && (
+        <OrderModal order={viewingOrder} onClose={() => setViewingOrder(null)} />
+      )}
+
+      <main style={{ minHeight: "100vh", background: "#070910", fontFamily: "'Syne', sans-serif", color: "#e2e8f0" }}>
+        {/* Header */}
+        <header style={{
+          borderBottom: "1px solid #1e2330",
+          background: "rgba(7,9,16,0.95)",
+          backdropFilter: "blur(12px)",
+          position: "sticky", top: 0, zIndex: 50,
+        }}>
+          <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: "linear-gradient(135deg, #059669, #047857)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em", color: "#f1f5f9" }}>Admin</span>
+              <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "#334155", padding: "1px 6px", background: "#1e2330", borderRadius: 4 }}>CONSOLE</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {dataLoading && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#34d399", animation: "ping 1s infinite" }} />
+                  <span style={{ color: "#64748b", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>Syncing</span>
+                </div>
+              )}
+              <button
+                onClick={refreshAll}
+                style={{
+                  background: "#1a1f2e", border: "1px solid #2d3548", color: "#94a3b8",
+                  borderRadius: 6, padding: "5px 12px", fontSize: 12, cursor: "pointer",
+                  fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 28px" }}>
+
+          {/* Stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
+            {[
+              { label: "Total Users", value: users.length, sub: `${users.filter((u) => u.active).length} active`, color: "#6ee7b7" },
+              { label: "Pro / Enterprise", value: users.filter((u) => u.plan !== "free").length, sub: "paid plans", color: "#a78bfa" },
+              { label: "Paid Orders", value: paidOrders.length, sub: `${creditedCount} credited`, color: "#60a5fa" },
+              { label: "Total Revenue", value: `₹${(totalRevenue).toFixed(0)}`, sub: "from paid orders", color: "#fbbf24" },
+            ].map((s) => (
+              <div key={s.label} style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 10, padding: "18px 20px" }}>
+                <p style={{ color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>{s.label}</p>
+                <p style={{ fontSize: 26, fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
+                <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 6 }}>{s.sub}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
+            {(["users", "orders"] as const).map((tab) => (
+              <button
+                key={tab}
+                className="tab-btn"
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  background: activeTab === tab ? "#1e2a3a" : "none",
+                  border: activeTab === tab ? "1px solid #2d4060" : "1px solid transparent",
+                  color: activeTab === tab ? "#60a5fa" : "#64748b",
+                  borderRadius: 6, padding: "6px 18px", fontSize: 13,
+                  cursor: "pointer", fontWeight: 700, letterSpacing: "0.02em",
+                  textTransform: "capitalize",
+                }}
+              >
+                {tab === "users" ? `Users (${users.length})` : `Paid Orders (${paidOrders.length})`}
+              </button>
+            ))}
+          </div>
+
+          {/* Users Table */}
+          {activeTab === "users" && (
+            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                      {["User", "Plan", "Status", "Usage", "API Key", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 8,
+                              background: `hsl(${u.email.charCodeAt(0) * 7 % 360}, 60%, 20%)`,
+                              border: `1px solid hsl(${u.email.charCodeAt(0) * 7 % 360}, 60%, 30%)`,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 13, fontWeight: 700, color: `hsl(${u.email.charCodeAt(0) * 7 % 360}, 70%, 65%)`,
+                              flexShrink: 0,
+                            }}>
+                              {(u.name || u.email)[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>{u.name || "—"}</p>
+                              <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>{u.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}><PlanBadge plan={u.plan} /></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: u.active ? "#34d399" : "#64748b", flexShrink: 0 }} />
+                            <span style={{ color: u.active ? "#6ee7b7" : "#64748b" }}>{u.active ? "Active" : "Inactive"}</span>
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                              <span style={{ color: "#94a3b8" }}>{u.usage || 0}</span>
+                              <span style={{ color: "#334155" }}>/ {u.limit || 0}</span>
+                            </div>
+                            <div style={{ height: 3, background: "#1e2330", borderRadius: 2, width: 100, overflow: "hidden" }}>
+                              <div style={{ height: "100%", borderRadius: 2, background: u.limit && u.usage / u.limit > 0.8 ? "#f97316" : "#34d399", width: `${Math.min(100, u.limit ? (u.usage / u.limit) * 100 : 0)}%`, transition: "width 0.3s" }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }} title={u.apiKey}>
+                            {u.apiKey ? `${u.apiKey.slice(0, 8)}••••••••` : "—"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <button
+                            className="action-btn"
+                            onClick={() => setEditingUser(u)}
+                            title="Edit user"
+                            style={{
+                              background: "#1a1f2e", border: "1px solid #2d3548",
+                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                              transition: "all 0.15s",
+                            }}
+                          >
+                            <IconEdit />
+                            <span>Edit</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Orders Table */}
+          {activeTab === "orders" && (
+            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                      {["Order ID", "User", "Amount", "Status", "Credited", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paidOrders.map((o) => (
+                      <tr key={o._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#94a3b8", fontSize: 11 }}>{o.orderId}</span>
+                        </td>
+                        <td style={{ padding: "14px 16px", color: "#cbd5e1", fontSize: 13 }}>
+                          {o.userId?.email || <span style={{ color: "#334155" }}>N/A</span>}
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
+                            ₹{(o.amount ).toFixed(2)}
+                          </span>
+                          <span style={{ color: "#334155", fontSize: 10, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{o.currency}</span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}><StatusBadge status={o.status} /></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {o.credited
+                              ? <><span style={{ color: "#34d399" }}><IconCheck /></span><span style={{ color: "#6ee7b7" }}>Yes</span></>
+                              : <><span style={{ color: "#64748b" }}><IconX /></span><span style={{ color: "#64748b" }}>No</span></>
+                            }
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <button
+                            className="action-btn"
+                            onClick={() => setViewingOrder(o)}
+                            style={{
+                              background: "#1a1f2e", border: "1px solid #2d3548",
+                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                              transition: "all 0.15s",
+                            }}
+                          >
+                            <IconEye />
+                            <span>View</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {paidOrders.length === 0 && (
+                      <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No paid orders found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
