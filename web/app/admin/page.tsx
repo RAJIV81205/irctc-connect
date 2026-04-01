@@ -24,6 +24,7 @@ interface User {
   usage: number;
   limit: number;
   apiKey?: string;
+  billingDate?: string | null;
 }
 
 interface Order {
@@ -183,6 +184,59 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
   );
 }
 
+// ─── Billing Timer Component ──────────────────────────────────────────────────
+function BillingTimer({ user }: { user: User }) {
+  const [display, setDisplay] = useState<string>("");
+
+  useEffect(() => {
+    const updateDisplay = () => {
+      if (user.plan === "free") {
+        setDisplay("Free plan");
+        return;
+      }
+      if (!user.billingDate) {
+        setDisplay("Not started");
+        return;
+      }
+
+      const BILLING_CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
+      const billingStart = new Date(user.billingDate).getTime();
+      if (Number.isNaN(billingStart)) {
+        setDisplay("Invalid date");
+        return;
+      }
+
+      const billingEndsAt = billingStart + BILLING_CYCLE_MS;
+      const remainingMs = billingEndsAt - Date.now();
+      if (remainingMs <= 0) {
+        setDisplay("Expired");
+        return;
+      }
+
+      const totalHours = Math.floor(remainingMs / (1000 * 60 * 60));
+      const days = Math.floor(totalHours / 24);
+      const hours = totalHours % 24;
+
+      if (days > 0) {
+        setDisplay(`${days}d ${hours}h left`);
+      } else {
+        const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+        setDisplay(`${hours}h ${minutes}m left`);
+      }
+    };
+
+    updateDisplay();
+    const interval = setInterval(updateDisplay, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [user]);
+
+  return (
+    <span style={{ color: display === "Expired" ? "#f87171" : "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, whiteSpace: "nowrap", display: "block" }}>
+      {display}
+    </span>
+  );
+}
+
 // ─── Edit User Modal ──────────────────────────────────────────────────────────
 function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: string, updates: Partial<User>) => void; onClose: () => void }) {
   const [draft, setDraft] = useState({ ...user });
@@ -302,9 +356,10 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid">("users");
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const [clearingUnpaid, setClearingUnpaid] = useState(false);
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -331,6 +386,7 @@ export default function AdminPanel() {
 
   const users      = usersData?.users ?? [];
   const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
+  const unpaidOrders = (ordersData?.orders ?? []).filter((o) => o.status !== "paid");
   const dataLoading = usersValidating || ordersValidating;
 
   // ── Check session on mount ──────────────────────────────────────────────────
@@ -390,6 +446,32 @@ export default function AdminPanel() {
   };
 
   const refreshAll = () => { mutateUsers(); mutateOrders(); };
+
+  const clearAllUnpaidOrders = async () => {
+    if (unpaidOrders.length === 0 || clearingUnpaid) return;
+
+    const confirmed = window.confirm(
+      `Delete ${unpaidOrders.length} unpaid order(s) older than 24 hours?`
+    );
+    if (!confirmed) return;
+
+    setClearingUnpaid(true);
+    try {
+      const res = await fetch("/api/admin/remove-unpaid", {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to clear unpaid orders");
+      }
+      await mutateOrders();
+      window.alert(`Removed ${data.deletedCount ?? 0} unpaid order(s).`);
+    } catch (error: any) {
+      window.alert(error?.message || "Failed to clear unpaid orders");
+    } finally {
+      setClearingUnpaid(false);
+    }
+  };
 
   // ── Loading screen ──────────────────────────────────────────────────────────
   if (authLoading) return <Loader text="Authenticating..." />;
@@ -547,7 +629,7 @@ export default function AdminPanel() {
             ].map((s) => (
               <div key={s.label} style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 10, padding: "18px 20px" }}>
                 <p style={{ color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>{s.label}</p>
-                <p style={{ fontSize: 26, fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
+                <p style={{ fontSize: 26, fontFamily: "'JetBrains Mono', monospace" ,fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
                 <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 6 }}>{s.sub}</p>
               </div>
             ))}
@@ -555,7 +637,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders"] as const).map((tab) => (
+            {(["users", "orders", "unpaid"] as const).map((tab) => (
               <button
                 key={tab}
                 className="tab-btn"
@@ -569,7 +651,11 @@ export default function AdminPanel() {
                   textTransform: "capitalize",
                 }}
               >
-                {tab === "users" ? `Users (${users.length})` : `Paid Orders (${paidOrders.length})`}
+                {tab === "users"
+                  ? `Users (${users.length})`
+                  : tab === "orders"
+                  ? `Paid Orders (${paidOrders.length})`
+                  : `Unpaid Orders (${unpaidOrders.length})`}
               </button>
             ))}
           </div>
@@ -581,7 +667,7 @@ export default function AdminPanel() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
-                      {["User", "Plan", "Status", "Usage", "API Key", "Actions"].map((h) => (
+                      {["User", "Plan", "Status", "Usage", "Billing Left", "Actions"].map((h) => (
                         <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
@@ -626,9 +712,7 @@ export default function AdminPanel() {
                           </div>
                         </td>
                         <td style={{ padding: "14px 16px" }}>
-                          <span style={{ color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }} title={u.apiKey}>
-                            {u.apiKey ? `${u.apiKey.slice(0, 8)}••••••••` : "—"}
-                          </span>
+                          <BillingTimer user={u} />
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <button
@@ -714,6 +798,103 @@ export default function AdminPanel() {
                     ))}
                     {paidOrders.length === 0 && (
                       <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No paid orders found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Unpaid Orders Table */}
+          {activeTab === "unpaid" && (
+            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderBottom: "1px solid #1e2330",
+                  background: "#0a0d13",
+                }}
+              >
+                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                  All unpaid orders (not paid)
+                </span>
+                <button
+                  onClick={clearAllUnpaidOrders}
+                  disabled={clearingUnpaid || unpaidOrders.length === 0}
+                  style={{
+                    background: clearingUnpaid || unpaidOrders.length === 0 ? "#1a1f2e" : "#2a0f0f",
+                    border: `1px solid ${clearingUnpaid || unpaidOrders.length === 0 ? "#2d3548" : "#4a1f1f"}`,
+                    color: clearingUnpaid || unpaidOrders.length === 0 ? "#64748b" : "#f87171",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    cursor: clearingUnpaid || unpaidOrders.length === 0 ? "not-allowed" : "pointer",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                  title="Delete unpaid orders older than 24 hours"
+                >
+                  {clearingUnpaid ? "Clearing..." : "Clear Unpaid > 24h"}
+                </button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                      {["Order ID", "User", "Amount", "Status", "Credited", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unpaidOrders.map((o) => (
+                      <tr key={o._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#94a3b8", fontSize: 11 }}>{o.orderId}</span>
+                        </td>
+                        <td style={{ padding: "14px 16px", color: "#cbd5e1", fontSize: 13 }}>
+                          {o.userId?.email || <span style={{ color: "#334155" }}>N/A</span>}
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
+                            ₹{(o.amount ).toFixed(2)}
+                          </span>
+                          <span style={{ color: "#334155", fontSize: 10, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{o.currency}</span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}><StatusBadge status={o.status} /></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {o.credited
+                              ? <><span style={{ color: "#34d399" }}><IconCheck /></span><span style={{ color: "#6ee7b7" }}>Yes</span></>
+                              : <><span style={{ color: "#64748b" }}><IconX /></span><span style={{ color: "#64748b" }}>No</span></>
+                            }
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <button
+                            className="action-btn"
+                            onClick={() => setViewingOrder(o)}
+                            style={{
+                              background: "#1a1f2e", border: "1px solid #2d3548",
+                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                              transition: "all 0.15s",
+                            }}
+                          >
+                            <IconEye />
+                            <span>View</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {unpaidOrders.length === 0 && (
+                      <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No unpaid orders found</td></tr>
                     )}
                   </tbody>
                 </table>
