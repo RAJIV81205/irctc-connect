@@ -343,7 +343,7 @@ const newSubsTemplateHtml = (user: IUser): string => {
           <!-- ── CTA ────────────────────────────────────────── -->
           <tr>
             <td style="padding: 32px 40px; text-align: center;">
-              <a href="https://irctc.rajivdubey.tech"
+              <a href="https://irctc.rajivdubey.tech/dashboard" target="_blank" rel="noopener noreferrer"
                 style="
                   display: inline-block;
                   background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 50%, #16a34a 100%);
