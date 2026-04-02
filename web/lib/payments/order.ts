@@ -1,6 +1,7 @@
 import Order, { OrderDocument } from "@/lib/db/models/Order";
 import User from "@/lib/db/models/User";
 import { PAID_PLANS, PaidPlanType } from "@/lib/payments/plans";
+import { sendWelcomeEmail } from "../services/email";
 
 type PaymentStateInput = {
   orderId: string;
@@ -74,6 +75,7 @@ export async function applyOrderPaymentState(input: PaymentStateInput) {
   }
 
   await grantPlanToUser(creditedOrder.userId.toString(), creditedOrder.planType);
+  await sendWelcomeEmail(creditedOrder.userId.toString());
   return { found: true, paid: true, credited: true };
 }
 
@@ -91,6 +93,8 @@ async function grantPlanToUser(userId: string, planType: PaidPlanType) {
       billingDate: new Date(),
     },
   });
+
+
 }
 
 export async function syncOrderWithCashfree(
