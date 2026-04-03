@@ -8,7 +8,7 @@
 
 A comprehensive Node.js SDK for Indian Railways. Get real-time PNR status, train information, live tracking, station updates, train search, and seat availability — all through a single, clean API.
 
-> **v3.0.0** — The SDK now routes all requests through the hosted IRCTC Connect backend. An API key is required.
+> **v3.0.2** — The SDK now routes all requests through the hosted IRCTC Connect backend. An API key is required.
 
 ---
 
