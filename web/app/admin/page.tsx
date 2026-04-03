@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import useSWR, { mutate as globalMutate } from "swr";
+import useSWR from "swr";
 
 // ─── SWR Fetcher ──────────────────────────────────────────────────────────────
 const fetcher = async (url: string) => {
@@ -12,6 +12,11 @@ const fetcher = async (url: string) => {
   const data = await res.json();
   if (!data.success) throw new Error(data.message || "Request failed");
   return data;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -351,15 +356,141 @@ function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: str
   );
 }
 
+// ─── Email Composer Modal ────────────────────────────────────────────────────
+function EmailComposerModal({
+  mode,
+  targetUser,
+  totalUsers,
+  subject,
+  html,
+  sending,
+  onSubjectChange,
+  onHtmlChange,
+  onSend,
+  onClose,
+}: {
+  mode: "single" | "all";
+  targetUser: User | null;
+  totalUsers: number;
+  subject: string;
+  html: string;
+  sending: boolean;
+  onSubjectChange: (value: string) => void;
+  onHtmlChange: (value: string) => void;
+  onSend: () => void;
+  onClose: () => void;
+}) {
+  const title = mode === "all" ? "Send Product Email to Everyone" : "Send Product Email";
+  const recipientText = mode === "all"
+    ? `All users (${totalUsers})`
+    : targetUser?.email || "Selected user";
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 110,
+        backdropFilter: "blur(4px)", padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#0f1117", border: "1px solid #1e2330",
+          borderRadius: 12, padding: 24, width: "100%", maxWidth: 680,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <div>
+            <p style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 15, margin: 0 }}>{title}</p>
+            <p style={{ color: "#64748b", fontSize: 12, margin: "5px 0 0", fontFamily: "'JetBrains Mono', monospace" }}>
+              Recipient: {recipientText}
+            </p>
+          </div>
+          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            <IconX />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Subject</span>
+            <input
+              value={subject}
+              onChange={(e) => onSubjectChange(e.target.value)}
+              placeholder="New updates in IRCTC Connect"
+              style={{
+                background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0",
+                borderRadius: 6, padding: "9px 12px", fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
+              }}
+            />
+          </label>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Raw HTML</span>
+            <textarea
+              value={html}
+              onChange={(e) => onHtmlChange(e.target.value)}
+              rows={12}
+              placeholder="<h1>Product Update</h1><p>Share your release notes here...</p>"
+              style={{
+                background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0",
+                borderRadius: 6, padding: "11px 12px", fontSize: 12, resize: "vertical",
+                fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.5,
+              }}
+            />
+          </label>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 18 }}>
+          <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+            HTML is sent as-is. Keep links and styles email-safe.
+          </p>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={onClose}
+              disabled={sending}
+              style={{
+                background: "none", border: "1px solid #2d3548", color: "#94a3b8",
+                borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: sending ? "not-allowed" : "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onSend}
+              disabled={sending}
+              style={{
+                background: sending ? "#1a1f2e" : "#059669", border: "none", color: sending ? "#64748b" : "#fff",
+                borderRadius: 6, padding: "8px 18px", fontSize: 13, cursor: sending ? "not-allowed" : "pointer", fontWeight: 700,
+              }}
+            >
+              {sending ? "Sending..." : "Send Email"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "email">("users");
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [clearingUnpaid, setClearingUnpaid] = useState(false);
+  const [emailComposerOpen, setEmailComposerOpen] = useState(false);
+  const [emailScope, setEmailScope] = useState<"single" | "all">("single");
+  const [emailTargetUser, setEmailTargetUser] = useState<User | null>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailHtml, setEmailHtml] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -416,8 +547,8 @@ export default function AdminPanel() {
       if (!response.ok || !result.success) throw new Error(result.message || "Admin login failed");
       setIsAdmin(true);
       // SWR keys become non-null now — data fetches automatically
-    } catch (err: any) {
-      setLoginError(err.message || "Login failed");
+    } catch (err: unknown) {
+      setLoginError(getErrorMessage(err, "Login failed"));
     } finally { setAuthLoading(false); }
   };
 
@@ -466,10 +597,55 @@ export default function AdminPanel() {
       }
       await mutateOrders();
       window.alert(`Removed ${data.deletedCount ?? 0} unpaid order(s).`);
-    } catch (error: any) {
-      window.alert(error?.message || "Failed to clear unpaid orders");
+    } catch (error: unknown) {
+      window.alert(getErrorMessage(error, "Failed to clear unpaid orders"));
     } finally {
       setClearingUnpaid(false);
+    }
+  };
+
+  const openEmailComposer = (scope: "single" | "all", user?: User) => {
+    setEmailScope(scope);
+    setEmailTargetUser(scope === "single" ? (user || null) : null);
+    setEmailSubject("");
+    setEmailHtml("");
+    setEmailComposerOpen(true);
+  };
+
+  const sendEmail = async () => {
+    if (!emailSubject.trim() || !emailHtml.trim()) {
+      setEmailFeedback({ type: "error", message: "Subject and raw HTML are required." });
+      return;
+    }
+
+    if (emailScope === "single" && !emailTargetUser?._id) {
+      setEmailFeedback({ type: "error", message: "No user selected for individual email." });
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const res = await fetch("/api/admin/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scope: emailScope,
+          userId: emailScope === "single" ? emailTargetUser?._id : undefined,
+          subject: emailSubject,
+          html: emailHtml,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to send email");
+      }
+
+      setEmailFeedback({ type: "success", message: data.message || "Email sent successfully." });
+      setEmailComposerOpen(false);
+    } catch (error: unknown) {
+      setEmailFeedback({ type: "error", message: getErrorMessage(error, "Failed to send email.") });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -574,6 +750,20 @@ export default function AdminPanel() {
       {viewingOrder && (
         <OrderModal order={viewingOrder} onClose={() => setViewingOrder(null)} />
       )}
+      {emailComposerOpen && (
+        <EmailComposerModal
+          mode={emailScope}
+          targetUser={emailTargetUser}
+          totalUsers={users.length}
+          subject={emailSubject}
+          html={emailHtml}
+          sending={sendingEmail}
+          onSubjectChange={setEmailSubject}
+          onHtmlChange={setEmailHtml}
+          onSend={sendEmail}
+          onClose={() => setEmailComposerOpen(false)}
+        />
+      )}
 
       <main style={{ minHeight: "100vh", background: "#070910", fontFamily: "'Syne', sans-serif", color: "#e2e8f0" }}>
         {/* Header */}
@@ -637,7 +827,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "email"] as const).map((tab) => (
               <button
                 key={tab}
                 className="tab-btn"
@@ -655,10 +845,28 @@ export default function AdminPanel() {
                   ? `Users (${users.length})`
                   : tab === "orders"
                   ? `Paid Orders (${paidOrders.length})`
-                  : `Unpaid Orders (${unpaidOrders.length})`}
+                  : tab === "unpaid"
+                  ? `Unpaid Orders (${unpaidOrders.length})`
+                  : "Email"}
               </button>
             ))}
           </div>
+
+          {activeTab === "email" && emailFeedback && (
+            <div
+              style={{
+                marginBottom: 14,
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: emailFeedback.type === "success" ? "#0f2a1d" : "#2a0f0f",
+                border: `1px solid ${emailFeedback.type === "success" ? "#1a4731" : "#4a1f1f"}`,
+              }}
+            >
+              <p style={{ color: emailFeedback.type === "success" ? "#6ee7b7" : "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                {emailFeedback.message}
+              </p>
+            </div>
+          )}
 
           {/* Users Table */}
           {activeTab === "users" && (
@@ -895,6 +1103,95 @@ export default function AdminPanel() {
                     ))}
                     {unpaidOrders.length === 0 && (
                       <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No unpaid orders found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Email Table */}
+          {activeTab === "email" && (
+            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "12px 16px", borderBottom: "1px solid #1e2330", background: "#0a0d13",
+                }}
+              >
+                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Send product info emails individually or to everyone
+                </span>
+                <button
+                  onClick={() => openEmailComposer("all")}
+                  disabled={users.length === 0}
+                  style={{
+                    background: users.length === 0 ? "#1a1f2e" : "#0f2233",
+                    border: `1px solid ${users.length === 0 ? "#2d3548" : "#1a3a5c"}`,
+                    color: users.length === 0 ? "#64748b" : "#60a5fa",
+                    borderRadius: 6, padding: "6px 12px", fontSize: 12,
+                    cursor: users.length === 0 ? "not-allowed" : "pointer",
+                    fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                  }}
+                >
+                  Send to Everyone
+                </button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                      {["User", "Plan", "Status", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{
+                              width: 30, height: 30, borderRadius: 8,
+                              background: `hsl(${u.email.charCodeAt(0) * 7 % 360}, 60%, 20%)`,
+                              border: `1px solid hsl(${u.email.charCodeAt(0) * 7 % 360}, 60%, 30%)`,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 13, fontWeight: 700, color: `hsl(${u.email.charCodeAt(0) * 7 % 360}, 70%, 65%)`,
+                              flexShrink: 0,
+                            }}>
+                              {(u.name || u.email)[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>{u.name || "—"}</p>
+                              <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>{u.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}><PlanBadge plan={u.plan} /></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: u.active ? "#34d399" : "#64748b", flexShrink: 0 }} />
+                            <span style={{ color: u.active ? "#6ee7b7" : "#64748b" }}>{u.active ? "Active" : "Inactive"}</span>
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <button
+                            className="action-btn"
+                            onClick={() => openEmailComposer("single", u)}
+                            style={{
+                              background: "#1a1f2e", border: "1px solid #2d3548",
+                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.15s",
+                            }}
+                          >
+                            <span>Send Email</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
                     )}
                   </tbody>
                 </table>

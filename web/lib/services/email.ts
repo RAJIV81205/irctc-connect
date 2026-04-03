@@ -16,6 +16,12 @@ const senderName = "IRCTC Connect";
 const replyToEmail = "lucky81205@gmail.com";
 const replyToName = "Rajiv Dubey";
 
+type SendRawHtmlEmailParams = {
+  to: string;
+  subject: string;
+  html: string;
+};
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function addOneMonth(date: Date): Date {
@@ -45,7 +51,9 @@ function capitalize(str: string): string {
 // ─── Template ────────────────────────────────────────────────────────────────
 
 const newSubsTemplateHtml = (user: IUser): string => {
-  const billingDate = user.billingDate ? new Date(user.billingDate) : new Date();
+  const billingDate = user.billingDate
+    ? new Date(user.billingDate)
+    : new Date();
   const nextBillingDate = addOneMonth(billingDate);
   const daysLeft = daysUntil(nextBillingDate);
   const formattedNextBilling = formatDate(nextBillingDate);
@@ -252,93 +260,118 @@ const newSubsTemplateHtml = (user: IUser): string => {
             </td>
           </tr>
 
-          <!-- ── Features ───────────────────────────────────── -->
-          <tr>
-            <td style="padding: 28px 40px 0;">
-              <p style="
-                margin: 0 0 16px;
-                font-size: 11px;
-                font-weight: 700;
-                letter-spacing: 2px;
-                text-transform: uppercase;
-                color: #0284c7;
-              ">✨ What's Included</p>
+         <!-- ── Features ───────────────────────────────────── -->
+<tr>
+  <td style="padding: 28px 40px 0;">
+    <p style="
+      margin: 0 0 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #0284c7;
+    ">✨ What's Included in the Latest Update</p>
 
-              <!-- Feature 1 -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                style="margin-bottom: 12px;">
-                <tr>
-                  <td width="40" valign="top">
-                    <div style="
-                      width: 32px; height: 32px;
-                      background: linear-gradient(135deg, #0369a1, #0ea5e9);
-                      border-radius: 10px;
-                      text-align: center;
-                      line-height: 32px;
-                      font-size: 16px;
-                    ">🚆</div>
-                  </td>
-                  <td style="padding-left: 12px;">
-                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
-                      Real-Time Train Status
-                    </p>
-                    <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
-                      Live updates on arrivals, departures, and platform changes.
-                    </p>
-                  </td>
-                </tr>
-              </table>
+    <!-- Feature 1 -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+      style="margin-bottom: 12px;">
+      <tr>
+        <td width="40" valign="top">
+          <div style="
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #0369a1, #0ea5e9);
+            border-radius: 10px;
+            text-align: center;
+            line-height: 32px;
+            font-size: 16px;
+          ">🎫</div>
+        </td>
+        <td style="padding-left: 12px;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+            PNR Status & Journey Details
+          </p>
+          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+            Real-time booking status, passenger confirmation, seat and journey information.
+          </p>
+        </td>
+      </tr>
+    </table>
 
-              <!-- Feature 2 -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                style="margin-bottom: 12px;">
-                <tr>
-                  <td width="40" valign="top">
-                    <div style="
-                      width: 32px; height: 32px;
-                      background: linear-gradient(135deg, #16a34a, #4ade80);
-                      border-radius: 10px;
-                      text-align: center;
-                      line-height: 32px;
-                      font-size: 16px;
-                    ">🎯</div>
-                  </td>
-                  <td style="padding-left: 12px;">
-                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
-                      Personalised Travel Recommendations
-                    </p>
-                    <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
-                      Smart suggestions tailored to your travel history and preferences.
-                    </p>
-                  </td>
-                </tr>
-              </table>
+    <!-- Feature 2 -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+      style="margin-bottom: 12px;">
+      <tr>
+        <td width="40" valign="top">
+          <div style="
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #16a34a, #4ade80);
+            border-radius: 10px;
+            text-align: center;
+            line-height: 32px;
+            font-size: 16px;
+          ">🚆</div>
+        </td>
+        <td style="padding-left: 12px;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+            Live Train Tracking
+          </p>
+          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+            Track live train location, delays, station-wise timings and real-time running status.
+          </p>
+        </td>
+      </tr>
+    </table>
 
-              <!-- Feature 3 -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td width="40" valign="top">
-                    <div style="
-                      width: 32px; height: 32px;
-                      background: linear-gradient(135deg, #0369a1, #16a34a);
-                      border-radius: 10px;
-                      text-align: center;
-                      line-height: 32px;
-                      font-size: 16px;
-                    ">🎟️</div>
-                  </td>
-                  <td style="padding-left: 12px;">
-                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
-                      Exclusive Offers & Deals
-                    </p>
-                    <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
-                      Member-only discounts on tickets and travel packages.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+    <!-- Feature 3 -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+      style="margin-bottom: 12px;">
+      <tr>
+        <td width="40" valign="top">
+          <div style="
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #0369a1, #16a34a);
+            border-radius: 10px;
+            text-align: center;
+            line-height: 32px;
+            font-size: 16px;
+          ">🔍</div>
+        </td>
+        <td style="padding-left: 12px;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+            Train Search & Availability
+          </p>
+          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+            Search trains between stations and check seat availability with fare breakdown.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Feature 4 -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="40" valign="top">
+          <div style="
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border-radius: 10px;
+            text-align: center;
+            line-height: 32px;
+            font-size: 16px;
+          ">🏢</div>
+        </td>
+        <td style="padding-left: 12px;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+            Live at Station
+          </p>
+          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+            View upcoming trains at any station with real-time arrival and departure information.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
 
           <!-- ── CTA ────────────────────────────────────────── -->
           <tr>
@@ -420,3 +453,23 @@ export async function sendWelcomeEmail(userId: string) {
   return data;
 }
 
+export async function sendRawHtmlEmail({
+  to,
+  subject,
+  html,
+}: SendRawHtmlEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: `${senderName} <${senderEmail}>`,
+    to: [to],
+    replyTo: `${replyToName} <${replyToEmail}>`,
+    subject,
+    html,
+  });
+
+  if (error) {
+    console.error(`Failed to send custom email to ${to}:`, error);
+    throw error;
+  }
+
+  return data;
+}
