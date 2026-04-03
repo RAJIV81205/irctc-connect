@@ -13,7 +13,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "cashfree-pg": "^5.1.0",
     "firebase": "^12.11.0",
-    "irctc-connect": "^3.0.2",
+    "irctc-connect": "^3.0.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.556.0",
     "mongoose": "^9.3.3",
