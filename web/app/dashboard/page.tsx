@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import useSWR from "swr";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { auth } from "../../lib/firebase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -535,6 +537,32 @@ export default function DashboardPage() {
     : "";
   const paidOrders = orders.filter((o) => o.status === "paid");
   const totalSpent = paidOrders.reduce((a, o) => a + o.amount, 0);
+  const usageExampleCode = `import {
+  configure,
+  checkPNRStatus,
+  getTrainInfo,
+  trackTrain,
+} from "irctc-connect";
+
+// Step 1: configure once with your API key
+configure(process.env.IRCTC_API_KEY);
+
+// Check PNR status
+const pnrResult = await checkPNRStatus("1234567890");
+
+// Get train information
+const trainResult = await getTrainInfo("12345");
+
+// Track Live Train
+const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
+  const normalizedPlan = (dbUser.plan || "").toLowerCase();
+  const isEnterpriseLikePlan =
+    normalizedPlan === "enterprise" || normalizedPlan === "advanced";
+  const planActionLabel = isEnterpriseLikePlan
+    ? "Increase Limit"
+    : "Upgrade Plan";
+  const enterpriseContactUrl =
+    process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL || "/pricing";
 
   const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
 
@@ -556,6 +584,25 @@ export default function DashboardPage() {
         .stat-card:nth-child(2){ animation-delay: 0.1s; }
         .stat-card:nth-child(3){ animation-delay: 0.15s; }
         .stat-card:nth-child(4){ animation-delay: 0.2s; }
+        .mobile-quick-links { display: none; }
+        @media (max-width: 900px) {
+          .dash-header-inner { padding: 0 14px !important; }
+          .dash-shell { padding: 20px 14px !important; }
+          .dash-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .dash-overview-grid { grid-template-columns: 1fr !important; }
+          .dash-tab-wrap { width: 100% !important; overflow-x: auto; }
+          .dash-tab-wrap button { white-space: nowrap; }
+          .dash-key-row { flex-direction: column; }
+          .dash-key-row > button { width: 100%; justify-content: center; padding: 10px 14px !important; }
+          .dash-usage-stats { grid-template-columns: 1fr !important; }
+          .dash-header-actions { gap: 6px !important; }
+          .dash-header-btn { padding: 6px 8px !important; }
+          .mobile-hide { display: none; }
+          .mobile-quick-links { display: flex; gap: 8px; margin-bottom: 14px; }
+        }
+        @media (max-width: 640px) {
+          .dash-stats-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {viewOrder && (
@@ -618,6 +665,7 @@ export default function DashboardPage() {
           }}
         >
           <div
+            className="dash-header-inner"
             style={{
               maxWidth: 1100,
               margin: "0 auto",
@@ -668,7 +716,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Right: refresh + avatar + logout */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="dash-header-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {refreshing && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div
@@ -681,6 +729,7 @@ export default function DashboardPage() {
                     }}
                   />
                   <span
+                    className="mobile-hide"
                     style={{
                       color: "#64748b",
                       fontSize: 11,
@@ -692,6 +741,7 @@ export default function DashboardPage() {
                 </div>
               )}
               <button
+                className="dash-header-btn"
                 onClick={refreshAll}
                 style={{
                   background: "#1a1f2e",
@@ -708,10 +758,11 @@ export default function DashboardPage() {
                 }}
               >
                 <IconRefresh />
-                Refresh
+                <span className="mobile-hide">Refresh</span>
               </button>
 
               <button
+                className="dash-header-btn"
                 onClick={onLogout}
                 style={{
                   background: "#1a1f2e",
@@ -728,7 +779,7 @@ export default function DashboardPage() {
                 }}
               >
                 <IconLogout />
-                Sign out
+                <span className="mobile-hide">Sign out</span>
               </button>
             </div>
           </div>
@@ -736,6 +787,7 @@ export default function DashboardPage() {
 
         {/* ── Body ─────────────────────────────────────────────────────────── */}
         <div
+          className="dash-shell"
           style={{
             maxWidth: 1100,
             margin: "0 auto",
@@ -744,6 +796,43 @@ export default function DashboardPage() {
             zIndex: 1,
           }}
         >
+          <div className="mobile-quick-links">
+            <button
+              onClick={() => router.push("/docs")}
+              style={{
+                flex: 1,
+                background: "#1a1f2e",
+                border: "1px solid #2d3548",
+                color: "#94a3b8",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 12,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Docs
+            </button>
+            <button
+              onClick={() => router.push("/pricing")}
+              style={{
+                flex: 1,
+                background: "#1a1f2e",
+                border: "1px solid #2d3548",
+                color: "#94a3b8",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 12,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Pricing
+            </button>
+          </div>
+
           {/* Page title
           <div style={{ marginBottom: 24 }}>
             <h1
@@ -773,6 +862,7 @@ export default function DashboardPage() {
 
           {/* ── Stats row ────────────────────────────────────────────────── */}
           <div
+            className="dash-stats-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(4, 1fr)",
@@ -863,6 +953,7 @@ export default function DashboardPage() {
 
           {/* ── Tabs ─────────────────────────────────────────────────────── */}
           <div
+            className="dash-tab-wrap"
             style={{
               display: "flex",
               gap: 4,
@@ -908,6 +999,7 @@ export default function DashboardPage() {
           {/* ── Tab: Overview ────────────────────────────────────────────── */}
           {activeTab === "overview" && (
             <div
+              className="dash-overview-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
@@ -1059,6 +1151,40 @@ export default function DashboardPage() {
                     {v}
                   </div>
                 ))}
+
+                <button
+                  onClick={() => {
+                    if (isEnterpriseLikePlan) {
+                      if (enterpriseContactUrl.startsWith("http")) {
+                        window.open(
+                          enterpriseContactUrl,
+                          "_blank",
+                          "noopener,noreferrer",
+                        );
+                      } else {
+                        router.push(enterpriseContactUrl);
+                      }
+                      return;
+                    }
+                    router.push("/pricing");
+                  }}
+                  style={{
+                    marginTop: 18,
+                    width: "100%",
+                    background: isEnterpriseLikePlan ? "#0f2233" : "#0f2a1d",
+                    border: `1px solid ${isEnterpriseLikePlan ? "#1a3a5c" : "#1a4731"}`,
+                    color: isEnterpriseLikePlan ? "#60a5fa" : "#6ee7b7",
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {planActionLabel}
+                </button>
               </div>
 
               {/* Usage + Billing card */}
@@ -1213,6 +1339,7 @@ export default function DashboardPage() {
 
                 {/* Quick stats */}
                 <div
+                  className="dash-usage-stats"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr",
@@ -1361,10 +1488,11 @@ export default function DashboardPage() {
               </div>
 
               {/* Key display */}
-              <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+              <div className="dash-key-row" style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
                 <div
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     background: "#0a0d13",
                     border: "1px solid #2d3548",
                     borderRadius: 8,
@@ -1379,7 +1507,7 @@ export default function DashboardPage() {
                   }}
                 >
                   <span
-                    style={{ overflowX: "auto", whiteSpace: "nowrap", flex: 1 }}
+                    style={{ overflowX: "auto", whiteSpace: "nowrap", flex: 1, display: "block" }}
                   >
                     {keyVisible ? dbUser.apiKey : maskedKey}
                   </span>
@@ -1455,65 +1583,20 @@ export default function DashboardPage() {
                   Example Usage
                 </p>
 
-                <pre
-                  style={{
-                    fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    lineHeight: 1.8,
-                    overflowX: "auto",
+                <SyntaxHighlighter
+                  language="typescript"
+                  style={nightOwl}
+                  customStyle={{
                     margin: 0,
-                    whiteSpace: "pre-wrap",
-                    color: "#d4d4d4",
+                    background: "transparent",
+                    fontSize: 12,
+                    lineHeight: 1.8,
+                    padding: 0,
+                    fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >
-                  <span style={{ color: "#569CD6" }}>import</span> {"{"}
-                  {"\n  "}
-                  <span style={{ color: "#9CDCFE" }}>configure</span>,{"\n  "}
-                  <span style={{ color: "#9CDCFE" }}>checkPNRStatus</span>,{" "}
-                  <span style={{ color: "#9CDCFE" }}>getTrainInfo</span>,{" "}
-                  <span style={{ color: "#9CDCFE" }}>trackTrain</span>,{"\n"}
-                  {"} "}
-                  <span style={{ color: "#569CD6" }}>from</span>{" "}
-                  <span style={{ color: "#CE9178" }}>'irctc-connect'</span>;
-                  {"\n\n"}
-                  <span style={{ color: "#6A9955" }}>
-                    // Step 1: configure once with your API key
-                  </span>
-                  {"\n"}
-                  <span style={{ color: "#DCDCAA" }}>configure</span>(
-                  <span style={{ color: "#9CDCFE" }}>process</span>.
-                  <span style={{ color: "#9CDCFE" }}>env</span>.
-                  <span style={{ color: "#9CDCFE" }}>IRCTC_API_KEY</span>);
-                  {"\n\n"}
-                  <span style={{ color: "#6A9955" }}>// Check PNR status</span>
-                  {"\n"}
-                  <span style={{ color: "#569CD6" }}>const</span>{" "}
-                  <span style={{ color: "#9CDCFE" }}>pnrResult</span> ={" "}
-                  <span style={{ color: "#569CD6" }}>await</span>{" "}
-                  <span style={{ color: "#DCDCAA" }}>checkPNRStatus</span>(
-                  <span style={{ color: "#CE9178" }}>'1234567890'</span>);
-                  {"\n\n"}
-                  <span style={{ color: "#6A9955" }}>
-                    // Get train information
-                  </span>
-                  {"\n"}
-                  <span style={{ color: "#569CD6" }}>const</span>{" "}
-                  <span style={{ color: "#9CDCFE" }}>trainResult</span> ={" "}
-                  <span style={{ color: "#569CD6" }}>await</span>{" "}
-                  <span style={{ color: "#DCDCAA" }}>getTrainInfo</span>(
-                  <span style={{ color: "#CE9178" }}>'12345'</span>);
-                  {"\n\n"}
-                  <span style={{ color: "#6A9955" }}>// Track Live Train</span>
-                  {"\n"}
-                  <span style={{ color: "#569CD6" }}>const</span>{" "}
-                  <span style={{ color: "#9CDCFE" }}>liveTrainResult</span> ={" "}
-                  <span style={{ color: "#569CD6" }}>await</span>{" "}
-                  <span style={{ color: "#DCDCAA" }}>trackTrain</span>(
-                  <span style={{ color: "#CE9178" }}>
-                    '12345' , "28-03-2026"
-                  </span>
-                  );
-                </pre>
+                  {usageExampleCode}
+                </SyntaxHighlighter>
               </div>
             </div>
           )}
