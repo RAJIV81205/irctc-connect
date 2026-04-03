@@ -17,21 +17,23 @@ type VerifiedUser = {
 
 export function Header() {
   const pathname = usePathname();
+  const isAdminPage = pathname === "/admin";
   const router = useRouter();
   const { sidebarOpen, setSidebarOpen } = useTheme();
   const [user, setUser] = useState<VerifiedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  if (pathname === "/admin") {
-    return null;
-  }
-
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
 
     const checkAuthFromToken = async () => {
+      setLoading(true);
       try {
-        const response = await fetch("/api/user/verify", { method: "GET" });
+        const response = await fetch("/api/user/verify", {
+          method: "GET",
+          signal: controller.signal,
+        });
         if (!response.ok) {
           if (mounted) {
             setUser(null);
@@ -44,6 +46,8 @@ export function Header() {
           setUser(data?.success ? data.user : null);
         }
       } catch (error) {
+        // Ignore fetch abort errors when route changes quickly
+        if (controller.signal.aborted) return;
         console.error(error);
         if (mounted) {
           setUser(null);
@@ -59,8 +63,13 @@ export function Header() {
 
     return () => {
       mounted = false;
+      controller.abort();
     };
-  }, []);
+  }, [pathname]);
+
+  if (isAdminPage) {
+    return null;
+  }
 
   const handleLogout = async () => {
     try {

@@ -50,7 +50,7 @@ export default async function LandingPage() {
           className="mb-6 flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-emerald-200 backdrop-blur-sm transition-colors hover:bg-emerald-300/20"
         >
           <Terminal className="h-4 w-4" />
-          <span>NPM PACKAGE — v2.1.3</span>
+          <span>NPM PACKAGE — v3.0.3</span>
         </a>
 
         <h1 className="max-w-4xl font-jetbrains text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl md:text-7xl">
