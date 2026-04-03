@@ -43,8 +43,7 @@ function PricingPageContent() {
   const [notice, setNotice] = useState<Notice>(null);
 
   const contactUrl =
-    process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL ||
-    "mailto:rajivdubey.dev@gmail.com?subject=IRCTC Connect Payment Help";
+    "mailto:lucky81205+irctc@gmail.com?subject=IRCTC Connect Payment Help";
 
   const orderIdFromQuery = searchParams.get("order_id");
   const isPaymentReturn = searchParams.get("payment_return") === "1";
