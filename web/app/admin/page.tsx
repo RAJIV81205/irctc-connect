@@ -43,6 +43,21 @@ interface Order {
   createdAt?: string;
 }
 
+interface GithubIssue {
+  id: number;
+  number: number;
+  title: string;
+  htmlUrl: string;
+  state: "open" | "closed";
+  createdAt: string;
+  updatedAt: string;
+  comments: number;
+  author: string;
+  labels: Array<{ name: string; color: string }>;
+  isNew: boolean;
+  isRecentlyUpdated: boolean;
+}
+
 // ─── Loader ───────────────────────────────────────────────────────────────────
 function Loader({ text = "Loading..." }: { text?: string }) {
   return (
@@ -149,6 +164,17 @@ const StatusBadge = ({ status }: { status: string }) => {
       {status.toUpperCase()}
     </span>
   );
+};
+
+const formatCompactDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -480,7 +506,7 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "email">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "email" | "issues">("users");
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [clearingUnpaid, setClearingUnpaid] = useState(false);
@@ -515,10 +541,31 @@ export default function AdminPanel() {
     { revalidateOnFocus: true, refreshInterval: 60_000 }
   );
 
+  const {
+    data: issuesData,
+    isLoading: issuesLoading,
+    isValidating: issuesValidating,
+    mutate: mutateIssues,
+    error: issuesError,
+  } = useSWR<{
+    success: boolean;
+    owner: string;
+    repo: string;
+    windowDays: number;
+    newCount: number;
+    updatedCount: number;
+    issues: GithubIssue[];
+  }>(
+    isAdmin ? "/api/admin/issues" : null,
+    fetcher,
+    { revalidateOnFocus: true, refreshInterval: 60_000 }
+  );
+
   const users      = usersData?.users ?? [];
   const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
   const unpaidOrders = (ordersData?.orders ?? []).filter((o) => o.status !== "paid");
-  const dataLoading = usersValidating || ordersValidating;
+  const issues = issuesData?.issues ?? [];
+  const dataLoading = usersValidating || ordersValidating || issuesValidating;
 
   // ── Check session on mount ──────────────────────────────────────────────────
   useEffect(() => {
@@ -576,7 +623,7 @@ export default function AdminPanel() {
     }
   };
 
-  const refreshAll = () => { mutateUsers(); mutateOrders(); };
+  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateIssues(); };
 
   const clearAllUnpaidOrders = async () => {
     if (unpaidOrders.length === 0 || clearingUnpaid) return;
@@ -651,7 +698,7 @@ export default function AdminPanel() {
 
   // ── Loading screen ──────────────────────────────────────────────────────────
   if (authLoading) return <Loader text="Authenticating..." />;
-  if (isAdmin && (usersLoading || ordersLoading)) return <Loader text="Fetching data..." />;
+  if (isAdmin && (usersLoading || ordersLoading || issuesLoading)) return <Loader text="Fetching data..." />;
 
   // ── Login screen ────────────────────────────────────────────────────────────
   if (!isAdmin) {
@@ -827,7 +874,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid", "email"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "email", "issues"] as const).map((tab) => (
               <button
                 key={tab}
                 className="tab-btn"
@@ -847,7 +894,9 @@ export default function AdminPanel() {
                   ? `Paid Orders (${paidOrders.length})`
                   : tab === "unpaid"
                   ? `Unpaid Orders (${unpaidOrders.length})`
-                  : "Email"}
+                  : tab === "email"
+                  ? "Email"
+                  : `Issues (${issues.length})`}
               </button>
             ))}
           </div>
@@ -864,6 +913,22 @@ export default function AdminPanel() {
             >
               <p style={{ color: emailFeedback.type === "success" ? "#6ee7b7" : "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
                 {emailFeedback.message}
+              </p>
+            </div>
+          )}
+
+          {activeTab === "issues" && issuesError && (
+            <div
+              style={{
+                marginBottom: 14,
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: "#2a0f0f",
+                border: "1px solid #4a1f1f",
+              }}
+            >
+              <p style={{ color: "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                {getErrorMessage(issuesError, "Failed to fetch GitHub issues")}
               </p>
             </div>
           )}
@@ -1192,6 +1257,120 @@ export default function AdminPanel() {
                     ))}
                     {users.length === 0 && (
                       <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Issues Table */}
+          {activeTab === "issues" && (
+            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "12px 16px", borderBottom: "1px solid #1e2330", background: "#0a0d13",
+                }}
+              >
+                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Recent new / updated GitHub issues (last {issuesData?.windowDays ?? 14} days)
+                </span>
+                <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                  New: {issuesData?.newCount ?? 0} | Updated: {issuesData?.updatedCount ?? 0}
+                </span>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                      {["Issue", "State", "Labels", "Updated", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {issues.map((issue) => (
+                      <tr key={issue.id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
+                        <td style={{ padding: "14px 16px", minWidth: 320 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>
+                              #{issue.number} {issue.title}
+                            </p>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                                @{issue.author}
+                              </span>
+                              {issue.isNew && (
+                                <span style={{ background: "#0f2a1d", color: "#6ee7b7", border: "1px solid #1a4731", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                                  NEW
+                                </span>
+                              )}
+                              {issue.isRecentlyUpdated && (
+                                <span style={{ background: "#0f2233", color: "#60a5fa", border: "1px solid #1a3a5c", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                                  UPDATED
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <StatusBadge status={issue.state === "open" ? "active" : "expired"} />
+                        </td>
+                        <td style={{ padding: "14px 16px", minWidth: 210 }}>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {issue.labels.slice(0, 3).map((label) => (
+                              <span
+                                key={`${issue.id}-${label.name}`}
+                                style={{
+                                  background: "#1a1f2e",
+                                  border: `1px solid #${label.color}`,
+                                  color: "#cbd5e1",
+                                  borderRadius: 999,
+                                  padding: "2px 8px",
+                                  fontSize: 10,
+                                  fontFamily: "'JetBrains Mono', monospace",
+                                }}
+                              >
+                                {label.name}
+                              </span>
+                            ))}
+                            {issue.labels.length === 0 && (
+                              <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>—</span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 16px", minWidth: 175 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ color: "#94a3b8", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                              {formatCompactDate(issue.updatedAt)}
+                            </span>
+                            <span style={{ color: "#475569", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                              Created: {formatCompactDate(issue.createdAt)}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <a
+                            className="action-btn"
+                            href={issue.htmlUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              background: "#1a1f2e", border: "1px solid #2d3548",
+                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
+                              cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5,
+                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.15s",
+                              textDecoration: "none",
+                            }}
+                          >
+                            Open
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                    {issues.length === 0 && (
+                      <tr><td colSpan={5} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No recent new or updated issues found</td></tr>
                     )}
                   </tbody>
                 </table>
