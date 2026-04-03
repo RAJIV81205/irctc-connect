@@ -35,6 +35,7 @@ function PricingPageContent() {
   const searchParams = useSearchParams();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState<"free" | PaidPlanType | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showPaymentNotice, setShowPaymentNotice] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanType | null>(null);
@@ -55,9 +56,26 @@ function PricingPageContent() {
           method: "GET",
           cache: "no-store",
         });
-        setIsAuthenticated(response.ok);
+
+        if (!response.ok) {
+          setIsAuthenticated(false);
+          setCurrentPlan(null);
+          return;
+        }
+
+        const data = await response.json();
+        setIsAuthenticated(Boolean(data?.success));
+
+        const rawPlan = String(data?.user?.plan || "").toLowerCase();
+        const mappedPlan = rawPlan === "enterprise" ? "advance" : rawPlan;
+        if (mappedPlan === "free" || mappedPlan === "pro" || mappedPlan === "advance") {
+          setCurrentPlan(mappedPlan);
+        } else {
+          setCurrentPlan(null);
+        }
       } catch {
         setIsAuthenticated(false);
+        setCurrentPlan(null);
       } finally {
         setIsCheckingAuth(false);
       }
@@ -157,13 +175,35 @@ function PricingPageContent() {
     }
   };
 
-  const paidButtonDisabled = isCheckingAuth || !isAuthenticated;
+  const getButtonState = (plan: typeof PRICING_PLANS[0]) => {
+    // Enterprise/Advance users should not see upgrade actions here.
+    if (!isCheckingAuth && isAuthenticated && currentPlan === "advance") {
+      if (plan.planType === "advance") {
+        return { label: "Current Plan", disabled: true };
+      }
+      if (plan.planType === "pro") {
+        return { label: "Not Available", disabled: true };
+      }
+      return { label: "Included", disabled: true };
+    }
 
-  const getButtonLabel = (plan: typeof PRICING_PLANS[0]) => {
-    if (plan.planType === "free") return plan.buttonText;
-    if (isCheckingAuth) return "Checking login...";
-    if (!isAuthenticated) return "Login to Continue";
-    return plan.buttonText;
+    if (plan.planType === "free") {
+      return { label: plan.buttonText, disabled: false };
+    }
+
+    if (isCheckingAuth) {
+      return { label: "Checking login...", disabled: true };
+    }
+
+    if (!isAuthenticated) {
+      return { label: "Login to Continue", disabled: true };
+    }
+
+    if (currentPlan === plan.planType) {
+      return { label: "Current Plan", disabled: true };
+    }
+
+    return { label: "Upgrade Plan", disabled: false };
   };
 
   return (
@@ -198,6 +238,7 @@ function PricingPageContent() {
 
           <div className="mt-16 grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto text-left items-start">
             {PRICING_PLANS.map((plan) => {
+              const buttonState = getButtonState(plan);
               const Icon = plan.colorTheme === "emerald" ? Terminal : plan.popular ? Star : Check;
               return (
                 <div 
@@ -238,16 +279,16 @@ function PricingPageContent() {
 
                   <button
                     onClick={() => openPaymentModal(plan.planType)}
-                    disabled={plan.planType !== "free" && paidButtonDisabled}
+                    disabled={buttonState.disabled}
                     className={`w-full py-3.5 px-6 rounded-xl font-bold mb-10 transition-all ${
-                      plan.planType !== "free" && paidButtonDisabled
+                      buttonState.disabled
                         ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
                         : plan.popular 
                           ? "bg-emerald-400 text-emerald-950 hover:bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.2)]"
                           : "bg-slate-800 text-white hover:bg-slate-700 border border-slate-700"
                     }`}
                   >
-                    {getButtonLabel(plan)}
+                    {buttonState.label}
                   </button>
 
                   <div className="space-y-4">
