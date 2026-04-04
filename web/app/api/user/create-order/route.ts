@@ -13,7 +13,8 @@ import {
   getExternalOrderDataUrl,
   getWebhookUrl,
 } from "@/lib/payments/cashfree";
-import { isPaidPlanType, PAID_PLANS } from "@/lib/payments/plans";
+import { isPaidPlanType } from "@/lib/payments/plans";
+import { getPaidPlanRuntime } from "@/lib/plans/config";
 
 function makeOrderId(userId: string) {
   const suffix = Math.random().toString(36).slice(2, 8);
@@ -68,7 +69,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const planConfig = PAID_PLANS[body.planType];
+    const planConfig = await getPaidPlanRuntime(body.planType);
+    if (!planConfig) {
+      return NextResponse.json(
+        { success: false, message: "plan config not found" },
+        { status: 400 }
+      );
+    }
     const orderId = makeOrderId(user._id.toString());
 
     const cashfreeRequest = {
@@ -94,10 +101,11 @@ export async function POST(request: Request) {
     const cashfreeResponse = await cashfree.PGCreateOrder(cashfreeRequest);
     const cfOrder = cashfreeResponse.data;
 
-    const createdOrder = await Order.create({
+    const createdOrderDoc = await Order.create({
       userId: user._id,
       orderId: cfOrder.order_id || orderId,
-      cfOrderId: cfOrder.cf_order_id || null,
+      cfOrderId:
+        typeof cfOrder.cf_order_id === "number" ? cfOrder.cf_order_id : null,
       paymentSessionId: cfOrder.payment_session_id || null,
       planType: body.planType,
       amount: planConfig.amount,
@@ -105,7 +113,15 @@ export async function POST(request: Request) {
       status: cfOrder.order_status?.toLowerCase() === "active" ? "active" : "created",
       paymentStatus: "PENDING",
       cashfreeOrderStatus: cfOrder.order_status || "ACTIVE",
-    } as any);
+    });
+    const createdOrder = {
+      orderId: createdOrderDoc.orderId,
+      paymentSessionId: createdOrderDoc.paymentSessionId,
+      planType: createdOrderDoc.planType,
+      amount: createdOrderDoc.amount,
+      currency: createdOrderDoc.currency,
+      status: createdOrderDoc.status,
+    };
 
     const redirectUrl = new URL(getExternalOrderDataUrl());
     redirectUrl.searchParams.set("order_id", createdOrder.orderId);

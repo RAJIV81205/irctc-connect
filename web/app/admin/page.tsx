@@ -58,6 +58,34 @@ interface GithubIssue {
   isRecentlyUpdated: boolean;
 }
 
+interface ManagedPlanFeature {
+  text: string;
+  highlight?: boolean;
+}
+
+interface ManagedPlan {
+  id: string;
+  name: string;
+  originalPrice?: number | null;
+  price: number;
+  period: string;
+  description: string;
+  features: ManagedPlanFeature[];
+  planType: "free" | "pro" | "advance";
+  buttonText: string;
+  popular?: boolean;
+  colorTheme: "blue" | "slate" | "emerald";
+  limit?: number;
+  userPlan?: "pro" | "enterprise" | null;
+}
+
+interface PlansConfig {
+  key: string;
+  offerEndsAt: string | null;
+  contactEmail: string;
+  plans: ManagedPlan[];
+}
+
 // ─── Loader ───────────────────────────────────────────────────────────────────
 function Loader({ text = "Loading..." }: { text?: string }) {
   return (
@@ -506,7 +534,7 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "email" | "issues">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "plans" | "email" | "issues">("users");
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [clearingUnpaid, setClearingUnpaid] = useState(false);
@@ -517,6 +545,9 @@ export default function AdminPanel() {
   const [emailHtml, setEmailHtml] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [planDraft, setPlanDraft] = useState<PlansConfig | null>(null);
+  const [savingPlans, setSavingPlans] = useState(false);
+  const [plansFeedback, setPlansFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -561,11 +592,22 @@ export default function AdminPanel() {
     { revalidateOnFocus: true, refreshInterval: 60_000 }
   );
 
+  const {
+    data: plansData,
+    isLoading: plansLoading,
+    isValidating: plansValidating,
+    mutate: mutatePlans,
+  } = useSWR<{ success: boolean; config: PlansConfig }>(
+    isAdmin ? "/api/admin/plans" : null,
+    fetcher,
+    { revalidateOnFocus: true, refreshInterval: 60_000 }
+  );
+
   const users      = usersData?.users ?? [];
   const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
   const unpaidOrders = (ordersData?.orders ?? []).filter((o) => o.status !== "paid");
   const issues = issuesData?.issues ?? [];
-  const dataLoading = usersValidating || ordersValidating || issuesValidating;
+  const dataLoading = usersValidating || ordersValidating || issuesValidating || plansValidating;
 
   // ── Check session on mount ──────────────────────────────────────────────────
   useEffect(() => {
@@ -577,6 +619,12 @@ export default function AdminPanel() {
       finally { setAuthLoading(false); }
     })();
   }, []);
+
+  useEffect(() => {
+    if (plansData?.config) {
+      setPlanDraft(plansData.config);
+    }
+  }, [plansData]);
 
   const onGoogleLogin = async () => {
     setLoginError("");
@@ -623,7 +671,7 @@ export default function AdminPanel() {
     }
   };
 
-  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateIssues(); };
+  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateIssues(); mutatePlans(); };
 
   const clearAllUnpaidOrders = async () => {
     if (unpaidOrders.length === 0 || clearingUnpaid) return;
@@ -696,9 +744,35 @@ export default function AdminPanel() {
     }
   };
 
+  const savePlansConfig = async () => {
+    if (!planDraft || savingPlans) return;
+
+    setSavingPlans(true);
+    setPlansFeedback(null);
+    try {
+      const res = await fetch("/api/admin/plans", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(planDraft),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to save plans");
+      }
+
+      setPlanDraft(data.config);
+      setPlansFeedback({ type: "success", message: "Plans updated successfully." });
+      mutatePlans();
+    } catch (error: unknown) {
+      setPlansFeedback({ type: "error", message: getErrorMessage(error, "Failed to save plans.") });
+    } finally {
+      setSavingPlans(false);
+    }
+  };
+
   // ── Loading screen ──────────────────────────────────────────────────────────
   if (authLoading) return <Loader text="Authenticating..." />;
-  if (isAdmin && (usersLoading || ordersLoading || issuesLoading)) return <Loader text="Fetching data..." />;
+  if (isAdmin && (usersLoading || ordersLoading || issuesLoading || plansLoading)) return <Loader text="Fetching data..." />;
 
   // ── Login screen ────────────────────────────────────────────────────────────
   if (!isAdmin) {
@@ -874,7 +948,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid", "email", "issues"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "plans", "email", "issues"] as const).map((tab) => (
               <button
                 key={tab}
                 className="tab-btn"
@@ -894,6 +968,8 @@ export default function AdminPanel() {
                   ? `Paid Orders (${paidOrders.length})`
                   : tab === "unpaid"
                   ? `Unpaid Orders (${unpaidOrders.length})`
+                  : tab === "plans"
+                  ? "Plans"
                   : tab === "email"
                   ? "Email"
                   : `Issues (${issues.length})`}
@@ -913,6 +989,22 @@ export default function AdminPanel() {
             >
               <p style={{ color: emailFeedback.type === "success" ? "#6ee7b7" : "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
                 {emailFeedback.message}
+              </p>
+            </div>
+          )}
+
+          {activeTab === "plans" && plansFeedback && (
+            <div
+              style={{
+                marginBottom: 14,
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: plansFeedback.type === "success" ? "#0f2a1d" : "#2a0f0f",
+                border: `1px solid ${plansFeedback.type === "success" ? "#1a4731" : "#4a1f1f"}`,
+              }}
+            >
+              <p style={{ color: plansFeedback.type === "success" ? "#6ee7b7" : "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                {plansFeedback.message}
               </p>
             </div>
           )}
@@ -1171,6 +1263,216 @@ export default function AdminPanel() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Plans Config */}
+          {activeTab === "plans" && planDraft && (
+            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderBottom: "1px solid #1e2330",
+                  background: "#0a0d13",
+                  gap: 12,
+                }}
+              >
+                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Manage pricing plans and offer settings shown on the pricing page
+                </span>
+                <button
+                  onClick={savePlansConfig}
+                  disabled={savingPlans}
+                  style={{
+                    background: savingPlans ? "#1a1f2e" : "#0f2a1d",
+                    border: `1px solid ${savingPlans ? "#2d3548" : "#1a4731"}`,
+                    color: savingPlans ? "#64748b" : "#6ee7b7",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    cursor: savingPlans ? "not-allowed" : "pointer",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 700,
+                  }}
+                >
+                  {savingPlans ? "Saving..." : "Save Plans"}
+                </button>
+              </div>
+
+              <div style={{ padding: 16, borderBottom: "1px solid #1e2330", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Offer Ends At (ISO)</span>
+                  <input
+                    value={planDraft.offerEndsAt || ""}
+                    onChange={(e) => setPlanDraft({ ...planDraft, offerEndsAt: e.target.value || null })}
+                    placeholder="2026-04-10T23:59:59+05:30"
+                    style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Contact Email</span>
+                  <input
+                    value={planDraft.contactEmail}
+                    onChange={(e) => setPlanDraft({ ...planDraft, contactEmail: e.target.value })}
+                    placeholder="owner@example.com"
+                    style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+                  />
+                </label>
+              </div>
+
+              <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+                {planDraft.plans.map((plan, index) => (
+                  <div key={plan.id} style={{ border: "1px solid #1e2330", borderRadius: 10, padding: 14, background: "#0b0f16" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700 }}>{plan.name} ({plan.planType})</p>
+                      <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>ID: {plan.id}</span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Name</span>
+                        <input
+                          value={plan.name}
+                          onChange={(e) =>
+                            setPlanDraft({
+                              ...planDraft,
+                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, name: e.target.value } : item)),
+                            })
+                          }
+                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Offer Price</span>
+                        <input
+                          type="number"
+                          value={plan.price}
+                          onChange={(e) =>
+                            setPlanDraft({
+                              ...planDraft,
+                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, price: Number(e.target.value) } : item)),
+                            })
+                          }
+                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Original Price</span>
+                        <input
+                          type="number"
+                          value={plan.originalPrice ?? ""}
+                          onChange={(e) =>
+                            setPlanDraft({
+                              ...planDraft,
+                              plans: planDraft.plans.map((item, i) =>
+                                i === index
+                                  ? { ...item, originalPrice: e.target.value === "" ? null : Number(e.target.value) }
+                                  : item
+                              ),
+                            })
+                          }
+                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
+                        />
+                      </label>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Button Text</span>
+                        <input
+                          value={plan.buttonText}
+                          onChange={(e) =>
+                            setPlanDraft({
+                              ...planDraft,
+                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, buttonText: e.target.value } : item)),
+                            })
+                          }
+                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Usage Limit</span>
+                        <input
+                          type="number"
+                          value={plan.limit ?? 0}
+                          onChange={(e) =>
+                            setPlanDraft({
+                              ...planDraft,
+                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, limit: Number(e.target.value) } : item)),
+                            })
+                          }
+                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>User Plan</span>
+                        <select
+                          value={plan.userPlan || ""}
+                          onChange={(e) =>
+                            setPlanDraft({
+                              ...planDraft,
+                              plans: planDraft.plans.map((item, i) =>
+                                i === index
+                                  ? { ...item, userPlan: e.target.value === "" ? null : (e.target.value as "pro" | "enterprise") }
+                                  : item
+                              ),
+                            })
+                          }
+                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
+                        >
+                          <option value="">None</option>
+                          <option value="pro">Pro</option>
+                          <option value="enterprise">Enterprise</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Description</span>
+                      <textarea
+                        rows={2}
+                        value={plan.description}
+                        onChange={(e) =>
+                          setPlanDraft({
+                            ...planDraft,
+                            plans: planDraft.plans.map((item, i) => (i === index ? { ...item, description: e.target.value } : item)),
+                          })
+                        }
+                        style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12, resize: "vertical" }}
+                      />
+                    </label>
+
+                    <label style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+                      <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Features (one per line)</span>
+                      <textarea
+                        rows={4}
+                        value={(plan.features || []).map((feature) => feature.text).join("\n")}
+                        onChange={(e) =>
+                          setPlanDraft({
+                            ...planDraft,
+                            plans: planDraft.plans.map((item, i) =>
+                              i === index
+                                ? {
+                                    ...item,
+                                    features: e.target.value
+                                      .split("\n")
+                                      .map((line) => line.trim())
+                                      .filter(Boolean)
+                                      .map((text) => ({ text, highlight: false })),
+                                  }
+                                : item
+                            ),
+                          })
+                        }
+                        style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12, resize: "vertical", fontFamily: "'JetBrains Mono', monospace" }}
+                      />
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
           )}

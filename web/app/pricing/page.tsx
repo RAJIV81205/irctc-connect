@@ -3,12 +3,20 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check, Star, Heart, Terminal } from "lucide-react";
-import { PRICING_PLANS, PaidPlanType } from "../../lib/constants";
+import type { PricingPlan, PaidPlanType } from "../../lib/constants";
 
 type Notice = {
   kind: "success" | "error" | "info";
   text: string;
 } | null;
+
+type PublicPlansResponse = {
+  success: boolean;
+  offerEndsAt?: string | null;
+  contactEmail?: string;
+  plans?: PricingPlan[];
+  message?: string;
+};
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) {
@@ -41,12 +49,125 @@ function PricingPageContent() {
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanType | null>(null);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
+  const [offerEndsAt, setOfferEndsAt] = useState<string | null>(
+    "2026-04-10T23:59:59+05:30"
+  );
+  const [planContactEmail, setPlanContactEmail] = useState(
+    "lucky81205+irctc@gmail.com"
+  );
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    expired: false,
+  });
 
-  const contactUrl =
-    "mailto:lucky81205+irctc@gmail.com?subject=IRCTC Connect Payment Help";
+  const contactUrl = `mailto:${planContactEmail}?subject=${encodeURIComponent(
+    "IRCTC Connect Payment Help"
+  )}`;
 
   const orderIdFromQuery = searchParams.get("order_id");
   const isPaymentReturn = searchParams.get("payment_return") === "1";
+
+  const getNumericPrice = (value: string) =>
+    Number(value.replace(/[^\d.]/g, "")) || 0;
+
+  const getDiscountPercent = (originalPrice: string, discountedPrice: string) => {
+    const original = getNumericPrice(originalPrice);
+    const discounted = getNumericPrice(discountedPrice);
+    if (!original || discounted >= original) return null;
+    return Math.round(((original - discounted) / original) * 100);
+  };
+
+  useEffect(() => {
+    if (!offerEndsAt) {
+      setTimeLeft({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        expired: true,
+      });
+      return;
+    }
+
+    const offerDeadline = new Date(offerEndsAt).getTime();
+    if (!Number.isFinite(offerDeadline)) {
+      setTimeLeft({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        expired: true,
+      });
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const diff = offerDeadline - now;
+
+      if (diff <= 0) {
+        setTimeLeft({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+          expired: true,
+        });
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      setTimeLeft({ days, hours, minutes, seconds, expired: false });
+    };
+
+    updateTimer();
+    const intervalId = setInterval(updateTimer, 1000);
+    return () => clearInterval(intervalId);
+  }, [offerEndsAt]);
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        setIsLoadingPlans(true);
+
+        const response = await fetch("/api/plans", {
+          method: "GET",
+          cache: "no-store",
+        });
+        const data = (await response.json()) as PublicPlansResponse;
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Unable to fetch plans");
+        }
+
+        setPricingPlans(Array.isArray(data.plans) ? data.plans : []);
+        if (typeof data.offerEndsAt !== "undefined") {
+          setOfferEndsAt(data.offerEndsAt ?? null);
+        }
+        if (data.contactEmail) {
+          setPlanContactEmail(data.contactEmail);
+        }
+      } catch (error: unknown) {
+        setNotice({
+          kind: "error",
+          text: getErrorMessage(error, "Unable to load latest plans."),
+        });
+      } finally {
+        setIsLoadingPlans(false);
+      }
+    };
+
+    loadPlans();
+  }, []);
 
   useEffect(() => {
     const verifyAuth = async () => {
@@ -174,7 +295,7 @@ function PricingPageContent() {
     }
   };
 
-  const getButtonState = (plan: typeof PRICING_PLANS[0]) => {
+  const getButtonState = (plan: PricingPlan) => {
     // Enterprise/Advance users should not see upgrade actions here.
     if (!isCheckingAuth && isAuthenticated && currentPlan === "advance") {
       if (plan.planType === "advance") {
@@ -209,11 +330,10 @@ function PricingPageContent() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)] text-slate-100 selection:bg-emerald-500/30 font-sans">
       <main className="pt-32 pb-24 px-6 relative">
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-300/40 bg-emerald-300/15 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-8 shadow-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-300/40 bg-emerald-300/15 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-6 shadow-sm">
             <Heart className="w-4 h-4 fill-emerald-400" />
             <span>Sponsor the Project</span>
           </div>
-
           <h1 className="max-w-4xl mx-auto font-jetbrains text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl tracking-tight mb-6">
             Plans and Pricing
           </h1>
@@ -235,23 +355,35 @@ function PricingPageContent() {
             </div>
           )}
 
-          <div className="mt-16 grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto text-left items-start">
-            {PRICING_PLANS.map((plan) => {
+          <div className="mt-16 grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto text-left items-stretch">
+            {pricingPlans.map((plan) => {
               const buttonState = getButtonState(plan);
               const Icon = plan.colorTheme === "emerald" ? Terminal : plan.popular ? Star : Check;
+              const isOfferActive = Boolean(plan.originalPrice) && !timeLeft.expired;
+              const displayedPrice =
+                isOfferActive && plan.originalPrice ? plan.price : plan.originalPrice || plan.price;
+              const discountPercent = isOfferActive && plan.originalPrice
+                ? getDiscountPercent(plan.originalPrice, plan.price)
+                : null;
               return (
                 <div 
                   key={plan.id}
-                  className={`relative group rounded-3xl border bg-slate-900/50 p-8 transition-all hover:bg-slate-800 ${
+                  className={`relative group rounded-3xl border bg-slate-900/60 p-8 transition-all hover:bg-slate-800/90 ${
                     plan.popular 
-                      ? 'border-emerald-500/50 shadow-[0_0_30px_rgba(52,211,153,0.15)] transform lg:-translate-y-4' 
-                      : 'border-slate-800 hover:border-slate-600'
+                      ? 'border-emerald-500/60 shadow-[0_0_35px_rgba(52,211,153,0.2)] transform lg:-translate-y-4' 
+                      : 'border-slate-700/80 hover:border-slate-500'
                   }`}
                 >
                   {plan.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 bg-emerald-400 text-emerald-950 text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
                       <Star className="w-3.5 h-3.5 fill-current" />
                       Popular
+                    </div>
+                  )}
+
+                  {isOfferActive && plan.originalPrice && discountPercent && (
+                    <div className="absolute top-5 right-5 rounded-full border border-amber-300/40 bg-amber-300/15 px-2.5 py-1 text-[11px] font-bold tracking-wide text-amber-200">
+                      {discountPercent}% OFF
                     </div>
                   )}
 
@@ -264,15 +396,47 @@ function PricingPageContent() {
                   <h3 className="text-2xl font-bold text-white mb-2 font-jetbrains">
                     {plan.name}
                   </h3>
-                  <div className="flex items-baseline gap-1 mb-4">
-                    <span className="text-5xl font-extrabold text-white">
-                      {plan.price}
-                    </span>
-                    <span className="text-slate-400 font-medium">
-                      {plan.period}
-                    </span>
-                  </div>
-                  <p className="text-slate-400 mb-8 h-12 leading-relaxed text-sm">
+                  {plan.originalPrice ? (
+                    <div className="mb-4">
+                      {isOfferActive && (
+                        <div className="flex items-baseline gap-2 mb-1">
+                          <span className="text-base font-medium text-slate-400 line-through decoration-2 decoration-slate-500">
+                            {plan.originalPrice}
+                          </span>
+                          <span className="rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2 py-0.5 text-[10px] uppercase tracking-wide font-bold text-emerald-200">
+                            Offer Price
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-5xl font-extrabold text-white">
+                          {displayedPrice}
+                        </span>
+                        <span className="text-slate-400 font-medium">
+                          {plan.period}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-xs text-amber-200/90">
+                        {!timeLeft.expired && (
+                          <span className="inline-flex items-center gap-1 rounded-md border border-amber-300/30 bg-amber-300/10 px-2 py-1 font-semibold">
+                            Ends in {timeLeft.days}d {String(timeLeft.hours).padStart(2, "0")}h {String(timeLeft.minutes).padStart(2, "0")}m {String(timeLeft.seconds).padStart(2, "0")}s
+                          </span>
+                        ) }
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mb-4">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-5xl font-extrabold text-white">
+                          {plan.price}
+                        </span>
+                        <span className="text-slate-400 font-medium">
+                          {plan.period}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-slate-400 mb-8 min-h-12 leading-relaxed text-sm">
                     {plan.description}
                   </p>
 
@@ -308,11 +472,33 @@ function PricingPageContent() {
                 </div>
               );
             })}
+            {!isLoadingPlans && pricingPlans.length === 0 && (
+              <div className="lg:col-span-3 rounded-2xl border border-slate-700 bg-slate-900/40 p-8 text-center text-slate-300">
+                No plans available right now. Please check back shortly.
+              </div>
+            )}
+          </div>
+
+          <div className="mt-12 mx-auto max-w-3xl rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-6 py-6 text-left shadow-[0_0_28px_rgba(34,211,238,0.08)]">
+            <p className="text-xs uppercase tracking-wider text-cyan-200 font-semibold mb-2">
+              Need More Than Current Plans?
+            </p>
+            <p className="text-slate-200 text-sm leading-relaxed mb-4">
+              If you need a custom request limit, business support, or team pricing, contact the support directly and we can set up a custom plan for you.
+            </p>
+            <a
+              href={contactUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/15 px-4 py-2.5 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/25"
+            >
+              Contact Support
+            </a>
           </div>
           
-          <p className="mt-16 text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
+          <p className="mt-10 text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
             By paying for a premium tier, you are directly helping in sponsoring
-            and sustaining this open-source project. Thank you! 🚀
+            and sustaining this open-source project. Thank you.
           </p>
         </div>
       </main>

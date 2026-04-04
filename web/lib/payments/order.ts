@@ -1,7 +1,8 @@
 import Order, { OrderDocument } from "@/lib/db/models/Order";
 import User from "@/lib/db/models/User";
-import { PAID_PLANS, PaidPlanType } from "@/lib/payments/plans";
+import { PaidPlanType } from "@/lib/payments/plans";
 import { sendWelcomeEmail } from "../services/email";
+import { getPaidPlanRuntime } from "@/lib/plans/config";
 
 type PaymentStateInput = {
   orderId: string;
@@ -80,7 +81,7 @@ export async function applyOrderPaymentState(input: PaymentStateInput) {
 }
 
 async function grantPlanToUser(userId: string, planType: PaidPlanType) {
-  const planConfig = PAID_PLANS[planType];
+  const planConfig = await getPaidPlanRuntime(planType);
   if (!planConfig) {
     return;
   }
