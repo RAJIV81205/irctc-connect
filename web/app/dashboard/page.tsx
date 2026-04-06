@@ -6,6 +6,15 @@ import { signOut } from "firebase/auth";
 import useSWR from "swr";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import {
+  checkPNRStatus,
+  configure,
+  getAvailability,
+  getTrainInfo,
+  liveAtStation,
+  searchTrainBetweenStations,
+  trackTrain,
+} from "irctc-connect";
 import { auth } from "../../lib/firebase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -469,10 +478,35 @@ export default function DashboardPage() {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [keyVisible, setKeyVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "apikey" | "orders">(
-    "overview",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "apikey" | "playground" | "orders"
+  >("overview");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
+  const [playgroundAction, setPlaygroundAction] = useState<
+    "pnr" | "train" | "track" | "station" | "search" | "seat"
+  >("pnr");
+  const [playgroundLoading, setPlaygroundLoading] = useState(false);
+  const [playgroundStatusCode, setPlaygroundStatusCode] = useState<number | null>(
+    null,
+  );
+  const [playgroundResponseTime, setPlaygroundResponseTime] = useState<
+    number | null
+  >(null);
+  const [playgroundResultText, setPlaygroundResultText] = useState("");
+  const [playgroundError, setPlaygroundError] = useState<string | null>(null);
+  const [pnrInput, setPnrInput] = useState("");
+  const [trainInput, setTrainInput] = useState("");
+  const [trackTrainInput, setTrackTrainInput] = useState("");
+  const [trackDateInput, setTrackDateInput] = useState("");
+  const [stationInput, setStationInput] = useState("");
+  const [fromStationInput, setFromStationInput] = useState("");
+  const [toStationInput, setToStationInput] = useState("");
+  const [seatTrainInput, setSeatTrainInput] = useState("");
+  const [seatFromInput, setSeatFromInput] = useState("");
+  const [seatToInput, setSeatToInput] = useState("");
+  const [seatDateInput, setSeatDateInput] = useState("");
+  const [seatClassInput, setSeatClassInput] = useState("SL");
+  const [seatQuotaInput, setSeatQuotaInput] = useState("GN");
   const {
     data: userData,
     error: userError,
@@ -522,6 +556,126 @@ export default function DashboardPage() {
       navigator.clipboard.writeText(dbUser.apiKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const toInputDate = (ddmmyyyy: string) => {
+    if (!ddmmyyyy || !ddmmyyyy.includes("-")) return "";
+    const [dd, mm, yyyy] = ddmmyyyy.split("-");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const fromInputDate = (yyyymmdd: string) => {
+    if (!yyyymmdd || !yyyymmdd.includes("-")) return "";
+    const [yyyy, mm, dd] = yyyymmdd.split("-");
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  const resetPlaygroundMeta = () => {
+    setPlaygroundError(null);
+    setPlaygroundStatusCode(null);
+    setPlaygroundResponseTime(null);
+    setPlaygroundResultText("");
+  };
+
+  const runPlayground = async () => {
+    setPlaygroundLoading(true);
+    resetPlaygroundMeta();
+
+    const start = performance.now();
+    try {
+      configure(dbUser.apiKey);
+
+      let result: unknown;
+      switch (playgroundAction) {
+        case "pnr":
+          if (!/^\d{10}$/.test(pnrInput)) {
+            throw new Error("PNR must be exactly 10 digits");
+          }
+          result = await checkPNRStatus(pnrInput);
+          break;
+        case "train":
+          if (!/^\d{5}$/.test(trainInput)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          result = await getTrainInfo(trainInput);
+          break;
+        case "track":
+          if (!/^\d{5}$/.test(trackTrainInput)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+          result = await trackTrain(trackTrainInput, trackDateInput);
+          break;
+        case "station":
+          if (!stationInput.trim()) {
+            throw new Error("Station code is required");
+          }
+          result = await liveAtStation(stationInput.trim().toUpperCase());
+          break;
+        case "search":
+          if (!fromStationInput.trim() || !toStationInput.trim()) {
+            throw new Error("From and To station codes are required");
+          }
+          result = await searchTrainBetweenStations(
+            fromStationInput.trim().toUpperCase(),
+            toStationInput.trim().toUpperCase(),
+          );
+          break;
+        case "seat":
+          if (!/^\d{5}$/.test(seatTrainInput)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          if (!seatFromInput.trim() || !seatToInput.trim()) {
+            throw new Error("From and To station codes are required");
+          }
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(seatDateInput)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+          result = await getAvailability(
+            seatTrainInput,
+            seatFromInput.trim().toUpperCase(),
+            seatToInput.trim().toUpperCase(),
+            seatDateInput,
+            seatClassInput,
+            seatQuotaInput,
+          );
+          break;
+      }
+
+      const codeGuess =
+        typeof result === "object" &&
+        result !== null &&
+        "statusCode" in result &&
+        typeof (result as { statusCode?: unknown }).statusCode === "number"
+          ? ((result as { statusCode: number }).statusCode ?? 200)
+          : 200;
+      setPlaygroundStatusCode(codeGuess);
+      setPlaygroundResultText(JSON.stringify(result, null, 2) || "{}");
+    } catch (error: unknown) {
+      const err = error as {
+        message?: string;
+        status?: number;
+        response?: { status?: number };
+      };
+      setPlaygroundError(err?.message || "Something went wrong");
+      setPlaygroundStatusCode(err?.status || err?.response?.status || 500);
+      setPlaygroundResultText(
+        JSON.stringify(
+          {
+            success: false,
+            message: err?.message || "Something went wrong",
+            statusCode: err?.status || err?.response?.status || 500,
+          },
+          null,
+          2,
+        ),
+      );
+    } finally {
+      setPlaygroundResponseTime(Math.round(performance.now() - start));
+      setPlaygroundLoading(false);
     }
   };
 
@@ -590,6 +744,8 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
           .dash-shell { padding: 20px 14px !important; }
           .dash-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .dash-overview-grid { grid-template-columns: 1fr !important; }
+          .dash-playground-grid { grid-template-columns: 1fr !important; }
+          .dash-playground-actions { grid-template-columns: 1fr !important; }
           .dash-tab-wrap { width: 100% !important; overflow-x: auto; }
           .dash-tab-wrap button { white-space: nowrap; }
           .dash-key-row { flex-direction: column; }
@@ -969,6 +1125,7 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
               [
                 { id: "overview", label: "Overview" },
                 { id: "apikey", label: "API Key" },
+                { id: "playground", label: "Playground" },
                 { id: "orders", label: `Orders (${orders.length})` },
               ] as const
             ).map((tab) => (
@@ -1597,6 +1754,514 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
                 >
                   {usageExampleCode}
                 </SyntaxHighlighter>
+              </div>
+            </div>
+          )}
+
+          {/* ── Tab: Playground ───────────────────────────────────────────── */}
+          {activeTab === "playground" && (
+            <div
+              className="dash-playground-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.05fr 0.95fr",
+                gap: 16,
+              }}
+            >
+              <div
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  padding: 22,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginBottom: 14,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#e2e8f0",
+                      fontSize: 15,
+                      fontWeight: 700,
+                    }}
+                  >
+                    API Playground
+                  </p>
+                  <span
+                    style={{
+                      color: "#6ee7b7",
+                      background: "#0f2a1d",
+                      border: "1px solid #1a4731",
+                      borderRadius: 6,
+                      padding: "3px 8px",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Using your API key
+                  </span>
+                </div>
+
+                <p
+                  style={{
+                    color: "#64748b",
+                    fontSize: 12,
+                    lineHeight: 1.7,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    marginBottom: 18,
+                  }}
+                >
+                  Run quick real requests without leaving your workspace.
+                  Results appear on the right panel with status and latency.
+                </p>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 6,
+                    marginBottom: 16,
+                  }}
+                >
+                  {[
+                    { id: "pnr", label: "PNR" },
+                    { id: "train", label: "Train" },
+                    { id: "track", label: "Track" },
+                    { id: "station", label: "Station" },
+                    { id: "search", label: "Search" },
+                    { id: "seat", label: "Seat" },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setPlaygroundAction(item.id as typeof playgroundAction);
+                        resetPlaygroundMeta();
+                      }}
+                      style={{
+                        background:
+                          playgroundAction === item.id ? "#1e2a3a" : "#131722",
+                        border:
+                          playgroundAction === item.id
+                            ? "1px solid #2d4060"
+                            : "1px solid #1f2432",
+                        color:
+                          playgroundAction === item.id ? "#60a5fa" : "#64748b",
+                        borderRadius: 6,
+                        padding: "7px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div
+                  className="dash-playground-actions"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 10,
+                  }}
+                >
+                  {playgroundAction === "pnr" && (
+                    <input
+                      value={pnrInput}
+                      onChange={(e) => setPnrInput(e.target.value.replace(/\D/g, ""))}
+                      maxLength={10}
+                      placeholder="PNR number (10 digits)"
+                      style={{
+                        gridColumn: "1 / -1",
+                        background: "#0a0d13",
+                        border: "1px solid #2d3548",
+                        borderRadius: 8,
+                        padding: "11px 12px",
+                        color: "#cbd5e1",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        outline: "none",
+                      }}
+                    />
+                  )}
+
+                  {playgroundAction === "train" && (
+                    <input
+                      value={trainInput}
+                      onChange={(e) =>
+                        setTrainInput(e.target.value.replace(/\D/g, ""))
+                      }
+                      maxLength={5}
+                      placeholder="Train number (5 digits)"
+                      style={{
+                        gridColumn: "1 / -1",
+                        background: "#0a0d13",
+                        border: "1px solid #2d3548",
+                        borderRadius: 8,
+                        padding: "11px 12px",
+                        color: "#cbd5e1",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        outline: "none",
+                      }}
+                    />
+                  )}
+
+                  {playgroundAction === "track" && (
+                    <>
+                      <input
+                        value={trackTrainInput}
+                        onChange={(e) =>
+                          setTrackTrainInput(e.target.value.replace(/\D/g, ""))
+                        }
+                        maxLength={5}
+                        placeholder="Train number"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(trackDateInput)}
+                        onChange={(e) =>
+                          setTrackDateInput(fromInputDate(e.target.value))
+                        }
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {playgroundAction === "station" && (
+                    <input
+                      value={stationInput}
+                      onChange={(e) => setStationInput(e.target.value.toUpperCase())}
+                      placeholder="Station code (e.g. NDLS)"
+                      style={{
+                        gridColumn: "1 / -1",
+                        background: "#0a0d13",
+                        border: "1px solid #2d3548",
+                        borderRadius: 8,
+                        padding: "11px 12px",
+                        color: "#cbd5e1",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        outline: "none",
+                      }}
+                    />
+                  )}
+
+                  {playgroundAction === "search" && (
+                    <>
+                      <input
+                        value={fromStationInput}
+                        onChange={(e) =>
+                          setFromStationInput(e.target.value.toUpperCase())
+                        }
+                        placeholder="From station code"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        value={toStationInput}
+                        onChange={(e) =>
+                          setToStationInput(e.target.value.toUpperCase())
+                        }
+                        placeholder="To station code"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {playgroundAction === "seat" && (
+                    <>
+                      <input
+                        value={seatTrainInput}
+                        onChange={(e) =>
+                          setSeatTrainInput(e.target.value.replace(/\D/g, ""))
+                        }
+                        maxLength={5}
+                        placeholder="Train number"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(seatDateInput)}
+                        onChange={(e) => setSeatDateInput(fromInputDate(e.target.value))}
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        value={seatFromInput}
+                        onChange={(e) => setSeatFromInput(e.target.value.toUpperCase())}
+                        placeholder="From station"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        value={seatToInput}
+                        onChange={(e) => setSeatToInput(e.target.value.toUpperCase())}
+                        placeholder="To station"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <select
+                        value={seatClassInput}
+                        onChange={(e) => setSeatClassInput(e.target.value)}
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      >
+                        {["SL", "3A", "2A", "1A", "CC", "EC", "2S"].map((coach) => (
+                          <option key={coach} value={coach}>
+                            {coach}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={seatQuotaInput}
+                        onChange={(e) => setSeatQuotaInput(e.target.value)}
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      >
+                        {["GN", "TQ", "LD", "PT", "SS"].map((quota) => (
+                          <option key={quota} value={quota}>
+                            {quota}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginTop: 16,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    onClick={runPlayground}
+                    disabled={playgroundLoading}
+                    style={{
+                      background: playgroundLoading
+                        ? "#1a1f2e"
+                        : "linear-gradient(135deg, #059669, #047857)",
+                      border: playgroundLoading
+                        ? "1px solid #2d3548"
+                        : "1px solid #047857",
+                      color: playgroundLoading ? "#64748b" : "#ffffff",
+                      borderRadius: 8,
+                      padding: "10px 16px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: playgroundLoading ? "not-allowed" : "pointer",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {playgroundLoading ? "Running..." : "Run Request"}
+                  </button>
+                  {playgroundStatusCode !== null && (
+                    <span
+                      style={{
+                        color: playgroundStatusCode < 400 ? "#6ee7b7" : "#fca5a5",
+                        background: playgroundStatusCode < 400 ? "#0f2a1d" : "#2a0f0f",
+                        border: `1px solid ${playgroundStatusCode < 400 ? "#1a4731" : "#4a1f1f"}`,
+                        borderRadius: 6,
+                        padding: "3px 8px",
+                        fontSize: 11,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      HTTP {playgroundStatusCode}
+                    </span>
+                  )}
+                  {playgroundResponseTime !== null && (
+                    <span
+                      style={{
+                        color: "#93c5fd",
+                        background: "#0b1a2c",
+                        border: "1px solid #1e3a5f",
+                        borderRadius: 6,
+                        padding: "3px 8px",
+                        fontSize: 11,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {playgroundResponseTime}ms
+                    </span>
+                  )}
+                </div>
+
+                {playgroundError && (
+                  <p
+                    style={{
+                      marginTop: 10,
+                      color: "#fda4af",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {playgroundError}
+                  </p>
+                )}
+              </div>
+
+              <div
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  minHeight: 420,
+                }}
+              >
+                <div
+                  style={{
+                    background: "#0a0d13",
+                    borderBottom: "1px solid #1e2330",
+                    padding: "12px 14px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#94a3b8",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Response
+                  </span>
+                  <span
+                    style={{
+                      color: "#475569",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    JSON
+                  </span>
+                </div>
+                <div style={{ padding: 14, height: "100%" }}>
+                  <SyntaxHighlighter
+                    language="json"
+                    style={nightOwl}
+                    customStyle={{
+                      margin: 0,
+                      background: "transparent",
+                      fontSize: 12,
+                      lineHeight: 1.7,
+                      minHeight: 360,
+                      maxHeight: 520,
+                      borderRadius: 8,
+                      overflow: "auto",
+                      padding: 0,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {playgroundResultText || `{\n  "message": "Run a request to preview the live response"\n}`}
+                  </SyntaxHighlighter>
+                </div>
               </div>
             </div>
           )}
