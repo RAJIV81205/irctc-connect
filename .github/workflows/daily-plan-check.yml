@@ -33,3 +33,9 @@ jobs:
         if: always()
         run: |
           echo "Plan check job completed"
+
+      - name: Trigger station list update
+        run: |
+          curl --fail --show-error --silent \
+            --max-time 120 \
+            "https://irctc-connect-api.rajivdubey.tech/update-station"
