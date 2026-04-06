@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { 
   Star, 
@@ -11,6 +12,15 @@ import {
   Github, 
   BookOpen 
 } from "lucide-react";
+import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "../lib/seo";
+
+export const metadata: Metadata = {
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
+};
 
 async function getStats() {
   try {
@@ -38,9 +48,38 @@ async function getStats() {
 
 export default async function LandingPage() {
   const stats = await getStats();
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+    description: SITE_DESCRIPTION,
+  };
+  const softwareSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "irctc-connect",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Node.js",
+    url: absoluteUrl("/"),
+    description: SITE_DESCRIPTION,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "INR",
+    },
+  };
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)] text-slate-100 selection:bg-emerald-500/30">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
+      />
       {/* Hero Section */}
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-24 sm:py-20 text-center">
         <a 
