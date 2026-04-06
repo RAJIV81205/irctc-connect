@@ -584,7 +584,11 @@ export default function DashboardPage() {
 
     const start = performance.now();
     try {
-      configure(dbUser.apiKey);
+      const apiKey = dbUser?.apiKey;
+      if (!apiKey) {
+        throw new Error("Session expired. Please refresh and sign in again.");
+      }
+      configure(apiKey);
 
       let result: unknown;
       switch (playgroundAction) {

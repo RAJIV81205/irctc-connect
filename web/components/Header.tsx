@@ -19,6 +19,7 @@ export function Header() {
   const pathname = usePathname();
   const isAdminPage = pathname === "/admin";
   const isDashboardPage = pathname === "/dashboard";
+  const isDocsPage = pathname === "/docs";
   const router = useRouter();
   const { sidebarOpen, setSidebarOpen } = useTheme();
   const [user, setUser] = useState<VerifiedUser | null>(null);
@@ -72,6 +73,12 @@ export function Header() {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isDocsPage) {
+      setSidebarOpen(false);
+    }
+  }, [isDocsPage, setSidebarOpen]);
 
   if (isAdminPage || isDashboardPage) {
     return null;
@@ -193,7 +200,7 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/60 bg-slate-950/50 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          {pathname === "/docs" && (
+          {isDocsPage && (
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors lg:hidden text-slate-400 hover:text-slate-100"
@@ -209,7 +216,7 @@ export function Header() {
             <span className="font-jetbrains font-bold text-slate-100 tracking-tight">Irctc-connect</span>
           </Link>
 
-          {pathname === "/docs" && (
+          {isDocsPage && (
             <div className="ml-4 hidden sm:block">
               <SearchCommand onNavigate={scrollToSection} />
             </div>
@@ -271,13 +278,19 @@ export function Header() {
             </div>
           )}
 
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800/50 hover:text-slate-100 md:hidden"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+          {isDocsPage ? (
+            <div className="md:hidden">
+              <SearchCommand onNavigate={scrollToSection} />
+            </div>
+          ) : (
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800/50 hover:text-slate-100 md:hidden"
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
         </nav>
       </div>
     </header>

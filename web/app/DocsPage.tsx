@@ -1,835 +1,863 @@
 "use client";
-import { useState } from "react";
-import { sidebarGroups } from "./docsData";
-import Playground from "../components/Playground";
-import { useTheme } from "./ThemeProvider";
-import SearchCommand from "../components/SearchCommand";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { sidebarGroups } from "./docsData";
+import { useTheme } from "./ThemeProvider";
 import {
-  BookOpen,
+  AlertTriangle,
+  Armchair,
+  BarChart3,
+  Building2,
+  CheckCircle,
+  ChevronRight,
+  Gamepad2,
+  MapPin,
   Package,
   Rocket,
+  Search,
   Ticket,
   Train,
-  MapPin,
-  Building2,
-  Search,
-  CheckCircle,
-  BarChart3,
-  AlertTriangle,
-  Gamepad2,
   type LucideIcon,
-  Armchair,
 } from "lucide-react";
 
-const IRCTCConnectDocs = () => {
+type EndpointSection = {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  description: string;
+  signature: string;
+  params: Array<{ name: string; type: string; desc: string }>;
+  example: string;
+};
+
+const endpointSections: EndpointSection[] = [
+  {
+    id: "pnr-status",
+    title: "PNR Status",
+    icon: Ticket,
+    description:
+      "Get complete PNR status with passenger details, journey route, and confirmation updates.",
+    signature: "checkPNRStatus(pnr: string)",
+    params: [{ name: "pnr", type: "string", desc: "10-digit PNR number" }],
+    example: `const result = await checkPNRStatus("1234567890");
+
+if (result.success) {
+  console.log(result.data.status);
+  console.log(result.data.train.name);
+  console.log(result.data.passengers);
+}`,
+  },
+  {
+    id: "train-info",
+    title: "Train Information",
+    icon: Train,
+    description:
+      "Retrieve route details, running schedule, stoppages, and station-level metadata.",
+    signature: "getTrainInfo(trainNumber: string)",
+    params: [
+      {
+        name: "trainNumber",
+        type: "string",
+        desc: "5-digit train number",
+      },
+    ],
+    example: `const result = await getTrainInfo("12345");
+
+if (result.success) {
+  console.log(result.data.trainInfo.train_name);
+  console.log(result.data.route.length);
+}`,
+  },
+  {
+    id: "live-tracking",
+    title: "Live Tracking",
+    icon: MapPin,
+    description:
+      "Track live train movement with station-by-station arrival and delay context.",
+    signature: "trackTrain(trainNumber: string, date: string)",
+    params: [
+      { name: "trainNumber", type: "string", desc: "5-digit train number" },
+      { name: "date", type: "string", desc: "Journey date in DD-MM-YYYY" },
+    ],
+    example: `const result = await trackTrain("12342", "06-12-2025");
+
+if (result.success) {
+  console.log(result.data.statusNote);
+  console.log(result.data.stations[0]);
+}`,
+  },
+  {
+    id: "station-live",
+    title: "Live At Station",
+    icon: Building2,
+    description:
+      "Get upcoming and passing trains at a station with near real-time status.",
+    signature: "liveAtStation(stationCode: string)",
+    params: [
+      {
+        name: "stationCode",
+        type: "string",
+        desc: "Station code such as NDLS, BCT, HWH",
+      },
+    ],
+    example: `const result = await liveAtStation("NDLS");
+
+if (result.success) {
+  console.log(result.data[0]?.trainname);
+}`,
+  },
+  {
+    id: "train-search",
+    title: "Train Search",
+    icon: Search,
+    description:
+      "Find available trains between stations with timetable and running-day data.",
+    signature: "searchTrainBetweenStations(from: string, to: string)",
+    params: [
+      { name: "from", type: "string", desc: "Origin station code" },
+      { name: "to", type: "string", desc: "Destination station code" },
+    ],
+    example: `const result = await searchTrainBetweenStations("NDLS", "BCT");
+
+if (result.success) {
+  console.log(result.data.map((t) => t.train_name));
+}`,
+  },
+  {
+    id: "seat-availability",
+    title: "Seat Availability",
+    icon: Armchair,
+    description:
+      "Check availability forecasts and detailed fare breakup by quota and class.",
+    signature:
+      "getAvailability(trainNo, fromStnCode, toStnCode, date, coach, quota)",
+    params: [
+      { name: "trainNo", type: "string", desc: "5-digit train number" },
+      { name: "fromStnCode", type: "string", desc: "Origin station code" },
+      { name: "toStnCode", type: "string", desc: "Destination station code" },
+      { name: "date", type: "string", desc: "Journey date in DD-MM-YYYY" },
+      { name: "coach", type: "string", desc: "SL, 3A, 2A, 1A, CC, EC, 2S" },
+      { name: "quota", type: "string", desc: "GN, TQ, LD, SS" },
+    ],
+    example: `const result = await getAvailability(
+  "12496",
+  "ASN",
+  "DDU",
+  "27-12-2025",
+  "2A",
+  "GN"
+);`,
+  },
+];
+
+const installSnippet = "npm install irctc-connect";
+
+const quickStartSnippet = `import {
+  configure,
+  checkPNRStatus,
+  getTrainInfo,
+  trackTrain,
+  liveAtStation,
+  searchTrainBetweenStations,
+  getAvailability
+} from "irctc-connect";
+
+configure(process.env.IRCTC_API_KEY);
+
+const pnr = await checkPNRStatus("1234567890");
+const train = await getTrainInfo("12345");
+const live = await trackTrain("12345", "06-12-2025");
+const station = await liveAtStation("NDLS");
+const between = await searchTrainBetweenStations("NDLS", "BCT");
+const seats = await getAvailability("12496", "ASN", "DDU", "27-12-2025", "2A", "GN");`;
+
+export default function DocsPage() {
+  const { sidebarOpen, setSidebarOpen } = useTheme();
   const [activeSection, setActiveSection] = useState("introduction");
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed on mobile
-  const { theme, toggleTheme } = useTheme();
+  const [copiedInstall, setCopiedInstall] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  const flatSections = useMemo(
+    () => sidebarGroups.flatMap((group) => group.items),
+    [],
+  );
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", `#${sectionId}`);
     }
+    setSidebarOpen(false);
   };
 
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (!hash) return;
+    const target = document.getElementById(hash);
+    if (!target) return;
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      setActiveSection(hash);
+    }, 120);
+  }, []);
+
+  useEffect(() => {
+    const update = () => setIsDesktop(window.innerWidth >= 1024);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    const sections = flatSections
+      .map((item) => document.getElementById(item.id))
+      .filter(Boolean) as HTMLElement[];
+
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]?.target?.id) {
+          setActiveSection(visible[0].target.id);
+        }
+      },
+      {
+        rootMargin: "-30% 0px -55% 0px",
+        threshold: [0.1, 0.3, 0.5, 0.7],
+      },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [flatSections]);
+
+  const copyInstall = async () => {
+    try {
+      await navigator.clipboard.writeText(installSnippet);
+      setCopiedInstall(true);
+      setTimeout(() => setCopiedInstall(false), 1400);
+    } catch {}
+  };
+
+  const sectionStyle = { marginBottom: 28, scrollMarginTop: 104 } as const;
+
   return (
-    <div className="min-h-screen bg-white dark:bg-black font-inter text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300">
-      {/* Main Layout */}
-      <div className="pt-16 max-w-full lg:max-w-7xl mx-auto flex px-4 lg:px-8">
-        {/* Sidebar */}
-        <aside
-          className={`fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-slate-50 dark:bg-zinc-900/40 border-slate-200 dark:border-white/10 overflow-y-auto transition-transform duration-300 z-40 lg:border-r lg:bg-transparent dark:lg:bg-transparent ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#070910",
+        color: "#e2e8f0",
+        paddingTop: 64,
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap');
+        .docs-shell { max-width: 1320px; margin: 0 auto; padding: 28px 24px 56px; position: relative; z-index: 2; }
+        .docs-card { background: #0f1117; border: 1px solid #1e2330; border-radius: 12px; min-width: 0; max-width: 100%; }
+        .docs-muted { color: #64748b; font-family: 'JetBrains Mono', monospace; }
+        .docs-title { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; }
+        .docs-code-wrap pre { background: transparent !important; margin: 0 !important; }
+        .docs-endpoint-signature {
+          display: block;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+        .docs-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .docs-scroll::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 4px; }
+        .docs-endpoint-stack { display: grid; gap: 26px; }
+        @media (max-width: 1024px) {
+          .docs-shell { padding: 20px 14px 40px; }
+          .docs-endpoint-stack { gap: 20px; }
+        }
+      `}</style>
+
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: "4%",
+            left: "8%",
+            width: 580,
+            height: 300,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(ellipse, rgba(52,211,153,0.06) 0%, transparent 72%)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: "8%",
+            top: "18%",
+            width: 520,
+            height: 260,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(ellipse, rgba(96,165,250,0.07) 0%, transparent 72%)",
+          }}
+        />
+      </div>
+
+      <div className="docs-shell">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isDesktop ? "280px 1fr" : "1fr",
+            gap: 24,
+          }}
         >
-          <div className="p-4">
-            <nav className="space-y-6">
-              {sidebarGroups.map((group) => (
-                <div key={group.title}>
-                  {/* Section Header */}
-                  <div className="px-3 mb-2 mt-4 text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                    {group.title}
-                  </div>
-
-                  {/* Items */}
-                  <div className="space-y-1">
-                    {group.items.map((section) => {
-                      const IconComponent = section.icon;
-                      const isActive = activeSection === section.id;
-
-                      return (
-                        <button
-                          key={section.id}
-                          title={section.label}
-                          onClick={() => scrollToSection(section.id)}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm
-                ${
-                  isActive
-                    ? "bg-slate-200 dark:bg-zinc-800 text-slate-900 dark:text-white font-medium shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-900/50 hover:text-slate-900 dark:hover:text-slate-300"
-                }`}
-                        >
-                          <IconComponent className="w-5 h-5 shrink-0" />
-                          <span className="text-sm">{section.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
-        {/* Overlay for mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Content */}
-        <main className="flex-1 min-h-[calc(100vh-4rem)] lg:pl-12 py-8 lg:py-12 px-4 lg:px-0">
-          <div className="max-w-4xl mx-auto">
-            {/* Introduction */}
-            <section id="introduction" className="mb-12 lg:mb-20 scroll-mt-32">
-              <div className="mb-10 text-left">
-                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">Get setup</p>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
-                  Introducing the new IRCTC Connect documentation
-                </h1>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
-                  Find all the guides and resources you need to develop with IRCTC Connect. An API key is required — call <code className="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">configure(apiKey)</code> once at startup and all functions will automatically authenticate with the backend.
+          <aside
+            className="docs-scroll"
+            style={{
+              position: isDesktop ? "sticky" : "fixed",
+              top: isDesktop ? 84 : 74,
+              left: isDesktop ? "auto" : 12,
+              width: isDesktop ? "auto" : "calc(100vw - 24px)",
+              alignSelf: "start",
+              maxHeight: isDesktop ? "calc(100vh - 100px)" : "calc(100vh - 88px)",
+              overflowY: "auto",
+              padding: 14,
+              background: "#0f1117",
+              border: "1px solid #1e2330",
+              borderRadius: 12,
+              zIndex: 20,
+              transform: sidebarOpen || isDesktop ? "translateX(0)" : "translateX(-120%)",
+              transition: "transform 0.22s ease",
+            }}
+          >
+            <p
+              style={{
+                color: "#94a3b8",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                fontFamily: "'JetBrains Mono', monospace",
+                marginBottom: 10,
+              }}
+            >
+              Documentation
+            </p>
+            {sidebarGroups.map((group) => (
+              <div key={group.title} style={{ marginBottom: 16 }}>
+                <p
+                  style={{
+                    color: "#475569",
+                    fontSize: 10,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    margin: "8px 6px",
+                  }}
+                >
+                  {group.title}
                 </p>
+                <div style={{ display: "grid", gap: 4 }}>
+                  {group.items.map((section) => {
+                    const Icon = section.icon;
+                    const isActive = activeSection === section.id;
+                    return (
+                      <button
+                        key={section.id}
+                        onClick={() => scrollToSection(section.id)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 9,
+                          width: "100%",
+                          padding: "8px 10px",
+                          borderRadius: 8,
+                          border: isActive
+                            ? "1px solid #2d4060"
+                            : "1px solid transparent",
+                          background: isActive ? "#1e2a3a" : "transparent",
+                          color: isActive ? "#60a5fa" : "#64748b",
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          textAlign: "left",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        <Icon size={14} />
+                        <span>{section.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </aside>
+
+          <main style={{ minWidth: 0, maxWidth: "100%", overflowX: "hidden" }}>
+            <section id="introduction" style={sectionStyle}>
+              <div className="docs-card" style={{ padding: isDesktop ? 30 : 20, marginBottom: 16 }}>
+                <p className="docs-muted" style={{ fontSize: 11, marginBottom: 8 }}>
+                  IRCTC CONNECT SDK
+                </p>
+                <h1
+                  className="docs-title"
+                  style={{
+                    fontSize: "clamp(30px, 5vw, 52px)",
+                    lineHeight: 1.05,
+                    marginBottom: 14,
+                  }}
+                >
+                  Irctc Connect SDK Documentation
+                </h1>
+                <p
+                  style={{
+                    color: "#94a3b8",
+                    maxWidth: 820,
+                    lineHeight: 1.75,
+                    fontSize: 14,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Get installation, quick start,
+                  endpoint references, validation rules, and live playground flow in
+                  one place.
+                </p>
+
+                <div
+                  style={{
+                    marginTop: 18,
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Link
+                    href="/dashboard"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      padding: "9px 13px",
+                      borderRadius: 8,
+                      background: "linear-gradient(135deg, #059669, #047857)",
+                      border: "1px solid #047857",
+                      color: "#fff",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Open Dashboard <ChevronRight size={13} />
+                  </Link>
+                  <a
+                    href="https://www.npmjs.com/package/irctc-connect"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      padding: "9px 13px",
+                      borderRadius: 8,
+                      background: "#1a1f2e",
+                      border: "1px solid #2d3548",
+                      color: "#94a3b8",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    View NPM Package
+                  </a>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 14,
+                }}
+              >
                 {[
-                  {
-                    icon: <Rocket className="w-5 h-5 stroke-[1.5]" />,
-                    title: "Quickstarts",
-                    desc: "Explore our end-to-end tutorials and get started.",
-                  },
-                  {
-                    icon: <Package className="w-5 h-5 stroke-[1.5]" />,
-                    title: "Core Features",
-                    desc: "Pre-built components and APIs for PNR and Trains.",
-                  },
-                  {
-                    icon: <AlertTriangle className="w-5 h-5 stroke-[1.5]" />,
-                    title: "Reliability",
-                    desc: "Input validations and strict error handling guidelines.",
-                  },
-                  {
-                    icon: <Gamepad2 className="w-5 h-5 stroke-[1.5]" />,
-                    title: "API Reference",
-                    desc: "Dig into our API reference documentation and SDKs.",
-                  },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-white dark:bg-zinc-900/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all shadow-sm"
-                  >
-                    <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 mb-4 shadow-sm">
-                      {item.icon}
-                    </div>
-                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1 text-sm">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      {item.desc}
+                  { label: "Endpoints", value: "6", color: "#60a5fa" },
+                  { label: "Runtime", value: "Node 14+", color: "#6ee7b7" },
+                  { label: "Auth", value: "API Key", color: "#fbbf24" },
+                  { label: "SDK", value: "irctc-connect", color: "#a78bfa" },
+                ].map((stat) => (
+                  <div key={stat.label} className="docs-card" style={{ padding: 14 }}>
+                    <p className="docs-muted" style={{ fontSize: 10, marginBottom: 8 }}>
+                      {stat.label}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 800,
+                        color: stat.color,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {stat.value}
                     </p>
                   </div>
                 ))}
               </div>
-
-              {/* Frameworks */}
-              <div className="mb-10 text-left">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
-                  Explore by frontend framework
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Find all the guides and resources you need to develop with IRCTC Connect.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6 pb-8">
-                {[
-                  {
-                    title: "Next.js",
-                    desc: "Easily add fast train scheduling and PNR tracking to Next.js.",
-                    letter: "N"
-                  },
-                  {
-                    title: "React",
-                    desc: "Get started installing and initializing IRCTC Connect in a React App.",
-                    letter: "R"
-                  },
-                  {
-                    title: "Express",
-                    desc: "Learn about installing and initializing APIs in an Express server.",
-                    letter: "E"
-                  },
-                  {
-                    title: "Vanilla Node",
-                    desc: "Use IRCTC Connect cleanly with pure Javascript to query data.",
-                    letter: "V"
-                  }
-                ].map((fw, idx) => (
-                  <div key={idx} className="flex gap-4 p-4 -ml-4 rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-900/30 hover:shadow-sm transition-all cursor-pointer group">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-lg shrink-0 shadow-sm transition-transform">
-                      {fw.letter}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900 dark:text-white text-sm mb-1">{fw.title}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{fw.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </section>
 
-            {/* Installation */}
-            <section id="installation" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <BookOpen /> Installation
-              </h2>
-              <div className="bg-slate-900 dark:bg-slate-950 rounded-xl p-6 font-mono text-sm border border-slate-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 text-xs">Terminal</span>
-                  <button className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-slate-800 transition-colors">
-                    Copy
+            <section id="installation" style={sectionStyle}>
+              <SectionHeader title="Installation" icon={Package} />
+              <div className="docs-card" style={{ overflow: "hidden" }}>
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    borderBottom: "1px solid #1e2330",
+                    background: "#0a0d13",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span className="docs-muted" style={{ fontSize: 11 }}>
+                    Terminal
+                  </span>
+                  <button
+                    onClick={copyInstall}
+                    style={{
+                      borderRadius: 6,
+                      border: "1px solid #2d3548",
+                      background: copiedInstall ? "#0f2a1d" : "#1a1f2e",
+                      color: copiedInstall ? "#6ee7b7" : "#94a3b8",
+                      cursor: "pointer",
+                      padding: "4px 8px",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {copiedInstall ? "Copied" : "Copy"}
                   </button>
                 </div>
-                <code className="text-green-400">
-                  npm install irctc-connect
-                </code>
-              </div>
-
-              <div className="mt-6 grid sm:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
-                    Requirements
-                  </h4>
-                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                    <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span> Node.js 14+
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span> Internet
-                      connection
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span> Valid API key
-                      added in `.env` (for example `IRCTC_API_KEY`)
-                    </li>
-                  </ul>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
-                    Supported Platforms
-                  </h4>
-                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                    <li className="flex items-center gap-2">
-                      <span className="text-blue-500">→</span> Node.js apps
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-blue-500">→</span> Express.js
-                      servers
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-blue-500">→</span> Next.js
-                      applications
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-blue-500">→</span> React Native
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            {/* Quick Start */}
-            <section id="quickstart" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <Rocket /> Quick Start
-              </h2>
-              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
-                An API key is required. Call <code className="font-mono font-semibold">configure(apiKey)</code> once before using any other function — store your key safely in environment variables.
-              </div>
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
-                    index.js
-                  </span>
-                </div>
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`import {
-  configure,
-  checkPNRStatus, getTrainInfo, trackTrain,
-  liveAtStation, searchTrainBetweenStations, getAvailability
-} from 'irctc-connect';
-
-// Step 1: configure once with your API key (store it in .env)
-// .env → IRCTC_API_KEY=your_api_key_here
-configure(process.env.IRCTC_API_KEY);
-
-// Check PNR status
-const pnrResult = await checkPNRStatus('1234567890');
-
-// Get train information
-const trainResult = await getTrainInfo('12345');
-
-// Track live train status
-const trackResult = await trackTrain('12345', '06-12-2025');
-
-// Get live trains at station
-const stationResult = await liveAtStation('NDLS');
-
-// Search trains between stations
-const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');
-
-// Get seat availability with fare
-const availResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');`}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
-            </section>
-
-            {/* PNR Status */}
-            <section id="pnr-status" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <Ticket /> checkPNRStatus(pnr)
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                Get comprehensive PNR status with passenger details and journey
-                information.
-              </p>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                  Parameters
-                </h4>
-                <div className="flex items-center gap-3">
-                  <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                    pnr
+                <div style={{ padding: 14, background: "#0a0d13" }}>
+                  <code
+                    style={{
+                      color: "#6ee7b7",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 13,
+                    }}
+                  >
+                    {installSnippet}
                   </code>
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    (string) — 10-digit PNR number
-                  </span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Example Usage
-                  </span>
-                </div>
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`const result = await checkPNRStatus('1234567890');
-
-if (result.success) {
-  console.log('PNR:', result.data.pnr);
-  console.log('Status:', result.data.status);
-  console.log('Train:', result.data.train.name);
-  console.log('Journey:', result.data.journey.from.name, '→', result.data.journey.to.name);
-  
-  result.data.passengers.forEach(passenger => {
-    console.log(\`\${passenger.name}: \${passenger.status} - \${passenger.seat}\`);
-  });
-}`}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Response Structure
-                  </span>
-                </div>
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`{
-  success: true,
-  data: {
-    pnr: "1234567890",
-    status: "CNF",
-    train: { number: "12345", name: "Rajdhani Express", class: "3A" },
-    journey: {
-      from: { name: "New Delhi", code: "NDLS", platform: "16" },
-      to: { name: "Mumbai Central", code: "BCT", platform: "3" },
-      departure: "20:05",
-      arrival: "08:35",
-      duration: "12h 30m"
-    },
-    passengers: [
-      { name: "JOHN DOE", status: "CNF", seat: "B1-45", berthType: "SL" }
-    ]
-  }
-}`}
-                  </SyntaxHighlighter>
-                </div>
+              <div
+                style={{
+                  marginTop: 14,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  gap: 14,
+                }}
+              >
+                <InfoPanel
+                  title="Requirements"
+                  items={[
+                    "Node.js 14+",
+                    "Active internet connection",
+                    "Valid API key in environment variables",
+                  ]}
+                />
+                <InfoPanel
+                  title="Supported Platforms"
+                  items={[
+                    "Node.js apps and scripts",
+                    "Express servers",
+                    "Next.js App Router projects",
+                    "React Native environments",
+                  ]}
+                />
               </div>
             </section>
 
-            {/* Train Info */}
-            <section id="train-info" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <Train /> getTrainInfo(trainNumber)
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                Get detailed train information including complete route with
-                station coordinates.
-              </p>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                  Parameters
-                </h4>
-                <div className="flex items-center gap-3">
-                  <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                    trainNumber
-                  </code>
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    (string) — 5-digit train number
-                  </span>
-                </div>
+            <section id="quickstart" style={sectionStyle}>
+              <SectionHeader title="Quick Start" icon={Rocket} />
+              <div
+                style={{
+                  background: "#1a1060",
+                  border: "1px solid #2d1f8a",
+                  color: "#c4b5fd",
+                  borderRadius: 10,
+                  padding: "11px 13px",
+                  fontSize: 12,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  marginBottom: 12,
+                  lineHeight: 1.6,
+                }}
+              >
+                Call <code>configure(apiKey)</code> once at app startup before any
+                request method.
               </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Example Usage
-                  </span>
-                </div>
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`const result = await getTrainInfo('12345');
-
-if (result.success) {
-  const { trainInfo, route } = result.data;
-  
-  console.log(\`🚂 \${trainInfo.train_name} (\${trainInfo.train_no})\`);
-  console.log(\`📍 \${trainInfo.from_stn_name} → \${trainInfo.to_stn_name}\`);
-  console.log(\`⏱️ \${trainInfo.from_time} - \${trainInfo.to_time}\`);
-  console.log(\`📅 Running Days: \${trainInfo.running_days}\`);
-  
-  route.forEach(station => {
-    console.log(\`  \${station.stnName} - \${station.departure}\`);
-  });
-}`}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
+              <CodePanel language="javascript" code={quickStartSnippet} />
             </section>
 
-            {/* Live Tracking */}
-            <section id="live-tracking" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <MapPin /> trackTrain(trainNumber, date)
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                Get real-time train status and tracking for a specific date with
-                detailed station-wise information including delays and coach
-                positions.
-              </p>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                  Parameters
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                      trainNumber
-                    </code>
-                    <span className="text-sm text-slate-600 dark:text-slate-300">
-                      (string) — 5-digit train number
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                      date
-                    </code>
-                    <span className="text-sm text-slate-600 dark:text-slate-300">
-                      (string) — Date in dd-mm-yyyy format
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Example Usage
-                  </span>
-                </div>
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`const result = await trackTrain('12342', '06-12-2025');
-
-if (result.success) {
-  const { trainNo, trainName, statusNote, stations } = result.data;
-  
-  console.log(\`🚂 \${trainName} (\${trainNo})\`);
-  console.log(\`📍 Status: \${statusNote}\`);
-  
-  stations.forEach(station => {
-    console.log(\`🚉 \${station.stationName} (\${station.stationCode})\`);
-    console.log(\`   Arrival: \${station.arrival.scheduled} → \${station.arrival.actual}\`);
-    if (station.arrival.delay) {
-      console.log(\`   ⚠️ Delay: \${station.arrival.delay}\`);
-    }
-  });
-}`}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
-            </section>
-
-            {/* Live at Station */}
-            <section id="station-live" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <Building2 /> liveAtStation(stnCode)
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                Get list of upcoming trains at any station with real-time
-                information.
-              </p>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                  Parameters
-                </h4>
-                <div className="flex items-center gap-3">
-                  <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                    stnCode
-                  </code>
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    (string) — Station code (e.g., 'NDLS', 'BCT', 'HWH')
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Example Usage
-                  </span>
-                </div>
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`const result = await liveAtStation('NDLS');
-
-if (result.success) {
-  result.data.forEach(train => {
-    console.log(\`🚂 \${train.trainno} - \${train.trainname}\`);
-    console.log(\`   📍 \${train.source} → \${train.dest}\`);
-    console.log(\`   ⏰ Time: \${train.timeat}\`);
-  });
-}`}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
-            </section>
-
-            {/* Train Search */}
-            <section id="train-search" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <Search /> searchTrainBetweenStations(from, to)
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                Find all trains running between two stations with timing and
-                availability.
-              </p>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                  Parameters
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                      fromStationCode
-                    </code>
-                    <span className="text-sm text-slate-600 dark:text-slate-300">
-                      (string) — Origin station code
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-sm font-mono">
-                      toStationCode
-                    </code>
-                    <span className="text-sm text-slate-600 dark:text-slate-300">
-                      (string) — Destination station code
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Example Usage
-                  </span>
-                </div>
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`const result = await searchTrainBetweenStations('NDLS', 'BCT');
-
-if (result.success) {
-  result.data.forEach(train => {
-    console.log(\`🚂 \${train.train_name} (\${train.train_no})\`);
-    console.log(\`   📍 \${train.from_stn_name} → \${train.to_stn_name}\`);
-    console.log(\`   ⏰ \${train.from_time} → \${train.to_time}\`);
-    console.log(\`   ⏱️ Duration: \${train.travel_time}\`);
-    console.log(\`   📏 Distance: \${train.distance} km\`);
-    console.log(\`   📅 Days: \${train.running_days}\`);
-  });
-}`}
-                  </SyntaxHighlighter>
-                </div>
-              </div>
-            </section>
-
-            {/* Seat Availability */}
-            <section
-              id="seat-availability"
-              className="mb-8 lg:mb-16 scroll-mt-24"
-            >
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <Armchair className="w-6 h-6" />
-                getAvailability( trainNo, fromStnCode, toStnCode, date, coach,
-                quota )
-              </h2>
-
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                Check seat availability with complete fare breakdown for a
-                specific train journey.
-              </p>
-
-              {/* Parameters */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                  Parameters
-                </h4>
-
-                <div className="space-y-3 text-sm">
-                  {[
-                    ["trainNo", "string", "5-digit train number"],
-                    [
-                      "fromStnCode",
-                      "string",
-                      "Origin station code (e.g. ASN, NDLS)",
-                    ],
-                    [
-                      "toStnCode",
-                      "string",
-                      "Destination station code (e.g. DDU, BCT)",
-                    ],
-                    ["date", "string", "Journey date in DD-MM-YYYY format"],
-                    [
-                      "coach",
-                      "string",
-                      "Class: 2S, SL, 3A, 3E, 2A, 1A, CC, EC",
-                    ],
-                    ["quota", "string", "Quota: GN, LD, SS, TQ"],
-                  ].map(([name, type, desc]) => (
-                    <div
-                      key={name}
-                      className="flex flex-wrap items-center gap-3"
+            <div className="docs-endpoint-stack">
+              {endpointSections.map((endpoint) => (
+                <section key={endpoint.id} id={endpoint.id} style={sectionStyle}>
+                  <SectionHeader title={endpoint.title} icon={endpoint.icon} />
+                  <div className="docs-card" style={{ padding: isDesktop ? 20 : 14 }}>
+                    <p
+                      style={{
+                        color: "#94a3b8",
+                        fontSize: 13,
+                        lineHeight: 1.78,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        marginBottom: 14,
+                      }}
                     >
-                      <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded font-mono">
-                        {name}
-                      </code>
-                      <span className="text-slate-600 dark:text-slate-300">
-                        ({type}) — {desc}
-                      </span>
+                      {endpoint.description}
+                    </p>
+                    <code
+                      className="docs-endpoint-signature"
+                      style={{
+                        padding: "6px 10px",
+                        background: "#0a0d13",
+                        border: "1px solid #2d3548",
+                        borderRadius: 7,
+                        color: "#93c5fd",
+                        fontSize: 12,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        marginBottom: 16,
+                      }}
+                    >
+                      {endpoint.signature}
+                    </code>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: 10,
+                        marginBottom: 16,
+                      }}
+                    >
+                      {endpoint.params.map((param) => (
+                        <div
+                          key={param.name}
+                          style={{
+                            background: "#0a0d13",
+                            border: "1px solid #1e2330",
+                            borderRadius: 9,
+                            padding: 11,
+                          }}
+                        >
+                          <p
+                            style={{
+                              color: "#e2e8f0",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              marginBottom: 6,
+                              fontFamily: "'JetBrains Mono', monospace",
+                              overflowWrap: "anywhere",
+                            }}
+                          >
+                            {param.name}
+                          </p>
+                          <p
+                            style={{
+                              color: "#60a5fa",
+                              fontSize: 11,
+                              fontFamily: "'JetBrains Mono', monospace",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {param.type}
+                          </p>
+                          <p
+                            style={{
+                              color: "#64748b",
+                              fontSize: 11,
+                              lineHeight: 1.6,
+                              fontFamily: "'JetBrains Mono', monospace",
+                              overflowWrap: "anywhere",
+                            }}
+                          >
+                            {param.desc}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <CodePanel language="javascript" code={endpoint.example} />
+                  </div>
+                </section>
+              ))}
+            </div>
 
-              {/* Example */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Example Usage
-                  </span>
-                </div>
-
-                <div className="p-2 font-jetbrains text-sm overflow-x-auto bg-slate-900">
-                  <SyntaxHighlighter language="javascript" style={nightOwl}>
-                    {`const result = await getAvailability(
-  '12496',
-  'ASN',
-  'DDU',
-  '27-12-2025',
-  '2A',
-  'GN'
-);
-
-if (result.success) {
-  const { train, fare, availability } = result.data;
-
-  console.log(\`🚂 \${train.trainName} (\${train.trainNo})\`);
-  console.log(
-    \`📍 \${train.fromStationName} → \${train.toStationName}\`
-  );
-
-  console.log('\\n💰 Fare Breakdown:');
-  console.log('Base Fare:', fare.baseFare);
-  console.log('Reservation:', fare.reservationCharge);
-  console.log('Superfast:', fare.superfastCharge);
-  console.log('Total:', fare.totalFare);
-
-  console.log('\\n📅 Availability:');
-  availability.forEach(day => {
-    console.log(
-      \`\${day.date}: \${day.availabilityText} (\${day.prediction})\`
-    );
-  });
-}`}
-                  </SyntaxHighlighter>
-                </div>
+            <section id="playground" style={sectionStyle}>
+              <SectionHeader title="Playground" icon={Gamepad2} />
+              <div className="docs-card" style={{ padding: 16 }}>
+                <p
+                  style={{
+                    color: "#94a3b8",
+                    lineHeight: 1.7,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 13,
+                    marginBottom: 14,
+                  }}
+                >
+                  The live playground is now available directly inside your user
+                  panel. Use it to run real API calls with your account key and see
+                  latency + JSON responses in the same dashboard workspace.
+                </p>
+                <Link
+                  href="/dashboard"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    textDecoration: "none",
+                    color: "#fff",
+                    background: "linear-gradient(135deg, #059669, #047857)",
+                    border: "1px solid #047857",
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Open Playground Tab <ChevronRight size={13} />
+                </Link>
               </div>
             </section>
 
-            <Playground />
-
-            {/* Validation */}
-            <section id="validation" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <CheckCircle /> Input Validation
-              </h2>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
-                    PNR Number
-                  </h4>
-                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                    <li>• Must be exactly 10 digits</li>
-                    <li>• Only numeric characters</li>
-                    <li>• Auto-cleans non-numeric input</li>
-                  </ul>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
-                    Train Number
-                  </h4>
-                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                    <li>• Must be exactly 5 characters</li>
-                    <li>• Valid train number string</li>
-                  </ul>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
-                    Date Format
-                  </h4>
-                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                    <li>• Format: dd-mm-yyyy</li>
-                    <li>• Validates actual dates</li>
-                    <li>• No invalid dates like 32-01-2025</li>
-                  </ul>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">
-                    Station Codes
-                  </h4>
-                  <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                    <li>• Valid station code strings</li>
-                    <li>• Examples: NDLS, BCT, HWH</li>
-                  </ul>
-                </div>
+            <section id="validation" style={sectionStyle}>
+              <SectionHeader title="Input Validation" icon={CheckCircle} />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                <InfoPanel
+                  title="PNR"
+                  items={[
+                    "Exactly 10 digits",
+                    "Numeric input only",
+                    "Reject malformed values early",
+                  ]}
+                />
+                <InfoPanel
+                  title="Train Number"
+                  items={[
+                    "Exactly 5 digits",
+                    "Treat as string to preserve zeros",
+                    "No spaces or symbols",
+                  ]}
+                />
+                <InfoPanel
+                  title="Date"
+                  items={[
+                    "DD-MM-YYYY format",
+                    "Validate real calendar date",
+                    "Use same format across APIs",
+                  ]}
+                />
+                <InfoPanel
+                  title="Station Code"
+                  items={[
+                    "Uppercase station code",
+                    "Examples: NDLS, BCT, HWH",
+                    "Trim extra whitespace",
+                  ]}
+                />
               </div>
             </section>
 
-            {/* Status Codes */}
-            <section id="status-codes" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <BarChart3 /> Status Codes
-              </h2>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden overflow-x-auto">
-                <table className="w-full text-sm">
+            <section id="status-codes" style={sectionStyle}>
+              <SectionHeader title="Status Codes" icon={BarChart3} />
+              <div className="docs-card" style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-3 lg:px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
-                        Code
-                      </th>
-                      <th className="px-3 lg:px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100 hidden sm:table-cell">
-                        Full Form
-                      </th>
-                      <th className="px-3 lg:px-6 py-4 text-left font-semibold text-slate-900 dark:text-slate-100">
-                        Description
-                      </th>
+                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                      {["Code", "Full Form", "Description"].map((head) => (
+                        <th
+                          key={head}
+                          style={{
+                            color: "#475569",
+                            fontSize: 10,
+                            letterSpacing: "0.1em",
+                            textTransform: "uppercase",
+                            textAlign: "left",
+                            padding: "11px 12px",
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        >
+                          {head}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tbody>
                     {[
-                      {
-                        code: "CNF",
-                        full: "Confirmed",
-                        desc: "Seat is confirmed",
-                      },
-                      {
-                        code: "WL",
-                        full: "Waiting List",
-                        desc: "Not confirmed yet",
-                      },
-                      {
-                        code: "RAC",
-                        full: "Reservation Against Cancellation",
-                        desc: "Partially confirmed",
-                      },
-                      {
-                        code: "CAN",
-                        full: "Cancelled",
-                        desc: "Ticket cancelled",
-                      },
-                      {
-                        code: "PQWL",
-                        full: "Pooled Quota Waiting List",
-                        desc: "On pooled quota",
-                      },
-                      {
-                        code: "TQWL",
-                        full: "Tatkal Quota Waiting List",
-                        desc: "On tatkal quota",
-                      },
-                      {
-                        code: "GNWL",
-                        full: "General Waiting List",
-                        desc: "On general quota",
-                      },
-                    ].map((status, idx) => (
-                      <tr
-                        key={idx}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                      >
-                        <td className="px-3 lg:px-6 py-4">
-                          <code className="px-2 py-1 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded font-mono text-xs font-semibold">
-                            {status.code}
+                      ["CNF", "Confirmed", "Seat or berth is confirmed"],
+                      ["WL", "Waiting List", "Seat not confirmed yet"],
+                      ["RAC", "Reservation Against Cancellation", "Partial seat allocation"],
+                      ["CAN", "Cancelled", "Ticket is cancelled"],
+                      ["PQWL", "Pooled Quota WL", "Pooled quota waiting"],
+                      ["TQWL", "Tatkal Quota WL", "Tatkal waiting"],
+                      ["GNWL", "General WL", "General waiting list"],
+                    ].map(([code, full, desc]) => (
+                      <tr key={code} style={{ borderBottom: "1px solid #141820" }}>
+                        <td style={{ padding: "11px 12px" }}>
+                          <code
+                            style={{
+                              background: "#0b1a2c",
+                              border: "1px solid #1e3a5f",
+                              borderRadius: 6,
+                              color: "#93c5fd",
+                              padding: "2px 6px",
+                              fontSize: 11,
+                              fontFamily: "'JetBrains Mono', monospace",
+                            }}
+                          >
+                            {code}
                           </code>
                         </td>
-                        <td className="px-3 lg:px-6 py-4 text-slate-700 dark:text-slate-300 hidden sm:table-cell">
-                          {status.full}
+                        <td
+                          style={{
+                            color: "#cbd5e1",
+                            fontSize: 12,
+                            padding: "11px 12px",
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        >
+                          {full}
                         </td>
-                        <td className="px-3 lg:px-6 py-4 text-slate-500 dark:text-slate-400">
-                          {status.desc}
+                        <td
+                          style={{
+                            color: "#94a3b8",
+                            fontSize: 12,
+                            padding: "11px 12px",
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        >
+                          {desc}
                         </td>
                       </tr>
                     ))}
@@ -838,67 +866,270 @@ if (result.success) {
               </div>
             </section>
 
-            {/* Error Handling */}
-            <section id="errors" className="mb-8 lg:mb-16 scroll-mt-24">
-              <h2 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 lg:mb-6 flex items-center gap-3">
-                <AlertTriangle /> Error Handling
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                All functions return a consistent response structure. Always
-                check the{" "}
-                <code className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded text-sm">
-                  success
-                </code>{" "}
-                field before accessing data.
-              </p>
-
-              <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
-                  <h4 className="font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
-                    <span className="text-lg">✅</span> Success Response
-                  </h4>
-                  <pre className="text-sm text-green-900 dark:text-green-200 font-mono">
-                    {`{
+            <section id="errors" style={{ marginBottom: 52, scrollMarginTop: 104 }}>
+              <SectionHeader title="Error Handling" icon={AlertTriangle} />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  gap: 12,
+                  marginBottom: 12,
+                }}
+              >
+                <div
+                  style={{
+                    background: "#0f2a1d",
+                    border: "1px solid #1a4731",
+                    borderRadius: 10,
+                    padding: 12,
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#6ee7b7",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Success Response
+                  </p>
+                  <pre
+                    style={{
+                      color: "#d1fae5",
+                      margin: 0,
+                      fontSize: 11,
+                      lineHeight: 1.6,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >{`{
   success: true,
   data: { ... }
-}`}
-                  </pre>
+}`}</pre>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-5">
-                  <h4 className="font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center gap-2">
-                    <span className="text-lg">❌</span> Error Response
-                  </h4>
-                  <pre className="text-sm text-red-900 dark:text-red-200 font-mono">
-                    {`{
+                <div
+                  style={{
+                    background: "#2a0f0f",
+                    border: "1px solid #4a1f1f",
+                    borderRadius: 10,
+                    padding: 12,
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#fda4af",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Error Response
+                  </p>
+                  <pre
+                    style={{
+                      color: "#fecdd3",
+                      margin: 0,
+                      fontSize: 11,
+                      lineHeight: 1.6,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >{`{
   success: false,
-  error: "Error message"
-}`}
-                  </pre>
+  message: "Error message"
+}`}</pre>
                 </div>
               </div>
-
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
-                <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-3">
-                  Common Error Scenarios
-                </h4>
-                <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-200">
-                  <li>• Missing API key — <code className="font-mono">configure(apiKey)</code> not called</li>
-                  <li>• Invalid or expired API key (401 Unauthorized)</li>
-                  <li>• API key inactive (403 Forbidden)</li>
-                  <li>• Monthly usage limit exceeded (429 Too Many Requests)</li>
-                  <li>• Invalid input parameters</li>
-                  <li>• Network timeouts (10-second timeout)</li>
-                  <li>• API service unavailable</li>
-                  <li>• Invalid PNR/train numbers</li>
-                  <li>• Invalid date formats</li>
-                </ul>
-              </div>
+              <InfoPanel
+                title="Common Error Scenarios"
+                items={[
+                  "Missing configure(apiKey) call",
+                  "Invalid or expired API key (401)",
+                  "Inactive API key (403)",
+                  "Rate limit exceeded (429)",
+                  "Invalid train/PNR/date inputs",
+                  "Temporary upstream timeout or API outage",
+                ]}
+              />
             </section>
-          </div>
-        </main>
+          </main>
+        </div>
+      </div>
+
+      {sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10,
+            background: "rgba(0, 0, 0, 0.5)",
+            border: "none",
+            cursor: "pointer",
+            display: isDesktop ? "none" : "block",
+          }}
+          aria-label="Close sidebar overlay"
+        />
+      )}
+    </div>
+  );
+}
+
+function SectionHeader({
+  title,
+  icon: Icon,
+}: {
+  title: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        marginBottom: 10,
+      }}
+    >
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          background: "#1a1f2e",
+          border: "1px solid #2d3548",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#93c5fd",
+        }}
+      >
+        <Icon size={15} />
+      </div>
+      <h2
+        style={{
+          color: "#f1f5f9",
+          fontSize: 20,
+          lineHeight: 1.2,
+          fontFamily: "'Syne', sans-serif",
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function InfoPanel({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="docs-card" style={{ padding: 13 }}>
+      <p
+        style={{
+          color: "#cbd5e1",
+          fontSize: 12,
+          marginBottom: 8,
+          fontWeight: 700,
+          fontFamily: "'JetBrains Mono', monospace",
+        }}
+      >
+        {title}
+      </p>
+      <div style={{ display: "grid", gap: 7 }}>
+        {items.map((item) => (
+          <p
+            key={item}
+            style={{
+              color: "#94a3b8",
+              fontSize: 12,
+              lineHeight: 1.55,
+              fontFamily: "'JetBrains Mono', monospace",
+            }}
+          >
+            {item}
+          </p>
+        ))}
       </div>
     </div>
   );
-};
+}
 
-export default IRCTCConnectDocs;
+function CodePanel({ language, code }: { language: string; code: string }) {
+  return (
+    <div
+      className="docs-card docs-code-wrap"
+      style={{
+        overflow: "hidden",
+        borderColor: "#1f2937",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "9px 12px",
+          borderBottom: "1px solid #1e2330",
+          background: "#0a0d13",
+        }}
+      >
+        <div
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: "#f87171",
+          }}
+        />
+        <div
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: "#fbbf24",
+          }}
+        />
+        <div
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: "#34d399",
+          }}
+        />
+        <span
+          style={{
+            marginLeft: 8,
+            color: "#64748b",
+            fontSize: 11,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          {language}
+        </span>
+      </div>
+      <div
+        style={{
+          background: "#0a0d13",
+          padding: "8px 10px",
+          overflowX: "auto",
+          maxWidth: "100%",
+        }}
+      >
+        <SyntaxHighlighter
+          language={language}
+          style={nightOwl}
+          customStyle={{
+            margin: 0,
+            fontSize: 12,
+            lineHeight: 1.72,
+            background: "transparent",
+            fontFamily: "'JetBrains Mono', monospace",
+            minWidth: "max-content",
+          }}
+        >
+          {code}
+        </SyntaxHighlighter>
+      </div>
+    </div>
+  );
+}
