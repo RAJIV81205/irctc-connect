@@ -22,6 +22,19 @@ type SendRawHtmlEmailParams = {
   html: string;
 };
 
+type SendRawHtmlBatchEmailParams = {
+  emails: Array<{
+    to: string;
+    subject: string;
+    html: string;
+  }>;
+};
+
+export type SendRawHtmlBatchEmailResult = {
+  sentCount: number;
+  failedEmails: string[];
+};
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function addOneMonth(date: Date): Date {
@@ -499,4 +512,43 @@ export async function sendRawHtmlEmail({
   }
 
   return data;
+}
+
+export async function sendRawHtmlEmailBatch({
+  emails,
+}: SendRawHtmlBatchEmailParams): Promise<SendRawHtmlBatchEmailResult> {
+  if (emails.length === 0) {
+    return { sentCount: 0, failedEmails: [] };
+  }
+
+  const { data, error } = await resend.batch.send(
+    emails.map((email) => ({
+      from: `${senderName} <${senderEmail}>`,
+      to: [email.to],
+      replyTo: `${replyToName} <${replyToEmail}>`,
+      subject: email.subject,
+      html: email.html,
+    })),
+    { batchValidation: "permissive" }
+  );
+
+  if (error) {
+    console.error("Failed to send custom email batch:", error);
+    throw error;
+  }
+
+  const failedIndices = new Set(
+    (data.errors || [])
+      .map((entry) => entry.index)
+      .filter((index) => Number.isInteger(index) && index >= 0)
+  );
+
+  const failedEmails = emails
+    .map((email, index) => (failedIndices.has(index) ? email.to : null))
+    .filter((email): email is string => Boolean(email));
+
+  return {
+    sentCount: emails.length - failedEmails.length,
+    failedEmails,
+  };
 }

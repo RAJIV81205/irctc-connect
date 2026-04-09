@@ -86,6 +86,86 @@ interface PlansConfig {
   plans: ManagedPlan[];
 }
 
+type EmailAudienceFilter =
+  | "all_users"
+  | "free_users"
+  | "pro_users"
+  | "advance_users"
+  | "paid_users"
+  | "active_users"
+  | "inactive_users"
+  | "billing_7_days_left"
+  | "billing_3_days_left"
+  | "billing_1_day_left"
+  | "billing_within_7_days"
+  | "billing_expired";
+
+const EMAIL_AUDIENCE_FILTER_OPTIONS: Array<{ value: EmailAudienceFilter; label: string }> = [
+  { value: "all_users", label: "All users" },
+  { value: "free_users", label: "Free users" },
+  { value: "pro_users", label: "Pro users" },
+  { value: "advance_users", label: "Advance users" },
+  { value: "paid_users", label: "Paid users" },
+  { value: "active_users", label: "Active users" },
+  { value: "inactive_users", label: "Inactive users" },
+  { value: "billing_7_days_left", label: "Billing: exactly 7 days left" },
+  { value: "billing_3_days_left", label: "Billing: exactly 3 days left" },
+  { value: "billing_1_day_left", label: "Billing: exactly 1 day left" },
+  { value: "billing_within_7_days", label: "Billing: within next 7 days" },
+  { value: "billing_expired", label: "Billing expired" },
+];
+
+const getEmailAudienceLabel = (filter: EmailAudienceFilter) =>
+  EMAIL_AUDIENCE_FILTER_OPTIONS.find((option) => option.value === filter)?.label || "Selected users";
+
+const BILLING_CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
+
+const getBillingDaysLeft = (billingDate?: string | null) => {
+  if (!billingDate) return null;
+  const billingStart = new Date(billingDate).getTime();
+  if (Number.isNaN(billingStart)) return null;
+  const remainingMs = billingStart + BILLING_CYCLE_MS - Date.now();
+  return Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+};
+
+const matchesEmailAudienceFilter = (user: User, filter: EmailAudienceFilter) => {
+  const plan = user.plan?.toLowerCase();
+  const isFree = plan === "free";
+  const isPro = plan === "pro";
+  const isAdvance = plan === "enterprise" || plan === "advance";
+  const isPaid = isPro || isAdvance;
+  const daysLeft = getBillingDaysLeft(user.billingDate || null);
+
+  switch (filter) {
+    case "all_users":
+      return true;
+    case "free_users":
+      return isFree;
+    case "pro_users":
+      return isPro;
+    case "advance_users":
+      return isAdvance;
+    case "paid_users":
+      return isPaid;
+    case "active_users":
+      return user.active;
+    case "inactive_users":
+      return !user.active;
+    case "billing_7_days_left":
+      return isPaid && daysLeft === 7;
+    case "billing_3_days_left":
+      return isPaid && daysLeft === 3;
+    case "billing_1_day_left":
+      return isPaid && daysLeft === 1;
+    case "billing_within_7_days":
+      return isPaid && daysLeft !== null && daysLeft > 0 && daysLeft <= 7;
+    case "billing_expired":
+      return isPaid && daysLeft !== null && daysLeft <= 0;
+    default:
+      return true;
+  }
+};
+
 // ─── Loader ───────────────────────────────────────────────────────────────────
 function Loader({ text = "Loading..." }: { text?: string }) {
   return (
@@ -414,7 +494,8 @@ function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: str
 function EmailComposerModal({
   mode,
   targetUser,
-  totalUsers,
+  audienceFilter,
+  filteredCount,
   subject,
   html,
   sending,
@@ -425,7 +506,8 @@ function EmailComposerModal({
 }: {
   mode: "single" | "all";
   targetUser: User | null;
-  totalUsers: number;
+  audienceFilter: EmailAudienceFilter;
+  filteredCount: number;
   subject: string;
   html: string;
   sending: boolean;
@@ -434,9 +516,9 @@ function EmailComposerModal({
   onSend: () => void;
   onClose: () => void;
 }) {
-  const title = mode === "all" ? "Send Product Email to Everyone" : "Send Product Email";
+  const title = mode === "all" ? "Send Product Email to Audience" : "Send Product Email";
   const recipientText = mode === "all"
-    ? `All users (${totalUsers})`
+    ? `${getEmailAudienceLabel(audienceFilter)} (${filteredCount})`
     : targetUser?.email || "Selected user";
 
   return (
@@ -540,6 +622,7 @@ export default function AdminPanel() {
   const [clearingUnpaid, setClearingUnpaid] = useState(false);
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [emailScope, setEmailScope] = useState<"single" | "all">("single");
+  const [emailAudienceFilter, setEmailAudienceFilter] = useState<EmailAudienceFilter>("all_users");
   const [emailTargetUser, setEmailTargetUser] = useState<User | null>(null);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailHtml, setEmailHtml] = useState("");
@@ -607,6 +690,7 @@ export default function AdminPanel() {
   const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
   const unpaidOrders = (ordersData?.orders ?? []).filter((o) => o.status !== "paid");
   const issues = issuesData?.issues ?? [];
+  const filteredEmailUsers = users.filter((user) => matchesEmailAudienceFilter(user, emailAudienceFilter));
   const dataLoading = usersValidating || ordersValidating || issuesValidating || plansValidating;
 
   // ── Check session on mount ──────────────────────────────────────────────────
@@ -718,6 +802,11 @@ export default function AdminPanel() {
       return;
     }
 
+    if (emailScope === "all" && filteredEmailUsers.length === 0) {
+      setEmailFeedback({ type: "error", message: "No users match the selected filter." });
+      return;
+    }
+
     setSendingEmail(true);
     try {
       const res = await fetch("/api/admin/email", {
@@ -726,6 +815,7 @@ export default function AdminPanel() {
         body: JSON.stringify({
           scope: emailScope,
           userId: emailScope === "single" ? emailTargetUser?._id : undefined,
+          filter: emailScope === "all" ? emailAudienceFilter : undefined,
           subject: emailSubject,
           html: emailHtml,
         }),
@@ -875,7 +965,8 @@ export default function AdminPanel() {
         <EmailComposerModal
           mode={emailScope}
           targetUser={emailTargetUser}
-          totalUsers={users.length}
+          audienceFilter={emailAudienceFilter}
+          filteredCount={filteredEmailUsers.length}
           subject={emailSubject}
           html={emailHtml}
           sending={sendingEmail}
@@ -1484,24 +1575,49 @@ export default function AdminPanel() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "12px 16px", borderBottom: "1px solid #1e2330", background: "#0a0d13",
+                  gap: 12,
                 }}
               >
-                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
-                  Send product info emails individually or to everyone
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                    Send product info emails individually or in batches by audience filter
+                  </span>
+                  <select
+                    value={emailAudienceFilter}
+                    onChange={(e) => setEmailAudienceFilter(e.target.value as EmailAudienceFilter)}
+                    style={{
+                      background: "#1a1f2e",
+                      border: "1px solid #2d3548",
+                      color: "#e2e8f0",
+                      borderRadius: 6,
+                      padding: "6px 9px",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {EMAIL_AUDIENCE_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                    Recipients: {filteredEmailUsers.length}
+                  </span>
+                </div>
                 <button
                   onClick={() => openEmailComposer("all")}
-                  disabled={users.length === 0}
+                  disabled={filteredEmailUsers.length === 0}
                   style={{
-                    background: users.length === 0 ? "#1a1f2e" : "#0f2233",
-                    border: `1px solid ${users.length === 0 ? "#2d3548" : "#1a3a5c"}`,
-                    color: users.length === 0 ? "#64748b" : "#60a5fa",
+                    background: filteredEmailUsers.length === 0 ? "#1a1f2e" : "#0f2233",
+                    border: `1px solid ${filteredEmailUsers.length === 0 ? "#2d3548" : "#1a3a5c"}`,
+                    color: filteredEmailUsers.length === 0 ? "#64748b" : "#60a5fa",
                     borderRadius: 6, padding: "6px 12px", fontSize: 12,
-                    cursor: users.length === 0 ? "not-allowed" : "pointer",
+                    cursor: filteredEmailUsers.length === 0 ? "not-allowed" : "pointer",
                     fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
                   }}
                 >
-                  Send to Everyone
+                  Send to {getEmailAudienceLabel(emailAudienceFilter)}
                 </button>
               </div>
               <div style={{ overflowX: "auto" }}>
@@ -1514,7 +1630,7 @@ export default function AdminPanel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((u) => (
+                    {filteredEmailUsers.map((u) => (
                       <tr key={u._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1557,8 +1673,8 @@ export default function AdminPanel() {
                         </td>
                       </tr>
                     ))}
-                    {users.length === 0 && (
-                      <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
+                    {filteredEmailUsers.length === 0 && (
+                      <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users match this filter</td></tr>
                     )}
                   </tbody>
                 </table>
