@@ -61,9 +61,11 @@ const newSubsTemplateHtml = (user: IUser): string => {
 
   // Badge colour based on days left
   const urgencyColor =
-    daysLeft > 20 ? "#16a34a" : daysLeft > 10 ? "#0284c7" : "#b45309";
+    daysLeft > 20 ? "#166534" : daysLeft > 10 ? "#1e40af" : "#92400e";
   const urgencyBg =
-    daysLeft > 20 ? "#dcfce7" : daysLeft > 10 ? "#e0f2fe" : "#fef3c7";
+    daysLeft > 20 ? "#f0fdf4" : daysLeft > 10 ? "#eff6ff" : "#fffbeb";
+  const urgencyBorder =
+    daysLeft > 20 ? "#bbf7d0" : daysLeft > 10 ? "#bfdbfe" : "#fde68a";
 
   return `
 <!DOCTYPE html>
@@ -76,7 +78,7 @@ const newSubsTemplateHtml = (user: IUser): string => {
 <body style="
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, #e0f2fe 0%, #dcfce7 100%);
+  background: #f4f4f5;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
 ">
@@ -93,15 +95,15 @@ const newSubsTemplateHtml = (user: IUser): string => {
             max-width: 600px;
             width: 100%;
             background: #ffffff;
-            border-radius: 20px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 20px 60px rgba(2, 132, 199, 0.12);
+            border: 1px solid #e4e4e7;
           ">
 
           <!-- ── Header ─────────────────────────────────────── -->
           <tr>
             <td style="
-              background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 50%, #16a34a 100%);
+              background: #18181b;
               padding: 36px 40px 28px;
               text-align: center;
             ">
@@ -109,12 +111,11 @@ const newSubsTemplateHtml = (user: IUser): string => {
               <img
                 src="https://irctc.rajivdubey.tech/icon.png"
                 alt="IRCTC Connect"
-                width="64"
-                height="64"
+                width="56"
+                height="56"
                 style="
-                  border-radius: 16px;
-                  border: 3px solid rgba(255,255,255,0.4);
-                  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+                  border-radius: 12px;
+                  border: 1px solid rgba(255,255,255,0.12);
                   display: block;
                   margin: 0 auto 14px;
                 "
@@ -122,15 +123,15 @@ const newSubsTemplateHtml = (user: IUser): string => {
               <h1 style="
                 margin: 0 0 4px;
                 color: #ffffff;
-                font-size: 26px;
-                font-weight: 700;
+                font-size: 22px;
+                font-weight: 600;
                 letter-spacing: -0.3px;
               ">IRCTC Connect</h1>
               <p style="
                 margin: 0;
-                color: rgba(255,255,255,0.8);
-                font-size: 13px;
-                letter-spacing: 2px;
+                color: #a1a1aa;
+                font-size: 12px;
+                letter-spacing: 1.5px;
                 text-transform: uppercase;
               ">Your Smart Rail Companion</p>
             </td>
@@ -140,18 +141,18 @@ const newSubsTemplateHtml = (user: IUser): string => {
           <tr>
             <td style="padding: 36px 40px 0;">
               <h2 style="
-                margin: 0 0 12px;
-                font-size: 22px;
-                font-weight: 700;
-                color: #0c4a6e;
+                margin: 0 0 10px;
+                font-size: 20px;
+                font-weight: 600;
+                color: #18181b;
               ">Welcome aboard, ${firstName}! 🎉</h2>
               <p style="
                 margin: 0;
-                font-size: 15px;
+                font-size: 14px;
                 line-height: 1.7;
-                color: #475569;
+                color: #71717a;
               ">
-                Your <strong style="color: #0369a1;">${capitalize(user.plan)} Plan</strong>
+                Your <strong style="color: #18181b;">${capitalize(user.plan)} Plan</strong>
                 subscription is now active. Here's everything you need to know to get started.
               </p>
             </td>
@@ -162,34 +163,34 @@ const newSubsTemplateHtml = (user: IUser): string => {
             <td style="padding: 24px 40px 0;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                 style="
-                  background: linear-gradient(135deg, #f0f9ff, #f0fdf4);
-                  border: 1px solid #bae6fd;
-                  border-radius: 14px;
+                  background: #fafafa;
+                  border: 1px solid #e4e4e7;
+                  border-radius: 12px;
                   overflow: hidden;
                 ">
                 <tr>
-                  <td style="padding: 24px;">
+                  <td style="padding: 22px 24px;">
                     <p style="
                       margin: 0 0 16px;
                       font-size: 11px;
-                      font-weight: 700;
-                      letter-spacing: 2px;
+                      font-weight: 600;
+                      letter-spacing: 1.5px;
                       text-transform: uppercase;
-                      color: #0284c7;
+                      color: #71717a;
                     ">📋 Your Subscription Details</p>
 
                     <!-- Row: Plan -->
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                       style="margin-bottom: 12px;">
                       <tr>
-                        <td style="font-size: 13px; color: #64748b;">Plan</td>
+                        <td style="font-size: 13px; color: #71717a;">Plan</td>
                         <td align="right">
                           <span style="
-                            background: linear-gradient(90deg, #0369a1, #0ea5e9);
-                            color: #fff;
-                            font-size: 12px;
-                            font-weight: 700;
-                            padding: 3px 12px;
+                            background: #18181b;
+                            color: #ffffff;
+                            font-size: 11px;
+                            font-weight: 600;
+                            padding: 3px 10px;
                             border-radius: 20px;
                           ">${capitalize(user.plan)}</span>
                         </td>
@@ -197,32 +198,32 @@ const newSubsTemplateHtml = (user: IUser): string => {
                     </table>
 
                     <!-- Divider -->
-                    <hr style="border: none; border-top: 1px solid #bae6fd; margin: 12px 0;" />
+                    <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 12px 0;" />
 
                     <!-- Row: API Limit -->
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                       style="margin-bottom: 12px;">
                       <tr>
-                        <td style="font-size: 13px; color: #64748b;">API / Request Limit</td>
+                        <td style="font-size: 13px; color: #71717a;">API / Request Limit</td>
                         <td align="right" style="
-                          font-size: 14px;
-                          font-weight: 700;
-                          color: #16a34a;
+                          font-size: 13px;
+                          font-weight: 600;
+                          color: #18181b;
                         ">${user.limit.toLocaleString("en-IN")} calls / month</td>
                       </tr>
                     </table>
 
                     <!-- Divider -->
-                    <hr style="border: none; border-top: 1px solid #bae6fd; margin: 12px 0;" />
+                    <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 12px 0;" />
 
                     <!-- Row: Next Billing -->
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="font-size: 13px; color: #64748b;">Next Billing Date</td>
+                        <td style="font-size: 13px; color: #71717a;">Next Billing Date</td>
                         <td align="right" style="
-                          font-size: 14px;
-                          font-weight: 700;
-                          color: #0c4a6e;
+                          font-size: 13px;
+                          font-weight: 600;
+                          color: #18181b;
                         ">${formattedNextBilling}</td>
                       </tr>
                     </table>
@@ -233,22 +234,22 @@ const newSubsTemplateHtml = (user: IUser): string => {
                 <tr>
                   <td style="
                     background: ${urgencyBg};
-                    border-top: 1px solid #bae6fd;
-                    padding: 12px 24px;
+                    border-top: 1px solid ${urgencyBorder};
+                    padding: 10px 24px;
                     text-align: center;
                   ">
                     <span style="
                       display: inline-block;
-                      width: 10px;
-                      height: 10px;
+                      width: 8px;
+                      height: 8px;
                       border-radius: 50%;
                       background: ${urgencyColor};
-                      margin-right: 8px;
+                      margin-right: 7px;
                       vertical-align: middle;
                     "></span>
                     <span style="
                       font-size: 13px;
-                      font-weight: 600;
+                      font-weight: 500;
                       color: ${urgencyColor};
                       vertical-align: middle;
                     ">
@@ -266,31 +267,32 @@ const newSubsTemplateHtml = (user: IUser): string => {
     <p style="
       margin: 0 0 16px;
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: #0284c7;
+      color: #71717a;
     ">✨ What's Included in the Latest Update</p>
 
     <!-- Feature 1 -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-      style="margin-bottom: 12px;">
+      style="margin-bottom: 14px;">
       <tr>
         <td width="40" valign="top">
           <div style="
             width: 32px; height: 32px;
-            background: linear-gradient(135deg, #0369a1, #0ea5e9);
-            border-radius: 10px;
+            background: #f4f4f5;
+            border: 1px solid #e4e4e7;
+            border-radius: 8px;
             text-align: center;
             line-height: 32px;
-            font-size: 16px;
+            font-size: 15px;
           ">🎫</div>
         </td>
         <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
             PNR Status & Journey Details
           </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
             Real-time booking status, passenger confirmation, seat and journey information.
           </p>
         </td>
@@ -299,23 +301,24 @@ const newSubsTemplateHtml = (user: IUser): string => {
 
     <!-- Feature 2 -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-      style="margin-bottom: 12px;">
+      style="margin-bottom: 14px;">
       <tr>
         <td width="40" valign="top">
           <div style="
             width: 32px; height: 32px;
-            background: linear-gradient(135deg, #16a34a, #4ade80);
-            border-radius: 10px;
+            background: #f4f4f5;
+            border: 1px solid #e4e4e7;
+            border-radius: 8px;
             text-align: center;
             line-height: 32px;
-            font-size: 16px;
+            font-size: 15px;
           ">🚆</div>
         </td>
         <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
             Live Train Tracking
           </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
             Track live train location, delays, station-wise timings and real-time running status.
           </p>
         </td>
@@ -324,23 +327,24 @@ const newSubsTemplateHtml = (user: IUser): string => {
 
     <!-- Feature 3 -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-      style="margin-bottom: 12px;">
+      style="margin-bottom: 14px;">
       <tr>
         <td width="40" valign="top">
           <div style="
             width: 32px; height: 32px;
-            background: linear-gradient(135deg, #0369a1, #16a34a);
-            border-radius: 10px;
+            background: #f4f4f5;
+            border: 1px solid #e4e4e7;
+            border-radius: 8px;
             text-align: center;
             line-height: 32px;
-            font-size: 16px;
+            font-size: 15px;
           ">🔍</div>
         </td>
         <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
             Train Search & Availability
           </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
             Search trains between stations and check seat availability with fare breakdown.
           </p>
         </td>
@@ -353,18 +357,19 @@ const newSubsTemplateHtml = (user: IUser): string => {
         <td width="40" valign="top">
           <div style="
             width: 32px; height: 32px;
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            border-radius: 10px;
+            background: #f4f4f5;
+            border: 1px solid #e4e4e7;
+            border-radius: 8px;
             text-align: center;
             line-height: 32px;
-            font-size: 16px;
+            font-size: 15px;
           ">🏢</div>
         </td>
         <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0c4a6e;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
             Live at Station
           </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
             View upcoming trains at any station with real-time arrival and departure information.
           </p>
         </td>
@@ -375,19 +380,18 @@ const newSubsTemplateHtml = (user: IUser): string => {
 
           <!-- ── CTA ────────────────────────────────────────── -->
           <tr>
-            <td style="padding: 32px 40px; text-align: center;">
+            <td style="padding: 32px 40px 0; text-align: center;">
               <a href="https://irctc.rajivdubey.tech/dashboard" target="_blank" rel="noopener noreferrer"
                 style="
                   display: inline-block;
-                  background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 50%, #16a34a 100%);
+                  background: #18181b;
                   color: #ffffff;
                   text-decoration: none;
-                  font-size: 15px;
-                  font-weight: 700;
-                  padding: 14px 36px;
-                  border-radius: 50px;
-                  letter-spacing: 0.3px;
-                  box-shadow: 0 8px 24px rgba(3, 105, 161, 0.35);
+                  font-size: 14px;
+                  font-weight: 600;
+                  padding: 12px 32px;
+                  border-radius: 8px;
+                  letter-spacing: 0.2px;
                 "
               >
                 Explore Your Dashboard →
@@ -395,22 +399,45 @@ const newSubsTemplateHtml = (user: IUser): string => {
             </td>
           </tr>
 
+          <!-- ── Signal CTA ─────────────────────────────────── -->
+          <tr>
+            <td style="padding: 12px 40px 0; text-align: center;">
+              <a href="https://signal.me/#eu/F8kHmQ5nKhO1ifpDuDcFXpAMg05zBLyi5GXx6MdLmNH9U1plPehLiKIkFp4aVHtw" target="_blank" rel="noopener noreferrer"
+                style="
+                  display: inline-block;
+                  background: #ffffff;
+                  color: #3d3d3d;
+                  text-decoration: none;
+                  font-size: 14px;
+                  font-weight: 500;
+                  padding: 11px 32px;
+                  border-radius: 8px;
+                  border: 1px solid #d4d4d8;
+                  letter-spacing: 0.2px;
+                "
+              >
+                Contact me on Signal
+              </a>
+            </td>
+          </tr>
+
           <!-- ── Footer ─────────────────────────────────────── -->
           <tr>
             <td style="
-              background: #f8fafc;
-              border-top: 1px solid #e2e8f0;
+              background: #fafafa;
+              border-top: 1px solid #e4e4e7;
               padding: 24px 40px;
+              margin-top: 32px;
               text-align: center;
             ">
-              <p style="margin: 0 0 6px; font-size: 13px; color: #64748b;">
+              <p style="margin: 0 0 6px; font-size: 13px; color: #71717a;">
                 Questions? Reply to this email — we're happy to help.
               </p>
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+              <p style="margin: 0; font-size: 12px; color: #a1a1aa;">
                 © ${new Date().getFullYear()} IRCTC Connect · 
-                <a href="https://irctc.rajivdubey.tech" style="color: #0284c7; text-decoration: none;">irctc.rajivdubey.tech</a>
+                <a href="https://irctc.rajivdubey.tech" style="color: #18181b; text-decoration: none;">irctc.rajivdubey.tech</a>
               </p>
-              <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e1;">
+              <p style="margin: 8px 0 0; font-size: 11px; color: #d4d4d8;">
                 You're receiving this because you subscribed with ${user.email}
               </p>
             </td>
