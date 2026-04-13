@@ -3,6 +3,16 @@ export const SITE_TITLE = "IRCTC Connect - Indian Railways API & SDK";
 export const SITE_DESCRIPTION =
   "IRCTC Connect is a developer-focused Indian Railways API and SDK for PNR status, live train tracking, station boards, train search, and seat availability.";
 export const SITE_KEYWORDS = [
+  "irctc connect",
+  "irctc api",
+  "irctc sdk",
+  "indian railways api",
+  "indian railways sdk",
+  "train tracking api",
+  "pnr status api",
+  "railway station live status",
+  "train availability api",
+  "node.js irctc package",
   "IRCTC API",
   "Indian Railways API",
   "PNR status API",
