@@ -31,6 +31,7 @@ const Playground = () => {
   const [stationInput, setStationInput] = useState("");
   const [fromStationInput, setFromStationInput] = useState("");
   const [toStationInput, setToStationInput] = useState("");
+  const [searchDateInput, setSearchDateInput] = useState("");
   const [apiKey, setApiKey] = useState("");
 
   const [playgroundResult, setPlaygroundResult] = useState<any>(null);
@@ -106,9 +107,13 @@ const Playground = () => {
           if (!fromStationInput || !toStationInput) {
             throw new Error("Both station codes required");
           }
+          if (searchDateInput && !/^\d{2}-\d{2}-\d{4}$/.test(searchDateInput)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
           result = await searchTrainBetweenStations(
             fromStationInput.toUpperCase(),
-            toStationInput.toUpperCase()
+            toStationInput.toUpperCase(),
+            searchDateInput || undefined
           );
           break;
 
@@ -354,6 +359,24 @@ const Playground = () => {
                   placeholder="e.g., BCT"
                   className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   maxLength={6}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Journey Date <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="date"
+                  value={searchDateInput ? formatToBrowserDate(searchDateInput) : ""}
+                  onChange={(e) => {
+                    if (!e.target.value) {
+                      setSearchDateInput("");
+                      return;
+                    }
+                    const [yyyy, mm, dd] = e.target.value.split("-");
+                    setSearchDateInput(`${dd}-${mm}-${yyyy}`);
+                  }}
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>

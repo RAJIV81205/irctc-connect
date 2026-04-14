@@ -115,12 +115,13 @@ if (result.success) {
     icon: Search,
     description:
       "Find available trains between stations with timetable and running-day data.",
-    signature: "searchTrainBetweenStations(from: string, to: string)",
+    signature: "searchTrainBetweenStations(from: string, to: string, date?: string)",
     params: [
       { name: "from", type: "string", desc: "Origin station code" },
       { name: "to", type: "string", desc: "Destination station code" },
+      { name: "date", type: "string", desc: "Journey date in DD-MM-YYYY (optional)" },
     ],
-    example: `const result = await searchTrainBetweenStations("NDLS", "BCT");
+    example: `const result = await searchTrainBetweenStations("NDLS", "BCT", "25-12-2025");
 
 if (result.success) {
   console.log(result.data.map((t) => t.train_name));

@@ -501,6 +501,7 @@ export default function DashboardPage() {
   const [stationInput, setStationInput] = useState("");
   const [fromStationInput, setFromStationInput] = useState("");
   const [toStationInput, setToStationInput] = useState("");
+  const [searchDateInput, setSearchDateInput] = useState("");
   const [seatTrainInput, setSeatTrainInput] = useState("");
   const [seatFromInput, setSeatFromInput] = useState("");
   const [seatToInput, setSeatToInput] = useState("");
@@ -623,9 +624,13 @@ export default function DashboardPage() {
           if (!fromStationInput.trim() || !toStationInput.trim()) {
             throw new Error("From and To station codes are required");
           }
+          if (searchDateInput && !/^\d{2}-\d{2}-\d{4}$/.test(searchDateInput)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
           result = await searchTrainBetweenStations(
             fromStationInput.trim().toUpperCase(),
             toStationInput.trim().toUpperCase(),
+            searchDateInput || undefined
           );
           break;
         case "seat":
@@ -2006,6 +2011,23 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
                           setToStationInput(e.target.value.toUpperCase())
                         }
                         placeholder="To station code"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(searchDateInput)}
+                        onChange={(e) =>
+                          setSearchDateInput(fromInputDate(e.target.value))
+                        }
                         style={{
                           background: "#0a0d13",
                           border: "1px solid #2d3548",
