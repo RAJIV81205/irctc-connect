@@ -22,8 +22,11 @@ export function trackTrain(trainNumber: string, date?: string): Promise<any>;
 /** Get the list of upcoming trains at a station. */
 export function liveAtStation(stationCode: string): Promise<any>;
 
-/** Search for all direct trains between two stations. */
-export function searchTrainBetweenStations(fromStnCode: string, toStnCode: string): Promise<any>;
+/** 
+ * Search for all direct trains between two stations. 
+ * @param date - Journey date in DD-MM-YYYY format (optional)
+ */
+export function searchTrainBetweenStations(fromStnCode: string, toStnCode: string, date?: string): Promise<any>;
 
 /**
  * Check seat availability for a specific train, class, and date.
