@@ -633,6 +633,25 @@ ${responseFormats.error}
                   >
                     {copiedAIMarkdown ? "Markdown Copied" : "Copy AI Markdown"}
                   </button>
+                  <Link
+                    href="/dashboard"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      padding: "9px 13px",
+                      borderRadius: 8,
+                      background: "#1a1f2e",
+                      border: "1px solid #2d3548",
+                      color: "#93c5fd",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Try in Playground <ChevronRight size={13} />
+                  </Link>
                 </div>
               </div>
 
