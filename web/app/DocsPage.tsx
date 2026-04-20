@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { sidebarGroups } from "./docsData";
+import {
+  packageInfo,
+  responseFormats,
+  sidebarGroups,
+} from "./docsData";
 import { useTheme } from "./ThemeProvider";
 import {
   AlertTriangle,
@@ -175,16 +179,129 @@ const station = await liveAtStation("NDLS");
 const between = await searchTrainBetweenStations("NDLS", "BCT");
 const seats = await getAvailability("12496", "ASN", "DDU", "27-12-2025", "2A", "GN");`;
 
+const docsBaseUrl = "https://irctc.rajivdubey.tech/docs";
+
 export default function DocsPage() {
   const { sidebarOpen, setSidebarOpen } = useTheme();
   const [activeSection, setActiveSection] = useState("introduction");
   const [copiedInstall, setCopiedInstall] = useState(false);
+  const [copiedAIMarkdown, setCopiedAIMarkdown] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
   const flatSections = useMemo(
     () => sidebarGroups.flatMap((group) => group.items),
     [],
   );
+
+  const aiDocsMarkdown = useMemo(() => {
+    const endpointDetails = endpointSections
+      .map((endpoint) => {
+        const params = endpoint.params
+          .map(
+            (param) =>
+              `- \`${param.name}\` (\`${param.type}\`): ${param.desc}`,
+          )
+          .join("\n");
+
+        return `### ${endpoint.title}
+Link: [${docsBaseUrl}#${endpoint.id}](${docsBaseUrl}#${endpoint.id})
+Signature: \`${endpoint.signature}\`
+Parameters:
+${params}
+
+Example:
+\`\`\`javascript
+${endpoint.example}
+\`\`\``;
+      })
+      .join("\n\n");
+
+    const sectionLinks = [
+      "installation",
+      "quickstart",
+      "pnr-status",
+      "train-info",
+      "live-tracking",
+      "station-live",
+      "train-search",
+      "seat-availability",
+      "validation",
+      "errors",
+    ]
+      .map((id) => {
+        const section = flatSections.find((item) => item.id === id);
+        return section
+          ? `- [${section.label}](${docsBaseUrl}#${section.id})`
+          : null;
+      })
+      .filter(Boolean)
+      .join("\n");
+
+    return `# IRCTC Connect - Implementation Essentials
+
+Use this for coding and integration only.
+
+## Official Links
+- Docs: [${docsBaseUrl}](${docsBaseUrl})
+- NPM: [${packageInfo.links.npm}](${packageInfo.links.npm})
+- GitHub: [${packageInfo.links.github}](${packageInfo.links.github})
+- Issues: [${packageInfo.links.issues}](${packageInfo.links.issues})
+
+## Quick Setup
+\`\`\`bash
+${installSnippet}
+\`\`\`
+
+- Runtime: Node.js 14+
+- Required: call \`configure(apiKey)\` once before SDK methods
+
+\`\`\`javascript
+${quickStartSnippet}
+\`\`\`
+
+## Section Links
+${sectionLinks}
+
+## Endpoint Contracts
+${endpointDetails}
+
+## Required Input Rules
+- PNR: exactly 10 digits, numeric only
+- Train number: exactly 5 digits (string)
+- Date: DD-MM-YYYY
+- Station code: uppercase (e.g., NDLS, BCT, HWH)
+
+## Response Handling
+Success:
+\`\`\`ts
+{
+  success: true,
+  data: { ... }
+}
+\`\`\`
+
+Error:
+\`\`\`ts
+{
+  success: false,
+  message: "Error message"
+}
+\`\`\`
+
+Also handle alternate error shape:
+\`\`\`ts
+${responseFormats.error}
+\`\`\`
+
+## Common Failure Cases
+- Missing \`configure(apiKey)\` call
+- Invalid or expired API key (401)
+- Inactive API key (403)
+- Rate limit (429)
+- Invalid PNR/train/date/station input
+- Upstream timeout/outage
+`;
+  }, [flatSections]);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -245,6 +362,14 @@ export default function DocsPage() {
       await navigator.clipboard.writeText(installSnippet);
       setCopiedInstall(true);
       setTimeout(() => setCopiedInstall(false), 1400);
+    } catch {}
+  };
+
+  const copyAIDocsMarkdown = async () => {
+    try {
+      await navigator.clipboard.writeText(aiDocsMarkdown);
+      setCopiedAIMarkdown(true);
+      setTimeout(() => setCopiedAIMarkdown(false), 1800);
     } catch {}
   };
 
@@ -346,7 +471,7 @@ export default function DocsPage() {
               transition: "transform 0.22s ease",
             }}
           >
-            <p
+            {/* <p
               style={{
                 color: "#94a3b8",
                 fontSize: 11,
@@ -357,7 +482,7 @@ export default function DocsPage() {
               }}
             >
               Documentation
-            </p>
+            </p> */}
             {sidebarGroups.map((group) => (
               <div key={group.title} style={{ marginBottom: 16 }}>
                 <p
@@ -487,6 +612,27 @@ export default function DocsPage() {
                   >
                     View NPM Package
                   </a>
+                  <button
+                    onClick={copyAIDocsMarkdown}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      padding: "9px 13px",
+                      borderRadius: 8,
+                      background: copiedAIMarkdown ? "#0f2a1d" : "#1a1f2e",
+                      border: copiedAIMarkdown
+                        ? "1px solid #1a4731"
+                        : "1px solid #2d3548",
+                      color: copiedAIMarkdown ? "#6ee7b7" : "#94a3b8",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {copiedAIMarkdown ? "Markdown Copied" : "Copy AI Markdown"}
+                  </button>
                 </div>
               </div>
 
