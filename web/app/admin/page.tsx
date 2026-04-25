@@ -43,6 +43,15 @@ interface Order {
   createdAt?: string;
 }
 
+interface ManualCreateOrderPayload {
+  email: string;
+  amount: number;
+  planType: "pro" | "advance";
+  timestamp?: string;
+  transactionReference: string;
+  note?: string;
+}
+
 interface GithubIssue {
   id: number;
   number: number;
@@ -611,6 +620,210 @@ function EmailComposerModal({
   );
 }
 
+function CreateOrderModal({
+  users,
+  creating,
+  onSubmit,
+  onClose,
+}: {
+  users: User[];
+  creating: boolean;
+  onSubmit: (payload: ManualCreateOrderPayload) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [selectedUserEmail, setSelectedUserEmail] = useState("");
+  const [amount, setAmount] = useState("0");
+  const [planType, setPlanType] = useState<"pro" | "advance">("pro");
+  const [timestamp, setTimestamp] = useState("");
+  const [transactionReference, setTransactionReference] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+
+  const filteredUsers = users
+    .filter((u) => u.email.toLowerCase().includes(search.trim().toLowerCase()))
+    .slice(0, 8);
+  const selectedUser = users.find((u) => u.email === selectedUserEmail) || null;
+
+  const submit = async () => {
+    const parsedAmount = Number(amount);
+    if (!selectedUserEmail) {
+      setError("Select a user email.");
+      return;
+    }
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setError("Enter a valid amount greater than 0.");
+      return;
+    }
+    if (!transactionReference.trim()) {
+      setError("Transaction reference is required.");
+      return;
+    }
+
+    setError("");
+    await onSubmit({
+      email: selectedUserEmail,
+      amount: parsedAmount,
+      planType,
+      timestamp: timestamp ? new Date(timestamp).toISOString() : undefined,
+      transactionReference: transactionReference.trim(),
+      note: note.trim() || undefined,
+    });
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 120,
+        backdropFilter: "blur(4px)", padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#0f1117", border: "1px solid #1e2330",
+          borderRadius: 12, padding: 24, width: "100%", maxWidth: 680,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div>
+            <p style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 15, margin: 0 }}>Create Manual Order</p>
+            <p style={{ color: "#64748b", fontSize: 12, margin: "5px 0 0", fontFamily: "'JetBrains Mono', monospace" }}>
+              Create paid/manual orders without changing order schema
+            </p>
+          </div>
+          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            <IconX />
+          </button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Search Email</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search user email..."
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 12px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+            />
+          </label>
+
+          <div style={{ border: "1px solid #1e2330", borderRadius: 8, maxHeight: 180, overflowY: "auto", background: "#0a0d13" }}>
+            {filteredUsers.length > 0 ? filteredUsers.map((u) => (
+              <button
+                key={u._id}
+                onClick={() => setSelectedUserEmail(u.email)}
+                style={{
+                  width: "100%", textAlign: "left", background: selectedUserEmail === u.email ? "#1e2a3a" : "transparent",
+                  border: "none", borderBottom: "1px solid #141820", color: selectedUserEmail === u.email ? "#93c5fd" : "#cbd5e1",
+                  padding: "8px 10px", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+                }}
+              >
+                {u.email}
+              </button>
+            )) : (
+              <p style={{ color: "#475569", padding: "10px 12px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>No users found</p>
+            )}
+          </div>
+
+          {selectedUser && (
+            <p style={{ color: "#6ee7b7", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+              Selected: {selectedUser.email}
+            </p>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Amount</span>
+              <input
+                type="number"
+                min={1}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Plan Type</span>
+              <select
+                value={planType}
+                onChange={(e) => setPlanType(e.target.value as "pro" | "advance")}
+                style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12 }}
+              >
+                <option value="pro">pro</option>
+                <option value="advance">advance</option>
+              </select>
+            </label>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Transaction Reference</span>
+              <input
+                value={transactionReference}
+                onChange={(e) => setTransactionReference(e.target.value)}
+                placeholder="UPI / bank reference number"
+                style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Timestamp (optional)</span>
+              <input
+                type="datetime-local"
+                value={timestamp}
+                onChange={(e) => setTimestamp(e.target.value)}
+                style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </label>
+          </div>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Note (optional)</span>
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="For internal reference"
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+            />
+          </label>
+        </div>
+
+        {error && (
+          <p style={{ color: "#f87171", fontSize: 12, marginTop: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+            {error}
+          </p>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
+          <button
+            onClick={onClose}
+            disabled={creating}
+            style={{
+              background: "none", border: "1px solid #2d3548", color: "#94a3b8",
+              borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: creating ? "not-allowed" : "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={creating}
+            style={{
+              background: creating ? "#1a1f2e" : "#0f2a1d", border: `1px solid ${creating ? "#2d3548" : "#1a4731"}`,
+              color: creating ? "#64748b" : "#6ee7b7", borderRadius: 6, padding: "8px 16px", fontSize: 13,
+              cursor: creating ? "not-allowed" : "pointer", fontWeight: 700,
+            }}
+          >
+            {creating ? "Creating..." : "Create Order"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
@@ -631,6 +844,9 @@ export default function AdminPanel() {
   const [planDraft, setPlanDraft] = useState<PlansConfig | null>(null);
   const [savingPlans, setSavingPlans] = useState(false);
   const [plansFeedback, setPlansFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [createOrderFeedback, setCreateOrderFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -860,6 +1076,39 @@ export default function AdminPanel() {
     }
   };
 
+  const createManualOrder = async (payload: ManualCreateOrderPayload) => {
+    if (creatingOrder) return;
+
+    setCreatingOrder(true);
+    setCreateOrderFeedback(null);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: payload.email,
+          planType: payload.planType,
+          amount: payload.amount,
+          timestamp: payload.timestamp,
+          transactionReference: payload.transactionReference,
+          note: payload.note,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to create order");
+      }
+
+      await mutateOrders();
+      setCreateOrderOpen(false);
+      setCreateOrderFeedback({ type: "success", message: "Manual order created successfully." });
+    } catch (error: unknown) {
+      setCreateOrderFeedback({ type: "error", message: getErrorMessage(error, "Failed to create order.") });
+    } finally {
+      setCreatingOrder(false);
+    }
+  };
+
   // ── Loading screen ──────────────────────────────────────────────────────────
   if (authLoading) return <Loader text="Authenticating..." />;
   if (isAdmin && (usersLoading || ordersLoading || issuesLoading || plansLoading)) return <Loader text="Fetching data..." />;
@@ -974,6 +1223,14 @@ export default function AdminPanel() {
           onHtmlChange={setEmailHtml}
           onSend={sendEmail}
           onClose={() => setEmailComposerOpen(false)}
+        />
+      )}
+      {createOrderOpen && (
+        <CreateOrderModal
+          users={users}
+          creating={creatingOrder}
+          onSubmit={createManualOrder}
+          onClose={() => setCreateOrderOpen(false)}
         />
       )}
 
@@ -1100,6 +1357,22 @@ export default function AdminPanel() {
             </div>
           )}
 
+          {activeTab === "orders" && createOrderFeedback && (
+            <div
+              style={{
+                marginBottom: 14,
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: createOrderFeedback.type === "success" ? "#0f2a1d" : "#2a0f0f",
+                border: `1px solid ${createOrderFeedback.type === "success" ? "#1a4731" : "#4a1f1f"}`,
+              }}
+            >
+              <p style={{ color: createOrderFeedback.type === "success" ? "#6ee7b7" : "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                {createOrderFeedback.message}
+              </p>
+            </div>
+          )}
+
           {activeTab === "issues" && issuesError && (
             <div
               style={{
@@ -1201,6 +1474,40 @@ export default function AdminPanel() {
           {/* Orders Table */}
           {activeTab === "orders" && (
             <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderBottom: "1px solid #1e2330",
+                  background: "#0a0d13",
+                  gap: 12,
+                }}
+              >
+                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Paid orders created through website and manual entries
+                </span>
+                <button
+                  onClick={() => {
+                    setCreateOrderFeedback(null);
+                    setCreateOrderOpen(true);
+                  }}
+                  style={{
+                    background: "#0f2a1d",
+                    border: "1px solid #1a4731",
+                    color: "#6ee7b7",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 700,
+                  }}
+                >
+                  Create Order
+                </button>
+              </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>

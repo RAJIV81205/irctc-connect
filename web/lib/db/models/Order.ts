@@ -23,6 +23,13 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    source: {
+      type: String,
+      enum: ["cashfree", "manual"],
+      default: "cashfree",
+      required: true,
+      index: true,
+    },
     planType: {
       type: String,
       enum: ["pro", "advance"],
@@ -56,6 +63,20 @@ const orderSchema = new mongoose.Schema(
     },
     cashfreeOrderStatus: {
       type: String,
+      default: null,
+    },
+    transactionReference: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    note: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    manualPaidAt: {
+      type: Date,
       default: null,
     },
     lastWebhookAt: {
