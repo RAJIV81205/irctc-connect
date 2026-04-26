@@ -479,7 +479,7 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [keyVisible, setKeyVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "apikey" | "playground" | "orders"
+    "overview" | "apikey" | "apiendpoints" | "playground" | "orders"
   >("overview");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [playgroundAction, setPlaygroundAction] = useState<
@@ -718,6 +718,98 @@ const trainResult = await getTrainInfo("12345");
 
 // Track Live Train
 const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
+  const directApiBaseUrl =
+    process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL ||
+    "https://irctc-connect-api.rajivdubey.tech";
+  const directApiQuickExample = `const API_KEY = process.env.IRCTC_API_KEY;
+
+const response = await fetch("${directApiBaseUrl}/api/checkPNRStatus/1234567890", {
+  method: "GET",
+  headers: {
+    "x-api-key": API_KEY,
+    "accept": "application/json",
+  },
+});
+
+const data = await response.json();
+console.log(data);`;
+  const directApiCurlExample = `curl -X GET "${directApiBaseUrl}/api/checkPNRStatus/1234567890" \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "accept: application/json"`;
+  const endpointDocs = [
+    {
+      name: "Check PNR Status",
+      method: "GET",
+      path: "/api/checkPNRStatus/:pnr",
+      examplePath: "/api/checkPNRStatus/1234567890",
+      notes: "PNR must be 10 digits.",
+      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/checkPNRStatus/1234567890", {
+  method: "GET",
+  headers: { "x-api-key": API_KEY, "accept": "application/json" },
+});
+const data = await res.json();`,
+    },
+    {
+      name: "Get Train Info",
+      method: "GET",
+      path: "/api/getTrainInfo/:trainNumber",
+      examplePath: "/api/getTrainInfo/12345",
+      notes: "Train number must be 5 digits.",
+      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/getTrainInfo/12345", {
+  method: "GET",
+  headers: { "x-api-key": API_KEY, "accept": "application/json" },
+});
+const data = await res.json();`,
+    },
+    {
+      name: "Track Train",
+      method: "GET",
+      path: "/api/trackTrain/:trainNumber/:date",
+      examplePath: "/api/trackTrain/12345/28-03-2026",
+      notes: "Date format: DD-MM-YYYY. You can also pass `today` as date.",
+      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/trackTrain/12345/28-03-2026", {
+  method: "GET",
+  headers: { "x-api-key": API_KEY, "accept": "application/json" },
+});
+const data = await res.json();`,
+    },
+    {
+      name: "Live At Station",
+      method: "GET",
+      path: "/api/liveAtStation/:stnCode",
+      examplePath: "/api/liveAtStation/NDLS",
+      notes: "Use station code in uppercase.",
+      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/liveAtStation/NDLS", {
+  method: "GET",
+  headers: { "x-api-key": API_KEY, "accept": "application/json" },
+});
+const data = await res.json();`,
+    },
+    {
+      name: "Search Trains Between Stations",
+      method: "GET",
+      path: "/api/searchTrainBetweenStations/:fromStnCode/:toStnCode?date=DD-MM-YYYY",
+      examplePath: "/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026",
+      notes: "Date query param is optional.",
+      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026", {
+  method: "GET",
+  headers: { "x-api-key": API_KEY, "accept": "application/json" },
+});
+const data = await res.json();`,
+    },
+    {
+      name: "Get Seat Availability",
+      method: "GET",
+      path: "/api/getAvailability/:trainNo/:fromStnCode/:toStnCode/:date/:coach/:quota",
+      examplePath: "/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN",
+      notes: "Date format: DD-MM-YYYY.",
+      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN", {
+  method: "GET",
+  headers: { "x-api-key": API_KEY, "accept": "application/json" },
+});
+const data = await res.json();`,
+    },
+  ] as const;
   const normalizedPlan = (dbUser.plan || "").toLowerCase();
   const isEnterpriseLikePlan =
     normalizedPlan === "enterprise" || normalizedPlan === "advanced";
@@ -764,9 +856,44 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
           .dash-header-btn { padding: 6px 8px !important; }
           .mobile-hide { display: none; }
           .mobile-quick-links { display: flex; gap: 8px; margin-bottom: 14px; }
+          .dash-api-grid { gap: 12px !important; }
+          .dash-api-card { padding: 16px !important; min-width: 0 !important; max-width: 100% !important; overflow: hidden !important; }
+          .dash-api-banner { font-size: 11px !important; line-height: 1.6 !important; padding: 10px 12px !important; }
+          .dash-api-title { font-size: 14px !important; }
+          .dash-api-text { font-size: 11px !important; line-height: 1.6 !important; }
+          .dash-api-code-wrap { padding: 10px !important; overflow-x: auto !important; max-width: 100% !important; }
+          .dash-api-endpoint-head { gap: 8px !important; }
+          .dash-api-endpoint-name { font-size: 13px !important; }
+          .dash-api-path { font-size: 11px !important; }
+          .dash-api-example-url { font-size: 10px !important; }
+          .dash-api-note { font-size: 10px !important; }
+          .dash-api-code-wrap pre { max-width: 100% !important; }
         }
         @media (max-width: 640px) {
           .dash-stats-grid { grid-template-columns: 1fr !important; }
+          .dash-api-card { padding: 14px !important; border-radius: 10px !important; }
+          .dash-api-endpoint-head { flex-direction: column; align-items: flex-start !important; }
+          .dash-api-method-pill { font-size: 10px !important; }
+        }
+        @media (max-width: 480px) {
+          .dash-header-inner { padding: 0 10px !important; height: 54px !important; }
+          .dash-shell { padding: 12px 10px 16px !important; }
+          .mobile-quick-links { gap: 6px !important; margin-bottom: 10px !important; }
+          .mobile-quick-links button { padding: 7px 10px !important; font-size: 11px !important; }
+          .dash-tab-wrap { margin-bottom: 12px !important; padding: 3px !important; gap: 3px !important; }
+          .dash-tab-wrap button { padding: 6px 12px !important; font-size: 11px !important; }
+          .dash-api-grid { gap: 10px !important; }
+          .dash-api-banner { font-size: 10px !important; line-height: 1.5 !important; padding: 8px 10px !important; }
+          .dash-api-card { padding: 12px !important; border-radius: 10px !important; }
+          .dash-api-title { font-size: 13px !important; margin-bottom: 8px !important; }
+          .dash-api-text { font-size: 10px !important; line-height: 1.55 !important; margin-bottom: 10px !important; }
+          .dash-api-endpoint-name { font-size: 12px !important; }
+          .dash-api-path { font-size: 10px !important; margin-bottom: 4px !important; }
+          .dash-api-example-url { font-size: 9px !important; line-height: 1.5 !important; }
+          .dash-api-note { font-size: 9px !important; line-height: 1.5 !important; margin-bottom: 10px !important; }
+          .dash-api-method-pill { font-size: 9px !important; padding: 2px 7px !important; }
+          .dash-api-code-wrap { padding: 8px !important; border-radius: 7px !important; }
+          .dash-api-code-wrap pre { font-size: 10px !important; line-height: 1.55 !important; }
         }
       `}</style>
 
@@ -1134,6 +1261,7 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
               [
                 { id: "overview", label: "Overview" },
                 { id: "apikey", label: "API Key" },
+                { id: "apiendpoints", label: "API Endpoints" },
                 { id: "playground", label: "Playground" },
                 { id: "orders", label: `Orders (${orders.length})` },
               ] as const
@@ -1764,6 +1892,284 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
                   {usageExampleCode}
                 </SyntaxHighlighter>
               </div>
+            </div>
+          )}
+
+          {/* ── Tab: API Endpoints ───────────────────────────────────────── */}
+          {activeTab === "apiendpoints" && (
+            <div
+              className="dash-api-grid"
+              style={{
+                display: "grid",
+                gap: 16,
+                minWidth: 0,
+                maxWidth: "100%",
+              }}
+            >
+              <div
+                className="dash-api-banner"
+                style={{
+                  background: "#2a1f0f",
+                  border: "1px solid #4a3a1f",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  color: "#fdba74",
+                  fontSize: 12,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  lineHeight: 1.7,
+                }}
+              >
+                Direct API access is enabled only on the <b>Advance</b> plan.
+                Free/Pro users must use the official SDK flow.
+              </div>
+
+              <div
+                className="dash-api-card"
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  padding: 22,
+                  minWidth: 0,
+                  maxWidth: "100%",
+                  overflow: "hidden",
+                }}
+              >
+                <p
+                  className="dash-api-title"
+                  style={{
+                    color: "#e2e8f0",
+                    fontSize: 15,
+                    fontWeight: 700,
+                    marginBottom: 10,
+                  }}
+                >
+                  How to call endpoints
+                </p>
+                <p
+                  className="dash-api-text"
+                  style={{
+                    color: "#64748b",
+                    fontSize: 12,
+                    lineHeight: 1.7,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    marginBottom: 14,
+                  }}
+                >
+                  Base URL:{" "}
+                  <span style={{ color: "#93c5fd" }}>{directApiBaseUrl}</span>
+                  <br />
+                  Required header on every request:{" "}
+                  <span style={{ color: "#6ee7b7" }}>x-api-key: YOUR_API_KEY</span>
+                </p>
+
+                <div
+                  className="dash-api-code-wrap"
+                  style={{
+                    background: "#0a0d13",
+                    border: "1px solid #1f2937",
+                    borderRadius: 8,
+                    padding: 14,
+                    marginBottom: 12,
+                    minWidth: 0,
+                    maxWidth: "100%",
+                    overflowX: "auto",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#64748b",
+                      fontSize: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 10,
+                    }}
+                  >
+                    JavaScript Fetch Example
+                  </p>
+                  <SyntaxHighlighter
+                    language="typescript"
+                    style={nightOwl}
+                    customStyle={{
+                      margin: 0,
+                      background: "transparent",
+                      fontSize: 12,
+                      lineHeight: 1.7,
+                      padding: 0,
+                      width: "100%",
+                      maxWidth: "100%",
+                      overflowX: "auto",
+                      overflowY: "hidden",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {directApiQuickExample}
+                  </SyntaxHighlighter>
+                </div>
+
+                <div
+                  className="dash-api-code-wrap"
+                  style={{
+                    background: "#0a0d13",
+                    border: "1px solid #1f2937",
+                    borderRadius: 8,
+                    padding: 14,
+                    minWidth: 0,
+                    maxWidth: "100%",
+                    overflowX: "auto",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#64748b",
+                      fontSize: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 10,
+                    }}
+                  >
+                    cURL Example
+                  </p>
+                  <SyntaxHighlighter
+                    language="bash"
+                    style={nightOwl}
+                    customStyle={{
+                      margin: 0,
+                      background: "transparent",
+                      fontSize: 12,
+                      lineHeight: 1.7,
+                      padding: 0,
+                      width: "100%",
+                      maxWidth: "100%",
+                      overflowX: "auto",
+                      overflowY: "hidden",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {directApiCurlExample}
+                  </SyntaxHighlighter>
+                </div>
+              </div>
+
+              {endpointDocs.map((endpoint) => (
+                <div
+                  className="dash-api-card"
+                  key={endpoint.path}
+                  style={{
+                    background: "#0f1117",
+                    border: "1px solid #1e2330",
+                    borderRadius: 12,
+                    padding: 22,
+                    minWidth: 0,
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    className="dash-api-endpoint-head"
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      alignItems: "center",
+                      marginBottom: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span
+                      className="dash-api-method-pill"
+                      style={{
+                        color: "#6ee7b7",
+                        background: "#0f2a1d",
+                        border: "1px solid #1a4731",
+                        borderRadius: 6,
+                        padding: "2px 8px",
+                        fontSize: 11,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {endpoint.method}
+                    </span>
+                    <p
+                      className="dash-api-endpoint-name"
+                      style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 700 }}
+                    >
+                      {endpoint.name}
+                    </p>
+                  </div>
+
+                  <p
+                    className="dash-api-path"
+                    style={{
+                      color: "#94a3b8",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 6,
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {endpoint.path}
+                  </p>
+                  <p
+                    className="dash-api-example-url"
+                    style={{
+                      color: "#475569",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 12,
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    Example URL: {directApiBaseUrl}
+                    {endpoint.examplePath}
+                  </p>
+                  <p
+                    className="dash-api-note"
+                    style={{
+                      color: "#64748b",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 12,
+                    }}
+                  >
+                    {endpoint.notes}
+                  </p>
+
+                  <div
+                    className="dash-api-code-wrap"
+                    style={{
+                      background: "#0a0d13",
+                      border: "1px solid #1f2937",
+                      borderRadius: 8,
+                      padding: 14,
+                      minWidth: 0,
+                      maxWidth: "100%",
+                      overflowX: "auto",
+                    }}
+                  >
+                    <SyntaxHighlighter
+                      language="typescript"
+                      style={nightOwl}
+                      customStyle={{
+                        margin: 0,
+                        background: "transparent",
+                        fontSize: 12,
+                        lineHeight: 1.7,
+                        padding: 0,
+                        width: "100%",
+                        maxWidth: "100%",
+                        overflowX: "auto",
+                        overflowY: "hidden",
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {endpoint.fetchExample}
+                    </SyntaxHighlighter>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
