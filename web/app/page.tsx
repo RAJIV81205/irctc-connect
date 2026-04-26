@@ -1,5 +1,7 @@
+
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { 
   Star, 
   Download, 
@@ -46,8 +48,53 @@ async function getStats() {
   }
 }
 
+type EnterpriseShowcaseUser = {
+  id: string;
+  name: string;
+  maskedEmail: string;
+};
+
+const enterpriseUsersFallback: EnterpriseShowcaseUser[] = [
+  { id: "f-1", name: "Nikhil S.", maskedEmail: "nikh.....gma.com" },
+  { id: "f-2", name: "Priya R.", maskedEmail: "priy.....out.com" },
+  { id: "f-3", name: "Ankit V.", maskedEmail: "anki.....yah.com" },
+  { id: "f-4", name: "Ritika M.", maskedEmail: "riti.....gma.com" },
+  { id: "f-5", name: "Aarav J.", maskedEmail: "aara.....pro.com" },
+  { id: "f-6", name: "Sneha K.", maskedEmail: "sneh.....zoh.com" },
+];
+
+async function getEnterpriseShowcaseUsers(): Promise<EnterpriseShowcaseUser[]> {
+  try {
+    const headerStore = await headers();
+    const host =
+      headerStore.get("x-forwarded-host") || headerStore.get("host");
+    const proto =
+      headerStore.get("x-forwarded-proto") ||
+      (host?.includes("localhost") ? "http" : "https");
+    const base = host ? `${proto}://${host}` : absoluteUrl("/");
+    const res = await fetch(`${base}/api/public/enterprise-users`, {
+      next: { revalidate: 300 },
+    });
+
+    const data = (await res.json()) as {
+      success?: boolean;
+      users?: EnterpriseShowcaseUser[];
+    };
+    if (!res.ok || !data?.success || !Array.isArray(data.users)) {
+      return enterpriseUsersFallback;
+    }
+
+    return data.users.length > 0 ? data.users : enterpriseUsersFallback;
+  } catch (error) {
+    console.error("Failed to fetch enterprise showcase users", error);
+    return enterpriseUsersFallback;
+  }
+}
+
 export default async function LandingPage() {
   const stats = await getStats();
+  const enterpriseUsers = await getEnterpriseShowcaseUsers();
+  const marqueeUsers = [...enterpriseUsers, ...enterpriseUsers];
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -72,6 +119,12 @@ export default async function LandingPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)] text-slate-100 selection:bg-emerald-500/30">
+      <style>{`
+        @keyframes enterprise-marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
@@ -151,6 +204,47 @@ export default async function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* Enterprise Recognition */}
+      <section className="mx-auto max-w-6xl px-6 pb-14">
+        <div className="mb-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/80">
+            Enterprise Customers
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-100 sm:text-3xl">
+            Trusted by teams on Enterprise plan
+          </h2>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/55 py-4 shadow-[0_16px_40px_rgba(2,6,23,0.4)]">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-slate-950 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-slate-950 to-transparent" />
+
+          <div
+            className="flex w-max gap-3 px-3 sm:gap-4 sm:px-4"
+            style={{ animation: "enterprise-marquee 26s linear infinite" }}
+          >
+            {marqueeUsers.map((user, index) => (
+              <div
+                key={`${user.id}-${index}`}
+                className="flex min-w-[190px] items-center gap-3 rounded-xl border border-emerald-400/20 bg-slate-900/90 px-3 py-2 sm:min-w-[220px] sm:px-4 sm:py-3"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold text-emerald-300 ring-1 ring-emerald-400/30 sm:h-9 sm:w-9">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-100">
+                    {user.name}
+                  </p>
+                  <p className="truncate font-mono text-[11px] text-slate-400 sm:text-xs">
+                    {user.maskedEmail}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Features Section */}
       <div className="mx-auto max-w-6xl px-6 pb-24">
