@@ -14,14 +14,20 @@ import {
   Github, 
   BookOpen 
 } from "lucide-react";
-import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "../lib/seo";
+import {
+  absoluteUrl,
+  buildMetadata,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+} from "../lib/seo";
 
 export const metadata: Metadata = {
-  title: SITE_TITLE,
-  description: SITE_DESCRIPTION,
-  alternates: {
-    canonical: "/",
-  },
+  ...buildMetadata({
+    title: undefined,
+    description:
+      "IRCTC Connect is a Node.js SDK and Indian Railways API for PNR status, live train tracking, train search, station boards, and seat availability.",
+    path: "/",
+  }),
 };
 
 async function getStats() {
@@ -110,6 +116,14 @@ export default async function LandingPage() {
     operatingSystem: "Node.js",
     url: absoluteUrl("/"),
     description: SITE_DESCRIPTION,
+    softwareVersion: "3.0.3",
+    downloadUrl: "https://www.npmjs.com/package/irctc-connect",
+    codeRepository: "https://github.com/RAJIV81205/irctc-connect",
+    author: {
+      "@type": "Person",
+      name: "Rajiv Dubey",
+      url: "https://github.com/RAJIV81205",
+    },
     offers: {
       "@type": "Offer",
       price: "0",
@@ -146,15 +160,17 @@ export default async function LandingPage() {
         </a>
 
         <h1 className="max-w-4xl font-jetbrains text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl md:text-7xl">
-          Complete SDK for
+          IRCTC Connect: Node.js SDK for
           <br className="hidden sm:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-            {" "}Indian Railways
+            {" "}Indian Railways API
           </span>
         </h1>
 
         <p className="mt-8 max-w-2xl text-lg text-slate-300 sm:text-xl leading-relaxed">
-          A comprehensive Node.js package for Indian Railways services. Get real-time PNR status, complete train info, live tracking, station updates, and seat availability with zero friction.
+          A developer-first Indian Railways API and Node.js package for real-time
+          PNR status, live train tracking, train search, station boards, and
+          seat availability with a simple integration flow.
         </p>
 
         {/* Command Copy Snippet */}

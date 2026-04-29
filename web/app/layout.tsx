@@ -5,11 +5,14 @@ import "./globals.css";
 import { ThemeProvider } from "./ThemeProvider";
 import { Header } from "../components/Header";
 import {
+  buildMetadata,
+  OG_LOCALE,
   SITE_DESCRIPTION,
   SITE_KEYWORDS,
   SITE_NAME,
   SITE_TITLE,
-  SOCIAL_IMAGE_PATH,
+  TWITTER_CARD,
+  TWITTER_HANDLE,
   getSiteUrl,
 } from "../lib/seo";
 
@@ -31,16 +34,20 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   applicationName: SITE_NAME,
+  authors: [{ name: "Rajiv Dubey", url: "https://github.com/RAJIV81205" }],
+  creator: "Rajiv Dubey",
+  publisher: SITE_NAME,
+  category: "developer tools",
   openGraph: {
     type: "website",
-    locale: "en_IN",
+    locale: OG_LOCALE,
     siteName: SITE_NAME,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    url: "/",
+    url: getSiteUrl(),
     images: [
       {
-        url: SOCIAL_IMAGE_PATH,
+        url: buildMetadata({}).openGraph.images[0].url,
         width: 512,
         height: 512,
         alt: "IRCTC Connect",
@@ -48,10 +55,11 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: TWITTER_CARD,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [SOCIAL_IMAGE_PATH],
+    creator: TWITTER_HANDLE,
+    images: [buildMetadata({}).twitter.images[0]],
   },
   robots: {
     index: true,
