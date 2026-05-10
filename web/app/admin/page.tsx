@@ -294,6 +294,15 @@ const formatCompactDate = (value: string) => {
   });
 };
 
+const toDateTimeLocalValue = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
   return (
@@ -472,6 +481,20 @@ function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: str
             </div>
             <span style={{ color: "#94a3b8", fontSize: 13 }}>Account Active</span>
           </label>
+
+          {/* Billing Date */}
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Billing Date</span>
+            <input
+              type="datetime-local"
+              value={toDateTimeLocalValue(draft.billingDate)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setDraft({ ...draft, billingDate: value ? new Date(value).toISOString() : null });
+              }}
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
+            />
+          </label>
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
@@ -485,7 +508,7 @@ function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: str
             Cancel
           </button>
           <button
-            onClick={() => { onSave(user._id, { plan: draft.plan, active: draft.active, usage: draft.usage, limit: draft.limit }); onClose(); }}
+            onClick={() => { onSave(user._id, { plan: draft.plan, active: draft.active, usage: draft.usage, limit: draft.limit, billingDate: draft.billingDate || null }); onClose(); }}
             style={{
               background: "#059669", border: "none", color: "#fff",
               borderRadius: 6, padding: "8px 20px", fontSize: 13, cursor: "pointer", fontWeight: 600,
