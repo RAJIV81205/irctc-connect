@@ -2,7 +2,15 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, Star, Heart, Terminal } from "lucide-react";
+import {
+  Check,
+  Star,
+  Heart,
+  Terminal,
+  Sparkles,
+  ShieldCheck,
+} from "lucide-react";
+
 import type { PricingPlan, PaidPlanType } from "../../lib/constants";
 
 type Notice = {
@@ -10,18 +18,8 @@ type Notice = {
   text: string;
 } | null;
 
-type PublicPlansResponse = {
-  success: boolean;
-  offerEndsAt?: string | null;
-  contactEmail?: string;
-  plans?: PricingPlan[];
-  message?: string;
-};
-
 function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) {
-    return error.message;
-  }
+  if (error instanceof Error) return error.message;
   return fallback;
 }
 
@@ -47,7 +45,7 @@ export default function PricingClient({
 
 function PricingPageFallback() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)]" aria-busy="true" />
+    <div className="min-h-screen bg-[#050816] animate-pulse" />
   );
 }
 
@@ -63,16 +61,30 @@ function PricingPageContent({
   const searchParams = useSearchParams();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState<"free" | PaidPlanType | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<
+    "free" | PaidPlanType | null
+  >(null);
+
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
   const [showPaymentNotice, setShowPaymentNotice] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PaidPlanType | null>(null);
+
+  const [selectedPlan, setSelectedPlan] =
+    useState<PaidPlanType | null>(null);
+
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
   const [notice, setNotice] = useState<Notice>(null);
-  const [pricingPlans] = useState<PricingPlan[]>(initialPlans);
-  const isLoadingPlans = false;
-  const [offerEndsAt] = useState<string | null>(initialOfferEndsAt);
-  const [planContactEmail] = useState(initialContactEmail);
+
+  const [pricingPlans] =
+    useState<PricingPlan[]>(initialPlans);
+
+  const [offerEndsAt] =
+    useState<string | null>(initialOfferEndsAt);
+
+  const [planContactEmail] =
+    useState(initialContactEmail);
+
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -85,17 +97,28 @@ function PricingPageContent({
     "IRCTC Connect Payment Help"
   )}`;
 
-  const orderIdFromQuery = searchParams.get("order_id");
-  const isPaymentReturn = searchParams.get("payment_return") === "1";
+  const orderIdFromQuery =
+    searchParams.get("order_id");
+
+  const isPaymentReturn =
+    searchParams.get("payment_return") === "1";
 
   const getNumericPrice = (value: string) =>
     Number(value.replace(/[^\d.]/g, "")) || 0;
 
-  const getDiscountPercent = (originalPrice: string, discountedPrice: string) => {
+  const getDiscountPercent = (
+    originalPrice: string,
+    discountedPrice: string
+  ) => {
     const original = getNumericPrice(originalPrice);
     const discounted = getNumericPrice(discountedPrice);
-    if (!original || discounted >= original) return null;
-    return Math.round(((original - discounted) / original) * 100);
+
+    if (!original || discounted >= original)
+      return null;
+
+    return Math.round(
+      ((original - discounted) / original) * 100
+    );
   };
 
   useEffect(() => {
@@ -107,10 +130,13 @@ function PricingPageContent({
         seconds: 0,
         expired: true,
       });
+
       return;
     }
 
-    const offerDeadline = new Date(offerEndsAt).getTime();
+    const offerDeadline =
+      new Date(offerEndsAt).getTime();
+
     if (!Number.isFinite(offerDeadline)) {
       setTimeLeft({
         days: 0,
@@ -119,11 +145,13 @@ function PricingPageContent({
         seconds: 0,
         expired: true,
       });
+
       return;
     }
 
     const updateTimer = () => {
       const now = Date.now();
+
       const diff = offerDeadline - now;
 
       if (diff <= 0) {
@@ -134,42 +162,81 @@ function PricingPageContent({
           seconds: 0,
           expired: true,
         });
+
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
+      const days = Math.floor(
+        diff / (1000 * 60 * 60 * 24)
+      );
 
-      setTimeLeft({ days, hours, minutes, seconds, expired: false });
+      const hours = Math.floor(
+        (diff / (1000 * 60 * 60)) % 24
+      );
+
+      const minutes = Math.floor(
+        (diff / (1000 * 60)) % 60
+      );
+
+      const seconds = Math.floor(
+        (diff / 1000) % 60
+      );
+
+      setTimeLeft({
+        days,  
+        hours,
+        minutes,
+        seconds,
+        expired: false,
+      });
     };
 
     updateTimer();
-    const intervalId = setInterval(updateTimer, 1000);
+
+    const intervalId = setInterval(
+      updateTimer,
+      1000
+    );
+
     return () => clearInterval(intervalId);
   }, [offerEndsAt]);
 
   useEffect(() => {
     const verifyAuth = async () => {
       try {
-        const response = await fetch("/api/user/verify", {
-          method: "GET",
-          cache: "no-store",
-        });
+        const response = await fetch(
+          "/api/user/verify",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
         if (!response.ok) {
           setIsAuthenticated(false);
           setCurrentPlan(null);
+
           return;
         }
 
         const data = await response.json();
+
         setIsAuthenticated(Boolean(data?.success));
 
-        const rawPlan = String(data?.user?.plan || "").toLowerCase();
-        const mappedPlan = rawPlan === "enterprise" ? "advance" : rawPlan;
-        if (mappedPlan === "free" || mappedPlan === "pro" || mappedPlan === "advance") {
+        const rawPlan = String(
+          data?.user?.plan || ""
+        ).toLowerCase();
+
+        const mappedPlan =
+          rawPlan === "enterprise"
+            ? "advance"
+            : rawPlan;
+
+        if (
+          mappedPlan === "free" ||
+          mappedPlan === "pro" ||
+          mappedPlan === "advance"
+        ) {
           setCurrentPlan(mappedPlan);
         } else {
           setCurrentPlan(null);
@@ -186,61 +253,84 @@ function PricingPageContent({
   }, []);
 
   useEffect(() => {
-    if (!isPaymentReturn || !orderIdFromQuery || isCheckingAuth || !isAuthenticated) {
+    if (
+      !isPaymentReturn ||
+      !orderIdFromQuery ||
+      isCheckingAuth ||
+      !isAuthenticated
+    ) {
       return;
     }
 
     const syncOrder = async () => {
       try {
-        setNotice({ kind: "info", text: "Checking payment status..." });
+        setNotice({
+          kind: "info",
+          text: "Checking payment status...",
+        });
 
         const response = await fetch(
-          `/api/user/get-order?orderId=${encodeURIComponent(orderIdFromQuery)}&sync=true`,
+          `/api/user/get-order?orderId=${encodeURIComponent(
+            orderIdFromQuery
+          )}&sync=true`,
           {
             method: "GET",
             cache: "no-store",
           }
         );
+
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data?.message || "Unable to verify payment status");
+          throw new Error(
+            data?.message ||
+              "Unable to verify payment status"
+          );
         }
 
         if (data?.order?.credited) {
           setNotice({
             kind: "success",
-            text: "Payment successful. Your plan benefits are now active.",
+            text: "Payment successful. Your plan is now active.",
           });
+
           return;
         }
 
         setNotice({
           kind: "info",
-          text: "Payment is still processing. We will update your plan once webhook/status confirms success.",
+          text: "Payment is still processing.",
         });
       } catch (error: unknown) {
         setNotice({
           kind: "error",
           text: getErrorMessage(
             error,
-            "Unable to verify payment status right now."
+            "Unable to verify payment."
           ),
         });
       }
     };
 
     syncOrder();
-  }, [isPaymentReturn, orderIdFromQuery, isCheckingAuth, isAuthenticated]);
+  }, [
+    isPaymentReturn,
+    orderIdFromQuery,
+    isCheckingAuth,
+    isAuthenticated,
+  ]);
 
-  const openPaymentModal = (planType: PaidPlanType | "free") => {
+  const openPaymentModal = (
+    planType: PaidPlanType | "free"
+  ) => {
     if (planType === "free") return;
-    
+
     if (!isAuthenticated || isCheckingAuth) {
       setNotice({
         kind: "info",
-        text: "Please login first to continue with payment.",
+        text: "Please login first.",
       });
+
       return;
     }
 
@@ -255,276 +345,455 @@ function PricingPageContent({
       setIsCreatingOrder(true);
       setNotice(null);
 
-      const response = await fetch("/api/user/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planType: selectedPlan }),
-      });
+      const response = await fetch(
+        "/api/user/create-order",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            planType: selectedPlan,
+          }),
+        }
+      );
 
       const data = await response.json();
+
       if (!response.ok || !data?.redirectUrl) {
-        throw new Error(data?.message || "Unable to create order");
+        throw new Error(
+          data?.message ||
+            "Unable to create order"
+        );
       }
 
       window.location.href = data.redirectUrl;
     } catch (error: unknown) {
       setNotice({
         kind: "error",
-        text: getErrorMessage(error, "Unable to create order right now."),
+        text: getErrorMessage(
+          error,
+          "Unable to create order."
+        ),
       });
+
       setIsCreatingOrder(false);
     }
   };
 
-  const getButtonState = (plan: PricingPlan) => {
-    // Enterprise/Advance users should not see upgrade actions here.
-    if (!isCheckingAuth && isAuthenticated && currentPlan === "advance") {
+  const getButtonState = (
+    plan: PricingPlan
+  ) => {
+    if (
+      !isCheckingAuth &&
+      isAuthenticated &&
+      currentPlan === "advance"
+    ) {
       if (plan.planType === "advance") {
-        return { label: "Current Plan", disabled: true };
+        return {
+          label: "Current Plan",
+          disabled: true,
+        };
       }
+
       if (plan.planType === "pro") {
-        return { label: "Not Available", disabled: true };
+        return {
+          label: "Not Available",
+          disabled: true,
+        };
       }
-      return { label: "Included", disabled: true };
+
+      return {
+        label: "Included",
+        disabled: true,
+      };
     }
 
     if (plan.planType === "free") {
-      return { label: plan.buttonText, disabled: false };
+      return {
+        label: plan.buttonText,
+        disabled: false,
+      };
     }
 
     if (isCheckingAuth) {
-      return { label: "Checking login...", disabled: true };
+      return {
+        label: "Checking Login...",
+        disabled: true,
+      };
     }
 
     if (!isAuthenticated) {
-      return { label: "Login to Continue", disabled: true };
+      return {
+        label: "Login to Continue",
+        disabled: true,
+      };
     }
 
     if (currentPlan === plan.planType) {
-      return { label: "Current Plan", disabled: true };
+      return {
+        label: "Current Plan",
+        disabled: true,
+      };
     }
 
-    return { label: "Upgrade Plan", disabled: false };
+    return {
+      label: "Upgrade Plan",
+      disabled: false,
+    };
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#1f3b8f_0%,transparent_35%),radial-gradient(circle_at_80%_90%,#14532d_0%,transparent_30%),linear-gradient(145deg,#0f172a,#111827,#020617)] text-slate-100 selection:bg-emerald-500/30 font-sans">
-      <main className="pt-32 pb-24 px-6 relative">
-        <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-300/40 bg-emerald-300/15 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-6 shadow-sm">
-            <Heart className="w-4 h-4 fill-emerald-400" />
-            <span>Sponsor the Project</span>
-          </div>
-          <h1 className="max-w-4xl mx-auto font-jetbrains text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl tracking-tight mb-6">
-            Plans and Pricing
-          </h1>
-          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-4 leading-relaxed">
-            Choose a plan that fits your usage needs and help sustain this open-source project.
-          </p>
+    <div className="relative min-h-screen overflow-hidden bg-[#050816] text-white">
 
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden">
+
+        <div className="absolute -top-40 -left-40 h-[32rem] w-[32rem] rounded-full bg-emerald-500/20 blur-3xl" />
+
+        <div className="absolute bottom-[-10rem] right-[-10rem] h-[35rem] w-[35rem] rounded-full bg-cyan-500/20 blur-3xl" />
+
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:60px_60px]" />
+      </div>
+
+      <main className="relative z-10 px-6 py-28">
+
+        <div className="mx-auto max-w-7xl">
+
+          {/* HERO */}
+          <div className="mb-24 text-center">
+
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-5 py-2 text-sm font-medium text-emerald-300 backdrop-blur-xl">
+              <Heart className="h-4 w-4 fill-emerald-400" />
+              Sponsor the Open Source Project
+            </div>
+
+            <h1 className="mt-8 text-5xl font-black leading-tight tracking-tight md:text-7xl">
+              Simple Pricing
+              <span className="mt-2 block bg-gradient-to-r from-emerald-300 via-cyan-300 to-emerald-500 bg-clip-text text-transparent">
+                Built for Scale
+              </span>
+            </h1>
+
+            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-400">
+              Powerful request limits, premium support,
+              and scalable infrastructure designed for
+              modern applications.
+            </p>
+
+          </div>
+
+          {/* NOTICE */}
           {notice && (
             <div
-              className={`mb-8 mx-auto max-w-3xl rounded-xl border px-5 py-4 text-left ${
+              className={`mx-auto mb-10 max-w-3xl rounded-2xl border px-5 py-4 backdrop-blur-xl ${
                 notice.kind === "success"
-                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-200"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
                   : notice.kind === "error"
-                    ? "border-red-500/50 bg-red-500/10 text-red-200"
-                    : "border-cyan-500/50 bg-cyan-500/10 text-cyan-200"
+                  ? "border-red-500/30 bg-red-500/10 text-red-200"
+                  : "border-cyan-500/30 bg-cyan-500/10 text-cyan-200"
               }`}
             >
               {notice.text}
             </div>
           )}
 
-          <div className="mt-16 grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto text-left items-stretch">
+          {/* PRICING */}
+          <div className="grid gap-8 lg:grid-cols-3">
+
             {pricingPlans.map((plan) => {
-              const buttonState = getButtonState(plan);
-              const isMostPopular =
-                plan.planType === "advance" ||
-                plan.id.toLowerCase() === "advance" ||
-                /advance|enterprise/i.test(plan.name);
-              const Icon = plan.colorTheme === "emerald" ? Terminal : isMostPopular ? Star : Check;
-              const isOfferActive = Boolean(plan.originalPrice) && !timeLeft.expired;
+
+              const buttonState =
+                getButtonState(plan);
+
+              const isPopular =
+                plan.planType === "advance";
+
+              const isOfferActive =
+                Boolean(plan.originalPrice) &&
+                !timeLeft.expired;
+
+              const discountPercent =
+                isOfferActive &&
+                plan.originalPrice
+                  ? getDiscountPercent(
+                      plan.originalPrice,
+                      plan.price
+                    )
+                  : null;
+
               const displayedPrice =
-                isOfferActive && plan.originalPrice ? plan.price : plan.originalPrice || plan.price;
-              const discountPercent = isOfferActive && plan.originalPrice
-                ? getDiscountPercent(plan.originalPrice, plan.price)
-                : null;
+                isOfferActive &&
+                plan.originalPrice
+                  ? plan.price
+                  : plan.originalPrice || plan.price;
+
               return (
-                <div 
+                <div
                   key={plan.id}
-                  className={`relative group rounded-3xl border bg-slate-900/60 p-8 transition-all hover:bg-slate-800/90 ${
-                    isMostPopular
-                      ? 'border-emerald-500/60 shadow-[0_0_35px_rgba(52,211,153,0.2)]' 
-                      : 'border-slate-700/80 hover:border-slate-500'
+                  className={`group relative overflow-hidden rounded-[32px] border backdrop-blur-2xl transition-all duration-500 hover:-translate-y-2 ${
+                    isPopular
+                      ? "border-emerald-400/30 bg-white/[0.08] shadow-[0_0_80px_rgba(16,185,129,0.15)]"
+                      : "border-white/10 bg-white/[0.04]"
                   }`}
                 >
-                  {isMostPopular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 bg-emerald-400 text-emerald-950 text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      Popular
+
+                  {/* glow */}
+                  {isPopular && (
+                    <div className="absolute inset-0 bg-gradient-to-b from-emerald-400/10 to-transparent" />
+                  )}
+
+                  {/* badge */}
+                  {isPopular && (
+                    <div className="absolute right-5 top-5 flex items-center gap-1 rounded-full bg-emerald-400 px-3 py-1 text-xs font-bold text-black">
+                      <Star className="h-3 w-3 fill-black" />
+                      POPULAR
                     </div>
                   )}
 
-                  {isOfferActive && plan.originalPrice && discountPercent && (
-                    <div className="absolute top-5 right-5 rounded-full border border-amber-300/40 bg-amber-300/15 px-2.5 py-1 text-[11px] font-bold tracking-wide text-amber-200">
-                      {discountPercent}% OFF
-                    </div>
-                  )}
+                  <div className="relative z-10 p-8">
 
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-8 border ${
-                    isMostPopular ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-slate-800 border-slate-700'
-                  }`}>
-                    <Icon className={`w-6 h-6 ${isMostPopular ? 'text-emerald-400' : 'text-slate-300'}`} />
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-white mb-2 font-jetbrains">
-                    {plan.name}
-                  </h3>
-                  {plan.originalPrice ? (
-                    <div className="mb-4">
-                      {isOfferActive && (
-                        <div className="flex items-baseline gap-2 mb-1">
-                          <span className="text-base font-medium text-slate-400 line-through decoration-2 decoration-slate-500">
-                            {plan.originalPrice}
-                          </span>
-                          <span className="rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2 py-0.5 text-[10px] uppercase tracking-wide font-bold text-emerald-200">
-                            Offer Price
-                          </span>
-                        </div>
+                    {/* ICON */}
+                    <div
+                      className={`mb-8 flex h-16 w-16 items-center justify-center rounded-2xl ${
+                        isPopular
+                          ? "bg-emerald-400/15 text-emerald-300"
+                          : "bg-white/5 text-white"
+                      }`}
+                    >
+                      {isPopular ? (
+                        <Sparkles className="h-7 w-7" />
+                      ) : (
+                        <Terminal className="h-7 w-7" />
                       )}
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-5xl font-extrabold text-white">
+                    </div>
+
+                    {/* TITLE */}
+                    <h3 className="text-3xl font-bold">
+                      {plan.name}
+                    </h3>
+
+                    <p className="mt-4 text-sm leading-relaxed text-slate-400">
+                      {plan.description}
+                    </p>
+
+                    {/* PRICE */}
+                    <div className="mt-10">
+
+                      {plan.originalPrice &&
+                        isOfferActive &&
+                        discountPercent && (
+                          <div className="mb-3 flex items-center gap-3">
+
+                            <span className="text-lg text-slate-500 line-through">
+                              {plan.originalPrice}
+                            </span>
+
+                            <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-300">
+                              {discountPercent}% OFF
+                            </span>
+
+                          </div>
+                        )}
+
+                      <div className="flex items-end gap-2">
+
+                        <span className="text-6xl font-black tracking-tight">
                           {displayedPrice}
                         </span>
-                        <span className="text-slate-400 font-medium">
+
+                        <span className="mb-2 text-slate-400">
                           {plan.period}
                         </span>
-                      </div>
-                      <div className="mt-2 text-xs text-amber-200/90">
-                        {!timeLeft.expired && (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-amber-300/30 bg-amber-300/10 px-2 py-1 font-semibold">
-                            Ends in {timeLeft.days}d {String(timeLeft.hours).padStart(2, "0")}h {String(timeLeft.minutes).padStart(2, "0")}m {String(timeLeft.seconds).padStart(2, "0")}s
-                          </span>
-                        ) }
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mb-4">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-5xl font-extrabold text-white">
-                          {plan.price}
-                        </span>
-                        <span className="text-slate-400 font-medium">
-                          {plan.period}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  <p className="text-slate-400 mb-8 min-h-12 leading-relaxed text-sm">
-                    {plan.description}
-                  </p>
 
-                  <button
-                    onClick={() => openPaymentModal(plan.planType)}
-                    disabled={buttonState.disabled}
-                    className={`w-full py-3.5 px-6 rounded-xl font-bold mb-10 transition-all ${
-                      buttonState.disabled
-                        ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
-                        : isMostPopular
-                          ? "bg-emerald-400 text-emerald-950 hover:bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.2)]"
-                          : "bg-slate-800 text-white hover:bg-slate-700 border border-slate-700"
-                    }`}
-                  >
-                    {buttonState.label}
-                  </button>
+                      </div>
 
-                  <div className="space-y-4">
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
-                      Features
+                      {!timeLeft.expired &&
+                        plan.originalPrice && (
+                          <div className="mt-5 inline-flex rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-sm text-amber-200">
+
+                            Ends in&nbsp;
+
+                            {timeLeft.days}d{" "}
+                            {String(
+                              timeLeft.hours
+                            ).padStart(2, "0")}
+                            h{" "}
+                            {String(
+                              timeLeft.minutes
+                            ).padStart(2, "0")}
+                            m{" "}
+                            {String(
+                              timeLeft.seconds
+                            ).padStart(2, "0")}
+                            s
+
+                          </div>
+                        )}
                     </div>
-                    <ul className="space-y-3">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <Check className={`w-5 h-5 shrink-0 ${isMostPopular ? 'text-emerald-400' : 'text-slate-400'}`} />
-                          <span className={`text-sm ${feature.highlight ? 'text-white font-semibold' : 'text-slate-300'}`}>
-                            {feature.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+
+                    {/* BUTTON */}
+                    <button
+                      onClick={() =>
+                        openPaymentModal(
+                          plan.planType
+                        )
+                      }
+                      disabled={
+                        buttonState.disabled
+                      }
+                      className={`mt-10 w-full rounded-2xl py-4 font-semibold transition-all duration-300 ${
+                        buttonState.disabled
+                          ? "cursor-not-allowed bg-white/5 text-slate-500"
+                          : isPopular
+                          ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-black hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(16,185,129,0.35)]"
+                          : "bg-white/5 hover:bg-white/10"
+                      }`}
+                    >
+                      {buttonState.label}
+                    </button>
+
+                    {/* FEATURES */}
+                    <div className="mt-10 border-t border-white/10 pt-8">
+
+                      <div className="mb-5 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+                        <ShieldCheck className="h-4 w-4" />
+                        Features
+                      </div>
+
+                      <div className="space-y-4">
+
+                        {plan.features.map(
+                          (feature, i) => (
+                            <div
+                              key={i}
+                              className="flex items-start gap-3"
+                            >
+
+                              <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/10">
+                                <Check className="h-3 w-3 text-emerald-300" />
+                              </div>
+
+                              <span
+                                className={`text-sm leading-relaxed ${
+                                  feature.highlight
+                                    ? "font-semibold text-white"
+                                    : "text-slate-300"
+                                }`}
+                              >
+                                {feature.text}
+                              </span>
+
+                            </div>
+                          )
+                        )}
+
+                      </div>
+
+                    </div>
+
                   </div>
                 </div>
               );
             })}
-            {!isLoadingPlans && pricingPlans.length === 0 && (
-              <div className="lg:col-span-3 rounded-2xl border border-slate-700 bg-slate-900/40 p-8 text-center text-slate-300">
-                No plans available right now. Please check back shortly.
-              </div>
-            )}
           </div>
 
-          <div className="mt-12 mx-auto max-w-3xl rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-6 py-6 text-left shadow-[0_0_28px_rgba(34,211,238,0.08)]">
-            <p className="text-xs uppercase tracking-wider text-cyan-200 font-semibold mb-2">
-              Need More Than Current Plans?
-            </p>
-            <p className="text-slate-200 text-sm leading-relaxed mb-4">
-              If you need a custom request limit, business support, or team pricing, contact the support directly and we can set up a custom plan for you.
-            </p>
-            <a
-              href={contactUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/15 px-4 py-2.5 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/25"
-            >
-              Contact Support
-            </a>
+          {/* CONTACT */}
+          <div className="mx-auto mt-20 max-w-4xl rounded-[32px] border border-cyan-400/20 bg-cyan-400/5 p-10 backdrop-blur-2xl">
+
+            <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+
+              <div>
+
+                <p className="text-sm font-bold uppercase tracking-widest text-cyan-300">
+                  Need a Custom Plan?
+                </p>
+
+                <h3 className="mt-3 text-3xl font-bold">
+                  Enterprise & Team Pricing
+                </h3>
+
+                <p className="mt-4 max-w-2xl leading-relaxed text-slate-400">
+                  Need higher request limits,
+                  dedicated support, or custom
+                  infrastructure? Contact us and
+                  we’ll create a custom plan for
+                  your business.
+                </p>
+
+              </div>
+
+              <a
+                href={contactUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-6 py-4 font-semibold text-cyan-200 transition-all hover:bg-cyan-400/20"
+              >
+                Contact Support
+              </a>
+
+            </div>
           </div>
-          
-          <p className="mt-10 text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
-            By paying for a premium tier, you are directly helping in sponsoring
-            and sustaining this open-source project. Thank you.
+
+          {/* FOOTER */}
+          <p className="mx-auto mt-12 max-w-2xl text-center leading-relaxed text-slate-500">
+            By purchasing a premium plan, you are
+            directly helping support and sustain
+            this open-source project. Thank you.
           </p>
+
         </div>
       </main>
 
+      {/* MODAL */}
       {showPaymentNotice && selectedPlan && (
-        <div className="fixed inset-0 z-[80] bg-slate-950/80 backdrop-blur-md flex items-center justify-center px-6">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
-            <h3 className="text-2xl font-bold text-white mb-4 font-jetbrains">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-xl">
+
+          <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-[#0b1220]/90 p-8 shadow-[0_0_80px_rgba(0,0,0,0.5)]">
+
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/10">
+              <ShieldCheck className="h-8 w-8 text-emerald-300" />
+            </div>
+
+            <h3 className="text-3xl font-bold">
               Secure Checkout
             </h3>
-            <p className="text-slate-300 leading-relaxed mb-6">
-              You will be redirected securely to complete the payment for the <span className="font-semibold text-emerald-400 uppercase">{selectedPlan}</span> plan.
+
+            <p className="mt-4 leading-relaxed text-slate-400">
+              You will now be redirected to
+              complete payment securely for the{" "}
+              <span className="font-semibold uppercase text-emerald-300">
+                {selectedPlan}
+              </span>{" "}
+              plan.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-end mt-8">
+            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-end">
+
               <button
                 onClick={() => {
                   setShowPaymentNotice(false);
                   setSelectedPlan(null);
                 }}
                 disabled={isCreatingOrder}
-                className="px-5 py-3 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors font-medium"
+                className="rounded-2xl border border-white/10 px-5 py-3 text-slate-300 transition-all hover:bg-white/5"
               >
                 Cancel
               </button>
-               <a
-                  href={contactUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-5 py-3 text-center rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors font-medium sm:hidden"
-                >
-                  Contact Me
-               </a>
+
               <button
                 onClick={startPayment}
                 disabled={isCreatingOrder}
-                className="px-5 py-3 rounded-xl bg-emerald-400 text-emerald-950 hover:bg-emerald-300 transition-colors font-bold disabled:opacity-60 flex justify-center items-center gap-2"
+                className="rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-5 py-3 font-bold text-black transition-all hover:scale-[1.02]"
               >
-                {isCreatingOrder ? "Creating Order..." : "Proceed to Payment"}
+                {isCreatingOrder
+                  ? "Creating Order..."
+                  : "Proceed to Payment"}
               </button>
+
             </div>
+
           </div>
         </div>
       )}
