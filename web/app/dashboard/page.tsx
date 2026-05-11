@@ -52,6 +52,8 @@ type UserOrdersResponse = {
   message?: string;
 };
 
+type ApiCodeLanguage = "javascript" | "python" | "curl";
+
 const fetcher = async <T,>(url: string): Promise<T> => {
   const res = await fetch(url);
   const data = await res.json();
@@ -524,6 +526,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "apikey" | "apiendpoints" | "playground" | "orders"
   >("overview");
+  const [apiCodeLanguage, setApiCodeLanguage] =
+    useState<ApiCodeLanguage>("javascript");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [playgroundAction, setPlaygroundAction] = useState<
     "pnr" | "train" | "track" | "station" | "search" | "seat"
@@ -764,9 +768,39 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
   const directApiBaseUrl =
     process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL ||
     "https://irctc-connect-api.rajivdubey.tech";
-  const directApiQuickExample = `const API_KEY = process.env.IRCTC_API_KEY;
 
-const response = await fetch("${directApiBaseUrl}/api/checkPNRStatus/1234567890", {
+  const apiLanguageMeta: Record<
+    ApiCodeLanguage,
+    { label: string; syntax: "javascript" | "python" | "bash" }
+  > = {
+    javascript: { label: "JavaScript", syntax: "javascript" },
+    python: { label: "Python", syntax: "python" },
+    curl: { label: "cURL", syntax: "bash" },
+  };
+
+  const buildApiSnippet = (examplePath: string, language: ApiCodeLanguage) => {
+    const url = `${directApiBaseUrl}${examplePath}`;
+    if (language === "python") {
+      return `import requests
+
+url = "${url}"
+headers = {
+    "x-api-key": "YOUR_API_KEY",
+    "accept": "application/json",
+}
+
+response = requests.get(url, headers=headers)
+data = response.json()
+print(data)`;
+    }
+    if (language === "curl") {
+      return `curl -X GET "${url}" \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "accept: application/json"`;
+    }
+    return `const API_KEY = process.env.IRCTC_API_KEY;
+
+const response = await fetch("${url}", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -776,9 +810,13 @@ const response = await fetch("${directApiBaseUrl}/api/checkPNRStatus/1234567890"
 
 const data = await response.json();
 console.log(data);`;
-  const directApiCurlExample = `curl -X GET "${directApiBaseUrl}/api/checkPNRStatus/1234567890" \\
-  -H "x-api-key: YOUR_API_KEY" \\
-  -H "accept: application/json"`;
+  };
+
+  const directApiQuickExample = buildApiSnippet(
+    "/api/checkPNRStatus/1234567890",
+    apiCodeLanguage,
+  );
+
   const endpointDocs = [
     {
       name: "Check PNR Status",
@@ -786,11 +824,6 @@ console.log(data);`;
       path: "/api/checkPNRStatus/:pnr",
       examplePath: "/api/checkPNRStatus/1234567890",
       notes: "PNR must be 10 digits.",
-      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/checkPNRStatus/1234567890", {
-  method: "GET",
-  headers: { "x-api-key": API_KEY, "accept": "application/json" },
-});
-const data = await res.json();`,
     },
     {
       name: "Get Train Info",
@@ -798,11 +831,6 @@ const data = await res.json();`,
       path: "/api/getTrainInfo/:trainNumber",
       examplePath: "/api/getTrainInfo/12345",
       notes: "Train number must be 5 digits.",
-      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/getTrainInfo/12345", {
-  method: "GET",
-  headers: { "x-api-key": API_KEY, "accept": "application/json" },
-});
-const data = await res.json();`,
     },
     {
       name: "Track Train",
@@ -810,11 +838,6 @@ const data = await res.json();`,
       path: "/api/trackTrain/:trainNumber/:date",
       examplePath: "/api/trackTrain/12345/28-03-2026",
       notes: "Date format: DD-MM-YYYY. You can also pass `today` as date.",
-      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/trackTrain/12345/28-03-2026", {
-  method: "GET",
-  headers: { "x-api-key": API_KEY, "accept": "application/json" },
-});
-const data = await res.json();`,
     },
     {
       name: "Live At Station",
@@ -822,11 +845,6 @@ const data = await res.json();`,
       path: "/api/liveAtStation/:stnCode",
       examplePath: "/api/liveAtStation/NDLS",
       notes: "Use station code in uppercase.",
-      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/liveAtStation/NDLS", {
-  method: "GET",
-  headers: { "x-api-key": API_KEY, "accept": "application/json" },
-});
-const data = await res.json();`,
     },
     {
       name: "Search Trains Between Stations",
@@ -834,11 +852,6 @@ const data = await res.json();`,
       path: "/api/searchTrainBetweenStations/:fromStnCode/:toStnCode?date=DD-MM-YYYY",
       examplePath: "/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026",
       notes: "Date query param is optional.",
-      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026", {
-  method: "GET",
-  headers: { "x-api-key": API_KEY, "accept": "application/json" },
-});
-const data = await res.json();`,
     },
     {
       name: "Get Seat Availability",
@@ -846,11 +859,6 @@ const data = await res.json();`,
       path: "/api/getAvailability/:trainNo/:fromStnCode/:toStnCode/:date/:coach/:quota",
       examplePath: "/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN",
       notes: "Date format: DD-MM-YYYY.",
-      fetchExample: `const res = await fetch("${directApiBaseUrl}/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN", {
-  method: "GET",
-  headers: { "x-api-key": API_KEY, "accept": "application/json" },
-});
-const data = await res.json();`,
     },
   ] as const;
   const normalizedPlan = (dbUser.plan || "").toLowerCase();
@@ -1990,6 +1998,38 @@ const data = await res.json();`,
                 >
                   How to call endpoints
                 </p>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginBottom: 10,
+                  }}
+                >
+                  <select
+                    value={apiCodeLanguage}
+                    onChange={(e) =>
+                      setApiCodeLanguage(e.target.value as ApiCodeLanguage)
+                    }
+                    style={{
+                      background: "#0a0d13",
+                      border: "1px solid #2d3548",
+                      borderRadius: 8,
+                      padding: "8px 10px",
+                      color: "#cbd5e1",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      outline: "none",
+                    }}
+                  >
+                    {(Object.keys(apiLanguageMeta) as ApiCodeLanguage[]).map(
+                      (lang) => (
+                        <option key={lang} value={lang}>
+                          {apiLanguageMeta[lang].label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
                 <p
                   className="dash-api-text"
                   style={{
@@ -2030,10 +2070,10 @@ const data = await res.json();`,
                       marginBottom: 10,
                     }}
                   >
-                    JavaScript Fetch Example
+                    {apiLanguageMeta[apiCodeLanguage].label} Example
                   </p>
                   <SyntaxHighlighter
-                    language="typescript"
+                    language={apiLanguageMeta[apiCodeLanguage].syntax}
                     style={nightOwl}
                     customStyle={{
                       margin: 0,
@@ -2049,50 +2089,6 @@ const data = await res.json();`,
                     }}
                   >
                     {directApiQuickExample}
-                  </SyntaxHighlighter>
-                </div>
-
-                <div
-                  className="dash-api-code-wrap"
-                  style={{
-                    background: "#0a0d13",
-                    border: "1px solid #1f2937",
-                    borderRadius: 8,
-                    padding: 14,
-                    minWidth: 0,
-                    maxWidth: "100%",
-                    overflowX: "auto",
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#64748b",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 10,
-                    }}
-                  >
-                    cURL Example
-                  </p>
-                  <SyntaxHighlighter
-                    language="bash"
-                    style={nightOwl}
-                    customStyle={{
-                      margin: 0,
-                      background: "transparent",
-                      fontSize: 12,
-                      lineHeight: 1.7,
-                      padding: 0,
-                      width: "100%",
-                      maxWidth: "100%",
-                      overflowX: "auto",
-                      overflowY: "hidden",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {directApiCurlExample}
                   </SyntaxHighlighter>
                 </div>
               </div>
@@ -2194,7 +2190,7 @@ const data = await res.json();`,
                     }}
                   >
                     <SyntaxHighlighter
-                      language="typescript"
+                      language={apiLanguageMeta[apiCodeLanguage].syntax}
                       style={nightOwl}
                       customStyle={{
                         margin: 0,
@@ -2209,7 +2205,7 @@ const data = await res.json();`,
                         fontFamily: "'JetBrains Mono', monospace",
                       }}
                     >
-                      {endpoint.fetchExample}
+                      {buildApiSnippet(endpoint.examplePath, apiCodeLanguage)}
                     </SyntaxHighlighter>
                   </div>
                 </div>
