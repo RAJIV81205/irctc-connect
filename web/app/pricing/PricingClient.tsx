@@ -339,7 +339,11 @@ function PricingPageContent({
           <div className="mt-16 grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto text-left items-stretch">
             {pricingPlans.map((plan) => {
               const buttonState = getButtonState(plan);
-              const Icon = plan.colorTheme === "emerald" ? Terminal : plan.popular ? Star : Check;
+              const isMostPopular =
+                plan.planType === "advance" ||
+                plan.id.toLowerCase() === "advance" ||
+                /advance|enterprise/i.test(plan.name);
+              const Icon = plan.colorTheme === "emerald" ? Terminal : isMostPopular ? Star : Check;
               const isOfferActive = Boolean(plan.originalPrice) && !timeLeft.expired;
               const displayedPrice =
                 isOfferActive && plan.originalPrice ? plan.price : plan.originalPrice || plan.price;
@@ -350,12 +354,12 @@ function PricingPageContent({
                 <div 
                   key={plan.id}
                   className={`relative group rounded-3xl border bg-slate-900/60 p-8 transition-all hover:bg-slate-800/90 ${
-                    plan.popular 
-                      ? 'border-emerald-500/60 shadow-[0_0_35px_rgba(52,211,153,0.2)] transform lg:-translate-y-4' 
+                    isMostPopular
+                      ? 'border-emerald-500/60 shadow-[0_0_35px_rgba(52,211,153,0.2)]' 
                       : 'border-slate-700/80 hover:border-slate-500'
                   }`}
                 >
-                  {plan.popular && (
+                  {isMostPopular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 bg-emerald-400 text-emerald-950 text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
                       <Star className="w-3.5 h-3.5 fill-current" />
                       Popular
@@ -369,9 +373,9 @@ function PricingPageContent({
                   )}
 
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-8 border ${
-                    plan.popular ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-slate-800 border-slate-700'
+                    isMostPopular ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-slate-800 border-slate-700'
                   }`}>
-                    <Icon className={`w-6 h-6 ${plan.popular ? 'text-emerald-400' : 'text-slate-300'}`} />
+                    <Icon className={`w-6 h-6 ${isMostPopular ? 'text-emerald-400' : 'text-slate-300'}`} />
                   </div>
 
                   <h3 className="text-2xl font-bold text-white mb-2 font-jetbrains">
@@ -427,7 +431,7 @@ function PricingPageContent({
                     className={`w-full py-3.5 px-6 rounded-xl font-bold mb-10 transition-all ${
                       buttonState.disabled
                         ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
-                        : plan.popular 
+                        : isMostPopular
                           ? "bg-emerald-400 text-emerald-950 hover:bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.2)]"
                           : "bg-slate-800 text-white hover:bg-slate-700 border border-slate-700"
                     }`}
@@ -442,7 +446,7 @@ function PricingPageContent({
                     <ul className="space-y-3">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-3">
-                          <Check className={`w-5 h-5 shrink-0 ${plan.popular ? 'text-emerald-400' : 'text-slate-400'}`} />
+                          <Check className={`w-5 h-5 shrink-0 ${isMostPopular ? 'text-emerald-400' : 'text-slate-400'}`} />
                           <span className={`text-sm ${feature.highlight ? 'text-white font-semibold' : 'text-slate-300'}`}>
                             {feature.text}
                           </span>
