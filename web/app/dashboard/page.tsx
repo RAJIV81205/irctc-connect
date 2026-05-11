@@ -104,6 +104,49 @@ function Loader({ text = "Loading..." }: { text?: string }) {
   );
 }
 
+function PlaygroundResponseSkeleton() {
+  const lineWidths = ["92%", "84%", "88%", "66%", "90%", "72%", "58%"];
+  return (
+    <div
+      style={{
+        minHeight: 360,
+        maxHeight: 520,
+        overflow: "hidden",
+        padding: "2px 0",
+      }}
+    >
+      <div
+        style={{
+          width: 96,
+          height: 10,
+          borderRadius: 999,
+          marginBottom: 14,
+          background:
+            "linear-gradient(90deg, rgba(45,53,72,0.65) 25%, rgba(71,85,105,0.38) 50%, rgba(45,53,72,0.65) 75%)",
+          backgroundSize: "200% 100%",
+          animation: "responseShimmer 1.4s ease-in-out infinite",
+        }}
+      />
+      {lineWidths.map((width, index) => (
+        <div
+          key={`${width}-${index}`}
+          style={{
+            width,
+            height: 10,
+            borderRadius: 999,
+            marginBottom: index === lineWidths.length - 1 ? 0 : 10,
+            background:
+              "linear-gradient(90deg, rgba(30,41,59,0.7) 25%, rgba(71,85,105,0.42) 50%, rgba(30,41,59,0.7) 75%)",
+            backgroundSize: "200% 100%",
+            animation: "responseShimmer 1.4s ease-in-out infinite",
+            animationDelay: `${index * 0.08}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const IconCopy = () => (
   <svg
@@ -834,6 +877,7 @@ const data = await res.json();`,
         .action-btn:hover { background: #2d3548 !important; color: #e2e8f0 !important; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         @keyframes ping { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+        @keyframes responseShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .stat-card { animation: fadeUp 0.4s ease both; }
         .stat-card:nth-child(1){ animation-delay: 0.05s; }
         .stat-card:nth-child(2){ animation-delay: 0.1s; }
@@ -2675,24 +2719,28 @@ const data = await res.json();`,
                   </span>
                 </div>
                 <div style={{ padding: 14, height: "100%" }}>
-                  <SyntaxHighlighter
-                    language="json"
-                    style={nightOwl}
-                    customStyle={{
-                      margin: 0,
-                      background: "transparent",
-                      fontSize: 12,
-                      lineHeight: 1.7,
-                      minHeight: 360,
-                      maxHeight: 520,
-                      borderRadius: 8,
-                      overflow: "auto",
-                      padding: 0,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {playgroundResultText || `{\n  "message": "Run a request to preview the live response"\n}`}
-                  </SyntaxHighlighter>
+                  {playgroundLoading ? (
+                    <PlaygroundResponseSkeleton />
+                  ) : (
+                    <SyntaxHighlighter
+                      language="json"
+                      style={nightOwl}
+                      customStyle={{
+                        margin: 0,
+                        background: "transparent",
+                        fontSize: 12,
+                        lineHeight: 1.7,
+                        minHeight: 360,
+                        maxHeight: 520,
+                        borderRadius: 8,
+                        overflow: "auto",
+                        padding: 0,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {playgroundResultText || `{\n  "message": "Run a request to preview the live response"\n}`}
+                    </SyntaxHighlighter>
+                  )}
                 </div>
               </div>
             </div>
