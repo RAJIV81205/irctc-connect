@@ -526,6 +526,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "apikey" | "apiendpoints" | "playground" | "orders"
   >("overview");
+  const [pricingStep, setPricingStep] = useState(0);
   const [apiCodeLanguage, setApiCodeLanguage] =
     useState<ApiCodeLanguage>("javascript");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
@@ -871,6 +872,14 @@ console.log(data);`;
     process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL || "/pricing";
 
   const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
+  const pricingBaseRequests = 20_000;
+  const pricingStepRequests = 10_000;
+  const pricingStepCost = 100;
+  const pricingBaseCost = 200;
+  const pricingMaxSteps = 48;
+  const pricingRequests = pricingBaseRequests + pricingStep * pricingStepRequests;
+  const pricingAmount = pricingBaseCost + pricingStep * pricingStepCost;
+  const pricingAtUpperCap = pricingStep === pricingMaxSteps;
 
   return (
     <>
@@ -1344,23 +1353,24 @@ console.log(data);`;
 
           {/* ── Tab: Overview ────────────────────────────────────────────── */}
           {activeTab === "overview" && (
-            <div
-              className="dash-overview-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-              }}
-            >
-              {/* Profile card */}
+            <div style={{ display: "grid", gap: 16 }}>
               <div
+                className="dash-overview-grid"
                 style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  padding: 24,
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
                 }}
               >
+                {/* Profile card */}
+                <div
+                  style={{
+                    background: "#0f1117",
+                    border: "1px solid #1e2330",
+                    borderRadius: 12,
+                    padding: 24,
+                  }}
+                >
                 <p
                   style={{
                     color: "#475569",
@@ -1531,17 +1541,17 @@ console.log(data);`;
                 >
                   {planActionLabel}
                 </button>
-              </div>
+                </div>
 
-              {/* Usage + Billing card */}
-              <div
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  padding: 24,
-                }}
-              >
+                {/* Usage + Billing card */}
+                <div
+                  style={{
+                    background: "#0f1117",
+                    border: "1px solid #1e2330",
+                    borderRadius: 12,
+                    padding: 24,
+                  }}
+                >
                 <p
                   style={{
                     color: "#475569",
@@ -1739,6 +1749,93 @@ console.log(data);`;
                       </p>
                     </div>
                   ))}
+                </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  padding: 24,
+                }}
+              >
+                <p
+                  style={{
+                    color: "#475569",
+                    fontSize: 10,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    marginBottom: 18,
+                  }}
+                >
+                  Pricing Calculator
+                </p>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    marginBottom: 14,
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#cbd5e1",
+                      fontSize: 13,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Requests:{" "}
+                    <b style={{ color: "#93c5fd" }}>
+                      {pricingRequests.toLocaleString("en-IN")}
+                      {pricingAtUpperCap ? "+" : ""}
+                    </b>
+                  </span>
+                  <span
+                    style={{
+                      color: "#6ee7b7",
+                      fontSize: 13,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Add-on: ₹{pricingAmount.toLocaleString("en-IN")}
+                    {pricingAtUpperCap ? "+" : ""}
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min={0}
+                  max={pricingMaxSteps}
+                  step={1}
+                  value={pricingStep}
+                  onChange={(e) => setPricingStep(Number(e.target.value))}
+                  style={{
+                    width: "100%",
+                    accentColor: "#34d399",
+                    cursor: "pointer",
+                  }}
+                />
+
+                <div
+                  style={{
+                    marginTop: 8,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    color: "#475569",
+                    fontSize: 11,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  <span>20,000 reqs</span>
+                  <span>∞ (10k = +₹100)</span>
                 </div>
               </div>
             </div>
