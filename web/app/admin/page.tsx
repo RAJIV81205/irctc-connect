@@ -30,6 +30,7 @@ interface User {
   limit: number;
   apiKey?: string;
   billingDate?: string | null;
+  expirationDate?: string | null;
 }
 
 interface Order {
@@ -495,6 +496,20 @@ function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: str
               style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
             />
           </label>
+
+          {/* Expiration Date */}
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Expiration Date</span>
+            <input
+              type="datetime-local"
+              value={toDateTimeLocalValue(draft.expirationDate)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setDraft({ ...draft, expirationDate: value ? new Date(value).toISOString() : null });
+              }}
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
+            />
+          </label>
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
@@ -508,7 +523,17 @@ function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: str
             Cancel
           </button>
           <button
-            onClick={() => { onSave(user._id, { plan: draft.plan, active: draft.active, usage: draft.usage, limit: draft.limit, billingDate: draft.billingDate || null }); onClose(); }}
+            onClick={() => {
+              onSave(user._id, {
+                plan: draft.plan,
+                active: draft.active,
+                usage: draft.usage,
+                limit: draft.limit,
+                billingDate: draft.billingDate || null,
+                expirationDate: draft.expirationDate || null,
+              });
+              onClose();
+            }}
             style={{
               background: "#059669", border: "none", color: "#fff",
               borderRadius: 6, padding: "8px 20px", fontSize: 13, cursor: "pointer", fontWeight: 600,
