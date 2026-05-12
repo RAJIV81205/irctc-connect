@@ -10,7 +10,7 @@ import User from "@/lib/db/models/User";
  * - If expirationDate is set and in the future, skip 30-day billing checks
  * - If expirationDate is set and has passed, set expirationDate to null
  * - Pro/Enterprise: If 30 days passed since billing date, downgrade to free with limit 50 and usage 0
- * - Free: If 30 days passed since billing date, reset limit to 0
+ * - Free: If 30 days passed since billing date, reset limit to 50
  * - On billing downgrade/reset: clear both expirationDate and billingDate to null
  *
  * FIXES APPLIED:
