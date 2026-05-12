@@ -869,7 +869,7 @@ console.log(data);`;
     ? "Increase Limit"
     : "Upgrade Plan";
   const enterpriseContactUrl =
-    process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL || "/pricing";
+    (process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL || "/pricing").replace(/^["']|["']$/g, "");
 
   const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
   const pricingBaseRequests = 20_000;
