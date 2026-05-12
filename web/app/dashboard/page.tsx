@@ -1511,12 +1511,8 @@ console.log(data);`;
                 <button
                   onClick={() => {
                     if (isEnterpriseLikePlan) {
-                      if (enterpriseContactUrl.startsWith("http")) {
-                        window.open(
-                          enterpriseContactUrl,
-                          "_blank",
-                          "noopener,noreferrer",
-                        );
+                      if (enterpriseContactUrl.startsWith("http") || enterpriseContactUrl.startsWith("mailto:")) {
+                        window.location.href = enterpriseContactUrl;
                       } else {
                         router.push(enterpriseContactUrl);
                       }
