@@ -150,6 +150,22 @@ function PlaygroundResponseSkeleton() {
   );
 }
 
+function ApiKeySkeleton() {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: 14,
+        borderRadius: 999,
+        background:
+          "linear-gradient(90deg, rgba(30,41,59,0.7) 25%, rgba(71,85,105,0.42) 50%, rgba(30,41,59,0.7) 75%)",
+        backgroundSize: "200% 100%",
+        animation: "responseShimmer 1.3s ease-in-out infinite",
+      }}
+    />
+  );
+}
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const IconCopy = () => (
   <svg
@@ -253,6 +269,23 @@ const IconEye = () => (
   >
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
     <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+const IconEyeOff = () => (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.76 21.76 0 0 1 5.06-6.94" />
+    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.78 21.78 0 0 1-3.31 4.53" />
+    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
 const IconShield = () => (
@@ -556,6 +589,8 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
 export default function DashboardPage() {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [regeneratingKey, setRegeneratingKey] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [keyVisible, setKeyVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "overview" | "apikey" | "apiendpoints" | "playground" | "orders"
@@ -645,6 +680,34 @@ export default function DashboardPage() {
       navigator.clipboard.writeText(dbUser.apiKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const regenerateApiKey = async () => {
+    if (!dbUser?.apiKey || !dbUser?.email || regeneratingKey) return;
+
+    setRegeneratingKey(true);
+    setRegenerateError(null);
+    setCopied(false);
+
+    try {
+      const res = await fetch("/api/user/key/regenerate", {
+        method: "GET",
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to regenerate key");
+      }
+
+      setKeyVisible(true);
+      await mutateUser();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to regenerate key";
+      setRegenerateError(message);
+    } finally {
+      setRegeneratingKey(false);
     }
   };
 
@@ -934,6 +997,7 @@ console.log(data);`;
         .action-btn:hover { background: #2d3548 !important; color: #e2e8f0 !important; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         @keyframes ping { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes responseShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .stat-card { animation: fadeUp 0.4s ease both; }
         .stat-card:nth-child(1){ animation-delay: 0.05s; }
@@ -1991,35 +2055,70 @@ console.log(data);`;
                   <span
                     style={{ overflowX: "auto", whiteSpace: "nowrap", flex: 1, display: "block" }}
                   >
-                    {keyVisible ? dbUser.apiKey : maskedKey}
+                    {regeneratingKey ? (
+                      <ApiKeySkeleton />
+                    ) : keyVisible ? (
+                      dbUser.apiKey
+                    ) : (
+                      maskedKey
+                    )}
                   </span>
-                  <button
-                    onClick={() => setKeyVisible(!keyVisible)}
-                    title={keyVisible ? "Hide key" : "Reveal key"}
+                  <div
                     style={{
-                      background: "none",
-                      border: "none",
-                      color: "#64748b",
-                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      padding: 4,
+                      gap: 6,
                       flexShrink: 0,
                     }}
                   >
-                    <IconEye />
-                  </button>
+                    <button
+                      onClick={() => setKeyVisible(!keyVisible)}
+                      title={keyVisible ? "Hide key" : "Reveal key"}
+                      disabled={regeneratingKey}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: regeneratingKey ? "#334155" : "#64748b",
+                        cursor: regeneratingKey ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 4,
+                      }}
+                    >
+                      {keyVisible ? <IconEyeOff /> : <IconEye />}
+                    </button>
+                    <button
+                      onClick={copyApiKey}
+                      title={copied ? "Copied" : "Copy key"}
+                      disabled={regeneratingKey}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: copied ? "#22c55e" : regeneratingKey ? "#334155" : "#64748b",
+                        cursor: regeneratingKey ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 4,
+                        transition: "color 0.2s ease",
+                      }}
+                    >
+                      {copied ? <IconCheck /> : <IconCopy />}
+                    </button>
+                  </div>
                 </div>
                 <button
-                  onClick={copyApiKey}
+                  onClick={regenerateApiKey}
+                  disabled={regeneratingKey}
                   style={{
-                    background: copied ? "#0f2a1d" : "#059669",
-                    border: `1px solid ${copied ? "#1a4731" : "#047857"}`,
-                    color: copied ? "#6ee7b7" : "#fff",
+                    background: "#059669",
+                    border: "1px solid #047857",
+                    color: "#fff",
                     borderRadius: 8,
                     padding: "0 20px",
-                    cursor: "pointer",
+                    cursor: regeneratingKey ? "not-allowed" : "pointer",
+                    opacity: regeneratingKey ? 0.6 : 1,
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 13,
                     fontWeight: 600,
@@ -2027,20 +2126,34 @@ console.log(data);`;
                     alignItems: "center",
                     gap: 8,
                     transition: "all 0.2s",
-                    boxShadow: copied ? "none" : "0 0 16px rgba(5,150,105,0.3)",
+                    boxShadow: "0 0 16px rgba(5,150,105,0.3)",
                   }}
                 >
-                  {copied ? (
-                    <>
-                      <IconCheck /> Copied!
-                    </>
-                  ) : (
-                    <>
-                      <IconCopy /> Copy Key
-                    </>
-                  )}
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      animation: regeneratingKey
+                        ? "spin 0.9s linear infinite"
+                        : "none",
+                    }}
+                  >
+                    <IconRefresh />
+                  </span>
+                  {regeneratingKey ? "Regenerating..." : "Regenerate Key"}
                 </button>
               </div>
+              {regenerateError && (
+                <p
+                  style={{
+                    marginTop: 10,
+                    color: "#fda4af",
+                    fontSize: 12,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  {regenerateError}
+                </p>
+              )}
 
               {/* Usage instructions */}
               <div
