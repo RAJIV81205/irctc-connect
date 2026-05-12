@@ -28,6 +28,7 @@ type DbUser = {
   active: boolean;
   plan: string;
   billingDate?: string;
+  expirationDate?: string | null;
 };
 
 type Order = {
@@ -377,6 +378,39 @@ function useBillingTimer(user: DbUser | null) {
         setPct(100);
         return;
       }
+
+      const now = Date.now();
+      const expirationAt = user.expirationDate
+        ? new Date(user.expirationDate).getTime()
+        : NaN;
+
+      // If a manual expiration is still active, it overrides the 30-day cycle.
+      if (Number.isFinite(expirationAt) && expirationAt > now) {
+        const remaining = expirationAt - now;
+        const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        );
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+
+        setDisplay(
+          days > 0
+            ? `${days}d ${hours}h left `
+            : `${hours}h ${minutes}m left`,
+        );
+
+        if (user.billingDate) {
+          const start = new Date(user.billingDate).getTime();
+          const total = Number.isFinite(start) && expirationAt > start
+            ? expirationAt - start
+            : remaining;
+          setPct(Math.max(0, Math.min(100, (remaining / Math.max(total, 1)) * 100)));
+        } else {
+          setPct(100);
+        }
+        return;
+      }
+
       if (!user.billingDate) {
         setDisplay("Not started");
         setPct(0);
@@ -392,7 +426,7 @@ function useBillingTimer(user: DbUser | null) {
       }
 
       const end = start + CYCLE;
-      const remaining = end - Date.now();
+      const remaining = end - now;
       if (remaining <= 0) {
         setDisplay("Expired");
         setPct(0);
@@ -413,7 +447,7 @@ function useBillingTimer(user: DbUser | null) {
     update();
     const id = setInterval(update, 60_000);
     return () => clearInterval(id);
-  }, [user?.plan, user?.billingDate]);
+  }, [user?.plan, user?.billingDate, user?.expirationDate]);
 
   const color =
     display === "Expired"
@@ -580,6 +614,12 @@ export default function DashboardPage() {
   const loading = userLoading || ordersLoading;
   const refreshing = userValidating || ordersValidating;
   const billing = useBillingTimer(dbUser);
+  const activeExpirationTimestamp = dbUser?.expirationDate
+    ? new Date(dbUser.expirationDate).getTime()
+    : NaN;
+  const hasActiveExpirationOverride =
+    Number.isFinite(activeExpirationTimestamp) &&
+    activeExpirationTimestamp > Date.now();
 
   useEffect(() => {
     if (userError) {
@@ -1250,7 +1290,9 @@ console.log(data);`;
               {
                 label: "Billing Cycle",
                 value: billing.display,
-                sub: dbUser.billingDate
+                sub: hasActiveExpirationOverride
+                  ? `until ${new Date(activeExpirationTimestamp).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
+                  : dbUser.billingDate
                   ? `since ${new Date(dbUser.billingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
                   : "Not started",
                 color: billing.color,
@@ -1638,7 +1680,8 @@ console.log(data);`;
                 </div>
 
                 {/* Billing cycle bar */}
-                {dbUser.plan !== "free" && dbUser.billingDate && (
+                {dbUser.plan !== "free" &&
+                  (dbUser.billingDate || hasActiveExpirationOverride) && (
                   <div style={{ marginBottom: 20 }}>
                     <div
                       style={{

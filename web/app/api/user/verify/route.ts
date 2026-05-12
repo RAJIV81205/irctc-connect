@@ -59,6 +59,7 @@ export async function GET() {
           active: user.active,
           plan: user.plan,
           billingDate: user.billingDate,
+          expirationDate: user.expirationDate,
         },
       },
       { status: 200 }

@@ -130,11 +130,20 @@ const getEmailAudienceLabel = (filter: EmailAudienceFilter) =>
 
 const BILLING_CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
 
-const getBillingDaysLeft = (billingDate?: string | null) => {
+const getBillingDaysLeft = (
+  billingDate?: string | null,
+  expirationDate?: string | null,
+) => {
+  const now = Date.now();
+  const expiration = expirationDate ? new Date(expirationDate).getTime() : NaN;
+  if (Number.isFinite(expiration) && expiration > now) {
+    return Math.ceil((expiration - now) / (24 * 60 * 60 * 1000));
+  }
+
   if (!billingDate) return null;
   const billingStart = new Date(billingDate).getTime();
   if (Number.isNaN(billingStart)) return null;
-  const remainingMs = billingStart + BILLING_CYCLE_MS - Date.now();
+  const remainingMs = billingStart + BILLING_CYCLE_MS - now;
   return Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
 };
 
@@ -144,7 +153,10 @@ const matchesEmailAudienceFilter = (user: User, filter: EmailAudienceFilter) => 
   const isPro = plan === "pro";
   const isAdvance = plan === "enterprise" || plan === "advance";
   const isPaid = isPro || isAdvance;
-  const daysLeft = getBillingDaysLeft(user.billingDate || null);
+  const daysLeft = getBillingDaysLeft(
+    user.billingDate || null,
+    user.expirationDate || null,
+  );
 
   switch (filter) {
     case "all_users":
@@ -352,6 +364,22 @@ function BillingTimer({ user }: { user: User }) {
         setDisplay("Free plan");
         return;
       }
+      const now = Date.now();
+      const expiration = user.expirationDate ? new Date(user.expirationDate).getTime() : NaN;
+      if (Number.isFinite(expiration) && expiration > now) {
+        const remainingMs = expiration - now;
+        const totalHours = Math.floor(remainingMs / (1000 * 60 * 60));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+
+        if (days > 0) {
+          setDisplay(`${days}d ${hours}h left `);
+        } else {
+          const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+          setDisplay(`${hours}h ${minutes}m left  `);
+        }
+        return;
+      }
       if (!user.billingDate) {
         setDisplay("Not started");
         return;
@@ -365,7 +393,7 @@ function BillingTimer({ user }: { user: User }) {
       }
 
       const billingEndsAt = billingStart + BILLING_CYCLE_MS;
-      const remainingMs = billingEndsAt - Date.now();
+      const remainingMs = billingEndsAt - now;
       if (remainingMs <= 0) {
         setDisplay("Expired");
         return;
