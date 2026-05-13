@@ -4,6 +4,16 @@ import { useEffect, useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import useSWR from "swr";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 // ─── SWR Fetcher ──────────────────────────────────────────────────────────────
 const fetcher = async (url: string) => {
@@ -66,6 +76,28 @@ interface GithubIssue {
   labels: Array<{ name: string; color: string }>;
   isNew: boolean;
   isRecentlyUpdated: boolean;
+}
+
+interface AuditLog {
+  id: string;
+  email: string;
+  statusCode: number;
+  path: string;
+  ip: string;
+  duration: number;
+  createdAt: string;
+}
+
+interface LogsData {
+  success: boolean;
+  logs: {
+    timelineDays: number;
+    dailyUsage: Array<{
+      date: string;
+      requests: number;
+    }>;
+    recent: AuditLog[];
+  };
 }
 
 interface ManagedPlanFeature {
@@ -905,7 +937,8 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "plans" | "email" | "issues">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "plans" | "email" | "issues" | "logs">("users");
+  const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [clearingUnpaid, setClearingUnpaid] = useState(false);
@@ -968,6 +1001,17 @@ export default function AdminPanel() {
   );
 
   const {
+    data: logsData,
+    isLoading: logsLoading,
+    isValidating: logsValidating,
+    mutate: mutateLogs,
+  } = useSWR<LogsData>(
+    isAdmin ? `/api/admin/logs?days=${logsTimelineDays}` : null,
+    fetcher,
+    { revalidateOnFocus: true, refreshInterval: 60_000 }
+  );
+
+  const {
     data: plansData,
     isLoading: plansLoading,
     isValidating: plansValidating,
@@ -982,8 +1026,10 @@ export default function AdminPanel() {
   const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
   const unpaidOrders = (ordersData?.orders ?? []).filter((o) => o.status !== "paid");
   const issues = issuesData?.issues ?? [];
+  const auditDailyUsage = logsData?.logs?.dailyUsage ?? [];
+  const recentLogs = logsData?.logs?.recent ?? [];
   const filteredEmailUsers = users.filter((user) => matchesEmailAudienceFilter(user, emailAudienceFilter));
-  const dataLoading = usersValidating || ordersValidating || issuesValidating || plansValidating;
+  const dataLoading = usersValidating || ordersValidating || issuesValidating || plansValidating || logsValidating;
 
   // ── Check session on mount ──────────────────────────────────────────────────
   useEffect(() => {
@@ -1001,6 +1047,11 @@ export default function AdminPanel() {
       setPlanDraft(plansData.config);
     }
   }, [plansData]);
+
+  const totalRequests = auditDailyUsage.reduce((sum, entry) => sum + entry.requests, 0);
+  const avgRequestsPerDay = auditDailyUsage.length > 0 
+    ? Math.round(totalRequests / auditDailyUsage.length) 
+    : 0;
 
   const onGoogleLogin = async () => {
     setLoginError("");
@@ -1047,7 +1098,7 @@ export default function AdminPanel() {
     }
   };
 
-  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateIssues(); mutatePlans(); };
+  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateIssues(); mutatePlans(); mutateLogs(); };
 
   const clearAllUnpaidOrders = async () => {
     if (unpaidOrders.length === 0 || clearingUnpaid) return;
@@ -1187,7 +1238,7 @@ export default function AdminPanel() {
 
   // ── Loading screen ──────────────────────────────────────────────────────────
   if (authLoading) return <Loader text="Authenticating..." />;
-  if (isAdmin && (usersLoading || ordersLoading || issuesLoading || plansLoading)) return <Loader text="Fetching data..." />;
+  if (isAdmin && (usersLoading || ordersLoading || issuesLoading || plansLoading || logsLoading)) return <Loader text="Fetching data..." />;
 
   // ── Login screen ────────────────────────────────────────────────────────────
   if (!isAdmin) {
@@ -1260,7 +1311,14 @@ export default function AdminPanel() {
 
   // ── Dashboard ───────────────────────────────────────────────────────────────
   const totalRevenue  = paidOrders.reduce((acc, o) => acc + o.amount, 0);
-  const creditedCount = paidOrders.filter((o) => o.credited).length;
+  const maxDailyRequests = Math.max(1, ...auditDailyUsage.map((entry) => entry.requests));
+  const chartData = auditDailyUsage.map((entry) => ({
+    ...entry,
+    label: new Date(entry.date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+    }),
+  }));
 
   return (
     <>
@@ -1359,7 +1417,7 @@ export default function AdminPanel() {
             {[
               { label: "Total Users", value: users.length, sub: `${users.filter((u) => u.active).length} active`, color: "#6ee7b7" },
               { label: "Pro / Enterprise", value: users.filter((u) => u.plan !== "free").length, sub: "paid plans", color: "#a78bfa" },
-              { label: "Paid Orders", value: paidOrders.length, sub: `${creditedCount} credited`, color: "#60a5fa" },
+              { label: "Avg Requests/Day", value: avgRequestsPerDay.toLocaleString("en-IN"), sub: `last ${logsTimelineDays} days`, color: "#60a5fa" },
               { label: "Total Revenue", value: `₹${(totalRevenue).toFixed(0)}`, sub: "from paid orders", color: "#fbbf24" },
             ].map((s) => (
               <div key={s.label} style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 10, padding: "18px 20px" }}>
@@ -1372,7 +1430,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid", "plans", "email", "issues"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "plans", "email", "logs", "issues"] as const).map((tab) => (
               <button
                 key={tab}
                 className="tab-btn"
@@ -1396,6 +1454,8 @@ export default function AdminPanel() {
                   ? "Plans"
                   : tab === "email"
                   ? "Email"
+                  : tab === "logs"
+                  ? `Logs${recentLogs.length ? ` (${recentLogs.length > 99 ? "99+" : recentLogs.length})` : ""}`
                   : `Issues (${issues.length})`}
               </button>
             ))}
@@ -2061,6 +2121,354 @@ export default function AdminPanel() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Logs Tab */}
+          {activeTab === "logs" && (
+            <div style={{ display: "grid", gap: 16 }}>
+              <div
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  padding: 20,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 14,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 700 }}>
+                    API Requests Per Day
+                  </p>
+                  <span
+                    style={{
+                      color: "#64748b",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Last {logsTimelineDays} days
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      border: "1px solid #243042",
+                      borderRadius: 8,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {([14, 30] as const).map((days) => (
+                      <button
+                        key={days}
+                        onClick={() => setLogsTimelineDays(days)}
+                        style={{
+                          background: logsTimelineDays === days ? "#1f3048" : "#0a0d13",
+                          color: logsTimelineDays === days ? "#93c5fd" : "#64748b",
+                          border: "none",
+                          borderRight: days === 14 ? "1px solid #243042" : "none",
+                          padding: "6px 12px",
+                          fontSize: 11,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {days}D
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: "#0a0d13",
+                    border: "1px solid #1f2937",
+                    borderRadius: 10,
+                    padding: 10,
+                    height: 260,
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chartData}
+                      margin={{ top: 12, right: 16, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="auditAreaFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.32} />
+                          <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fill: "#64748b", fontSize: 11 }}
+                        axisLine={{ stroke: "#1f2937" }}
+                        tickLine={{ stroke: "#1f2937" }}
+                        minTickGap={18}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fill: "#64748b", fontSize: 11 }}
+                        axisLine={{ stroke: "#1f2937" }}
+                        tickLine={{ stroke: "#1f2937" }}
+                      />
+                      <Tooltip
+                        cursor={{ stroke: "#334155", strokeWidth: 1 }}
+                        contentStyle={{
+                          background: "#0b1220",
+                          border: "1px solid #1e293b",
+                          borderRadius: 8,
+                          color: "#cbd5e1",
+                          fontSize: 12,
+                        }}
+                        formatter={(value) => {
+                          const numericValue =
+                            typeof value === "number" ? value : Number(value ?? 0);
+                          return [`${numericValue} requests`, "Usage"];
+                        }}
+                        labelFormatter={(label) => `Date: ${label}`}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="requests"
+                        stroke="none"
+                        fill="url(#auditAreaFill)"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="requests"
+                        stroke="#38bdf8"
+                        strokeWidth={3}
+                        dot={{ r: 3, stroke: "#0a0d13", strokeWidth: 1, fill: "#7dd3fc" }}
+                        activeDot={{ r: 5, fill: "#e0f2fe", stroke: "#38bdf8", strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 10,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    color: "#475569",
+                    fontSize: 10,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  <span>
+                    Start:{" "}
+                    {auditDailyUsage[0]
+                      ? new Date(auditDailyUsage[0].date).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                      })
+                      : "-"}
+                  </span>
+                  <span>Peak: {maxDailyRequests} req/day</span>
+                  <span>
+                    End:{" "}
+                    {auditDailyUsage[auditDailyUsage.length - 1]
+                      ? new Date(
+                        auditDailyUsage[auditDailyUsage.length - 1].date
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                      })
+                      : "-"}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "14px 18px",
+                    borderBottom: "1px solid #1e2330",
+                    background: "#0a0d13",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#94a3b8",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Recent API Logs (All Users)
+                  </span>
+                  <span
+                    style={{
+                      color: "#475569",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {recentLogs.length} entries
+                  </span>
+                </div>
+
+                <div style={{ overflowX: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                    }}
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          background: "#0a0d13",
+                          borderBottom: "1px solid #1e2330",
+                        }}
+                      >
+                        {["Time", "User", "Path", "Status", "Duration", "IP"].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "12px 16px",
+                              textAlign: "left",
+                              color: "#475569",
+                              fontSize: 10,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.1em",
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentLogs.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            style={{
+                              padding: 48,
+                              textAlign: "center",
+                              color: "#334155",
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontSize: 12,
+                            }}
+                          >
+                            No logs yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        recentLogs.map((log) => (
+                          <tr
+                            key={log.id}
+                            className="row-hover"
+                            style={{
+                              borderBottom: "1px solid #141820",
+                            }}
+                          >
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#94a3b8",
+                                fontSize: 11,
+                                fontFamily: "'JetBrains Mono', monospace",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {new Date(log.createdAt).toLocaleString("en-IN")}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#cbd5e1",
+                                fontSize: 11,
+                                fontFamily: "'JetBrains Mono', monospace",
+                                maxWidth: 200,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {log.email}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#cbd5e1",
+                                fontSize: 12,
+                                fontFamily: "'JetBrains Mono', monospace",
+                                maxWidth: 420,
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {log.path}
+                            </td>
+                            <td style={{ padding: "12px 16px" }}>
+                              <span
+                                style={{
+                                  color:
+                                    log.statusCode >= 200 && log.statusCode < 400
+                                      ? "#6ee7b7"
+                                      : "#fda4af",
+                                  fontFamily: "'JetBrains Mono', monospace",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {log.statusCode}
+                              </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#93c5fd",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: 12,
+                              }}
+                            >
+                              {Number(log.duration).toFixed(2)} ms
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#64748b",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: 11,
+                              }}
+                            >
+                              {log.ip}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
