@@ -7,6 +7,16 @@ import useSWR from "swr";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
   checkPNRStatus,
   configure,
   getAvailability,
@@ -44,6 +54,22 @@ type Order = {
 type VerifyUserResponse = {
   success: boolean;
   user: DbUser;
+  logs?: {
+    timelineDays: number;
+    dailyUsage: Array<{
+      date: string;
+      requests: number;
+    }>;
+    recent: Array<{
+      id: string;
+      email: string;
+      statusCode: number;
+      path: string;
+      ip: string;
+      duration: number;
+      createdAt: string;
+    }>;
+  };
   message?: string;
 };
 
@@ -593,8 +619,9 @@ export default function DashboardPage() {
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [keyVisible, setKeyVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "apikey" | "apiendpoints" | "playground" | "orders"
+    "overview" | "apikey" | "apiendpoints" | "playground" | "logs" | "orders"
   >("overview");
+  const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
   const [pricingStep, setPricingStep] = useState(0);
   const [apiCodeLanguage, setApiCodeLanguage] =
     useState<ApiCodeLanguage>("javascript");
@@ -631,9 +658,13 @@ export default function DashboardPage() {
     isLoading: userLoading,
     isValidating: userValidating,
     mutate: mutateUser,
-  } = useSWR<VerifyUserResponse>("/api/user/verify", fetcher, {
-    revalidateOnFocus: true,
-  });
+  } = useSWR<VerifyUserResponse>(
+    `/api/user/verify?days=${logsTimelineDays}`,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+    }
+  );
 
   const {
     data: ordersData,
@@ -645,6 +676,8 @@ export default function DashboardPage() {
   });
 
   const dbUser = userData?.user ?? null;
+  const auditDailyUsage = userData?.logs?.dailyUsage ?? [];
+  const recentLogs = userData?.logs?.recent ?? [];
   const orders = ordersData?.orders ?? [];
   const loading = userLoading || ordersLoading;
   const refreshing = userValidating || ordersValidating;
@@ -671,7 +704,7 @@ export default function DashboardPage() {
     try {
       await signOut(auth);
       await fetch("/api/user/verify", { method: "DELETE" });
-    } catch {}
+    } catch { }
     router.replace("/");
   };
 
@@ -807,9 +840,9 @@ export default function DashboardPage() {
 
       const codeGuess =
         typeof result === "object" &&
-        result !== null &&
-        "statusCode" in result &&
-        typeof (result as { statusCode?: unknown }).statusCode === "number"
+          result !== null &&
+          "statusCode" in result &&
+          typeof (result as { statusCode?: unknown }).statusCode === "number"
           ? ((result as { statusCode: number }).statusCode ?? 200)
           : 200;
       setPlaygroundStatusCode(codeGuess);
@@ -846,6 +879,17 @@ export default function DashboardPage() {
   const usageLeft = Math.max(0, dbUser.limit - dbUser.usage);
   const usageColor =
     usagePct > 80 ? "#f97316" : usagePct > 60 ? "#fbbf24" : "#34d399";
+  const maxDailyRequests = Math.max(
+    1,
+    ...auditDailyUsage.map((entry) => entry.requests),
+  );
+  const chartData = auditDailyUsage.map((entry) => ({
+    ...entry,
+    label: new Date(entry.date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+    }),
+  }));
   const maskedKey = dbUser.apiKey
     ? `${dbUser.apiKey.slice(0, 8)}${"•".repeat(24)}${dbUser.apiKey.slice(-6)}`
     : "";
@@ -1357,8 +1401,8 @@ console.log(data);`;
                 sub: hasActiveExpirationOverride
                   ? `until ${new Date(activeExpirationTimestamp).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
                   : dbUser.billingDate
-                  ? `since ${new Date(dbUser.billingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
-                  : "Not started",
+                    ? `since ${new Date(dbUser.billingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
+                    : "Not started",
                 color: billing.color,
               },
             ].map((s) => (
@@ -1430,6 +1474,13 @@ console.log(data);`;
                 { id: "apikey", label: "API Key" },
                 { id: "apiendpoints", label: "API Endpoints" },
                 { id: "playground", label: "Playground" },
+                {
+                  id: "logs",
+                  label: `Logs${recentLogs.length
+                      ? ` (${recentLogs.length > 99 ? "99+" : recentLogs.length})`
+                      : ""
+                    }`,
+                },
                 { id: "orders", label: `Orders (${orders.length})` },
               ] as const
             ).map((tab) => (
@@ -1477,172 +1528,172 @@ console.log(data);`;
                     padding: 24,
                   }}
                 >
-                <p
-                  style={{
-                    color: "#475569",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginBottom: 16,
-                  }}
-                >
-                  Profile
-                </p>
-
-                {/* Avatar row */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    marginBottom: 24,
-                  }}
-                >
-                  <div
+                  <p
                     style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background: `hsl(${avatarHue}, 60%, 18%)`,
-                      border: `1px solid hsl(${avatarHue}, 60%, 28%)`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 20,
-                      fontWeight: 800,
-                      color: `hsl(${avatarHue}, 70%, 65%)`,
+                      color: "#475569",
+                      fontSize: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 16,
                     }}
                   >
-                    {(dbUser.name || dbUser.email)[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p
-                      style={{
-                        color: "#e2e8f0",
-                        fontSize: 15,
-                        fontWeight: 700,
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      {dbUser.name || "—"}
-                    </p>
-                    <p
-                      style={{
-                        color: "#475569",
-                        fontSize: 11,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        marginTop: 3,
-                      }}
-                    >
-                      {dbUser.email}
-                    </p>
-                  </div>
-                </div>
+                    Profile
+                  </p>
 
-                {/* Details */}
-                {[
-                  { k: "Plan", v: <PlanBadge plan={dbUser.plan} /> },
-                  {
-                    k: "Status",
-                    v: (
-                      <span
+                  {/* Avatar row */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      marginBottom: 24,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 12,
+                        background: `hsl(${avatarHue}, 60%, 18%)`,
+                        border: `1px solid hsl(${avatarHue}, 60%, 28%)`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 20,
+                        fontWeight: 800,
+                        color: `hsl(${avatarHue}, 70%, 65%)`,
+                      }}
+                    >
+                      {(dbUser.name || dbUser.email)[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p
                         style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 5,
+                          color: "#e2e8f0",
+                          fontSize: 15,
+                          fontWeight: 700,
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
+                        {dbUser.name || "—"}
+                      </p>
+                      <p
+                        style={{
+                          color: "#475569",
                           fontSize: 11,
                           fontFamily: "'JetBrains Mono', monospace",
+                          marginTop: 3,
                         }}
                       >
+                        {dbUser.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  {[
+                    { k: "Plan", v: <PlanBadge plan={dbUser.plan} /> },
+                    {
+                      k: "Status",
+                      v: (
                         <span
                           style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            background: dbUser.active ? "#34d399" : "#64748b",
-                          }}
-                        />
-                        <span
-                          style={{
-                            color: dbUser.active ? "#6ee7b7" : "#64748b",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            fontSize: 11,
+                            fontFamily: "'JetBrains Mono', monospace",
                           }}
                         >
-                          {dbUser.active ? "Active" : "Inactive"}
+                          <span
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: "50%",
+                              background: dbUser.active ? "#34d399" : "#64748b",
+                            }}
+                          />
+                          <span
+                            style={{
+                              color: dbUser.active ? "#6ee7b7" : "#64748b",
+                            }}
+                          >
+                            {dbUser.active ? "Active" : "Inactive"}
+                          </span>
                         </span>
-                      </span>
-                    ),
-                  },
-                  {
-                    k: "Total Spent",
-                    v: (
-                      <span
-                        style={{
-                          color: "#6ee7b7",
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        ₹{totalSpent.toFixed(2)}
-                      </span>
-                    ),
-                  },
-                ].map(({ k, v }) => (
-                  <div
-                    key={k}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 0",
-                      borderTop: "1px solid #141820",
-                    }}
-                  >
-                    <span
+                      ),
+                    },
+                    {
+                      k: "Total Spent",
+                      v: (
+                        <span
+                          style={{
+                            color: "#6ee7b7",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 13,
+                            fontWeight: 600,
+                          }}
+                        >
+                          ₹{totalSpent.toFixed(2)}
+                        </span>
+                      ),
+                    },
+                  ].map(({ k, v }) => (
+                    <div
+                      key={k}
                       style={{
-                        color: "#475569",
-                        fontSize: 11,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 0",
+                        borderTop: "1px solid #141820",
                       }}
                     >
-                      {k}
-                    </span>
-                    {v}
-                  </div>
-                ))}
+                      <span
+                        style={{
+                          color: "#475569",
+                          fontSize: 11,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {k}
+                      </span>
+                      {v}
+                    </div>
+                  ))}
 
-                <button
-                  onClick={() => {
-                    if (isEnterpriseLikePlan) {
-                      if (enterpriseContactUrl.startsWith("http") || enterpriseContactUrl.startsWith("mailto:")) {
-                        window.location.href = enterpriseContactUrl;
-                      } else {
-                        router.push(enterpriseContactUrl);
+                  <button
+                    onClick={() => {
+                      if (isEnterpriseLikePlan) {
+                        if (enterpriseContactUrl.startsWith("http") || enterpriseContactUrl.startsWith("mailto:")) {
+                          window.location.href = enterpriseContactUrl;
+                        } else {
+                          router.push(enterpriseContactUrl);
+                        }
+                        return;
                       }
-                      return;
-                    }
-                    router.push("/pricing");
-                  }}
-                  style={{
-                    marginTop: 18,
-                    width: "100%",
-                    background: isEnterpriseLikePlan ? "#0f2233" : "#0f2a1d",
-                    border: `1px solid ${isEnterpriseLikePlan ? "#1a3a5c" : "#1a4731"}`,
-                    color: isEnterpriseLikePlan ? "#60a5fa" : "#6ee7b7",
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {planActionLabel}
-                </button>
+                      router.push("/pricing");
+                    }}
+                    style={{
+                      marginTop: 18,
+                      width: "100%",
+                      background: isEnterpriseLikePlan ? "#0f2233" : "#0f2a1d",
+                      border: `1px solid ${isEnterpriseLikePlan ? "#1a3a5c" : "#1a4731"}`,
+                      color: isEnterpriseLikePlan ? "#60a5fa" : "#6ee7b7",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    {planActionLabel}
+                  </button>
                 </div>
 
                 {/* Usage + Billing card */}
@@ -1654,99 +1705,21 @@ console.log(data);`;
                     padding: 24,
                   }}
                 >
-                <p
-                  style={{
-                    color: "#475569",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginBottom: 20,
-                  }}
-                >
-                  Usage & Billing
-                </p>
+                  <p
+                    style={{
+                      color: "#475569",
+                      fontSize: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 20,
+                    }}
+                  >
+                    Usage & Billing
+                  </p>
 
-                {/* Usage bar */}
-                <div style={{ marginBottom: 24 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#94a3b8",
-                        fontSize: 12,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      API Requests
-                    </span>
-                    <span
-                      style={{
-                        color: usageColor,
-                        fontSize: 12,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {usagePct.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: 6,
-                      background: "#1e2330",
-                      borderRadius: 3,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        borderRadius: 3,
-                        background: usageColor,
-                        width: `${Math.min(100, usagePct)}%`,
-                        transition: "width 0.6s ease",
-                        boxShadow: `0 0 8px ${usageColor}50`,
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginTop: 6,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#334155",
-                        fontSize: 10,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {dbUser.usage.toLocaleString("en-IN")} used
-                    </span>
-                    <span
-                      style={{
-                        color: "#334155",
-                        fontSize: 10,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {dbUser.limit.toLocaleString("en-IN")} total
-                    </span>
-                  </div>
-                </div>
-
-                {/* Billing cycle bar */}
-                {dbUser.plan !== "free" &&
-                  (dbUser.billingDate || hasActiveExpirationOverride) && (
-                  <div style={{ marginBottom: 20 }}>
+                  {/* Usage bar */}
+                  <div style={{ marginBottom: 24 }}>
                     <div
                       style={{
                         display: "flex",
@@ -1761,17 +1734,17 @@ console.log(data);`;
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
                       >
-                        Billing Cycle
+                        API Requests
                       </span>
                       <span
                         style={{
-                          color: billing.color,
+                          color: usageColor,
                           fontSize: 12,
                           fontFamily: "'JetBrains Mono', monospace",
                           fontWeight: 600,
                         }}
                       >
-                        {billing.display}
+                        {usagePct.toFixed(1)}%
                       </span>
                     </div>
                     <div
@@ -1786,73 +1759,151 @@ console.log(data);`;
                         style={{
                           height: "100%",
                           borderRadius: 3,
-                          background: billing.color,
-                          width: `${billing.pct}%`,
+                          background: usageColor,
+                          width: `${Math.min(100, usagePct)}%`,
                           transition: "width 0.6s ease",
-                          boxShadow: `0 0 8px ${billing.color}50`,
+                          boxShadow: `0 0 8px ${usageColor}50`,
                         }}
                       />
                     </div>
-                  </div>
-                )}
-
-                {/* Quick stats */}
-                <div
-                  className="dash-usage-stats"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 10,
-                    marginTop: 8,
-                  }}
-                >
-                  {[
-                    {
-                      label: "Paid Orders",
-                      value: paidOrders.length,
-                      color: "#6ee7b7",
-                    },
-                    {
-                      label: "Total Spent",
-                      value: `₹${totalSpent.toFixed(0)}`,
-                      color: "#fbbf24",
-                    },
-                  ].map((s) => (
                     <div
-                      key={s.label}
                       style={{
-                        background: "#0a0d13",
-                        border: "1px solid #1e2330",
-                        borderRadius: 8,
-                        padding: "12px 14px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginTop: 6,
                       }}
                     >
-                      <p
+                      <span
                         style={{
-                          color: "#475569",
+                          color: "#334155",
                           fontSize: 10,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.08em",
                           fontFamily: "'JetBrains Mono', monospace",
-                          marginBottom: 6,
                         }}
                       >
-                        {s.label}
-                      </p>
-                      <p
+                        {dbUser.usage.toLocaleString("en-IN")} used
+                      </span>
+                      <span
                         style={{
-                          fontSize: 18,
-                          fontWeight: 800,
-                          color: s.color,
+                          color: "#334155",
+                          fontSize: 10,
                           fontFamily: "'JetBrains Mono', monospace",
-                          letterSpacing: "-0.02em",
                         }}
                       >
-                        {s.value}
-                      </p>
+                        {dbUser.limit.toLocaleString("en-IN")} total
+                      </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  {/* Billing cycle bar */}
+                  {dbUser.plan !== "free" &&
+                    (dbUser.billingDate || hasActiveExpirationOverride) && (
+                      <div style={{ marginBottom: 20 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: "#94a3b8",
+                              fontSize: 12,
+                              fontFamily: "'JetBrains Mono', monospace",
+                            }}
+                          >
+                            Billing Cycle
+                          </span>
+                          <span
+                            style={{
+                              color: billing.color,
+                              fontSize: 12,
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {billing.display}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            height: 6,
+                            background: "#1e2330",
+                            borderRadius: 3,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: "100%",
+                              borderRadius: 3,
+                              background: billing.color,
+                              width: `${billing.pct}%`,
+                              transition: "width 0.6s ease",
+                              boxShadow: `0 0 8px ${billing.color}50`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Quick stats */}
+                  <div
+                    className="dash-usage-stats"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 10,
+                      marginTop: 8,
+                    }}
+                  >
+                    {[
+                      {
+                        label: "Paid Orders",
+                        value: paidOrders.length,
+                        color: "#6ee7b7",
+                      },
+                      {
+                        label: "Total Spent",
+                        value: `₹${totalSpent.toFixed(0)}`,
+                        color: "#fbbf24",
+                      },
+                    ].map((s) => (
+                      <div
+                        key={s.label}
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #1e2330",
+                          borderRadius: 8,
+                          padding: "12px 14px",
+                        }}
+                      >
+                        <p
+                          style={{
+                            color: "#475569",
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            marginBottom: 6,
+                          }}
+                        >
+                          {s.label}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 800,
+                            color: s.color,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            letterSpacing: "-0.02em",
+                          }}
+                        >
+                          {s.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -2991,6 +3042,339 @@ console.log(data);`;
             </div>
           )}
 
+          {/* ── Tab: Logs ─────────────────────────────────────────────────── */}
+          {activeTab === "logs" && (
+            <div style={{ display: "grid", gap: 16 }}>
+              <div
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  padding: 20,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 14,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 700 }}>
+                    API Requests Per Day
+                  </p>
+                  <span
+                    style={{
+                      color: "#64748b",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Last {logsTimelineDays} days
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      border: "1px solid #243042",
+                      borderRadius: 8,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {([14, 30] as const).map((days) => (
+                      <button
+                        key={days}
+                        onClick={() => setLogsTimelineDays(days)}
+                        style={{
+                          background: logsTimelineDays === days ? "#1f3048" : "#0a0d13",
+                          color: logsTimelineDays === days ? "#93c5fd" : "#64748b",
+                          border: "none",
+                          borderRight: days === 14 ? "1px solid #243042" : "none",
+                          padding: "6px 12px",
+                          fontSize: 11,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {days}D
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: "#0a0d13",
+                    border: "1px solid #1f2937",
+                    borderRadius: 10,
+                    padding: 10,
+                    height: 260,
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chartData}
+                      margin={{ top: 12, right: 16, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="auditAreaFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.32} />
+                          <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fill: "#64748b", fontSize: 11 }}
+                        axisLine={{ stroke: "#1f2937" }}
+                        tickLine={{ stroke: "#1f2937" }}
+                        minTickGap={18}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fill: "#64748b", fontSize: 11 }}
+                        axisLine={{ stroke: "#1f2937" }}
+                        tickLine={{ stroke: "#1f2937" }}
+                      />
+                      <Tooltip
+                        cursor={{ stroke: "#334155", strokeWidth: 1 }}
+                        contentStyle={{
+                          background: "#0b1220",
+                          border: "1px solid #1e293b",
+                          borderRadius: 8,
+                          color: "#cbd5e1",
+                          fontSize: 12,
+                        }}
+                        formatter={(value) => {
+                          const numericValue =
+                            typeof value === "number" ? value : Number(value ?? 0);
+                          return [`${numericValue} requests`, "Usage"];
+                        }}
+                        labelFormatter={(label) => `Date: ${label}`}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="requests"
+                        stroke="none"
+                        fill="url(#auditAreaFill)"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="requests"
+                        stroke="#38bdf8"
+                        strokeWidth={3}
+                        dot={{ r: 3, stroke: "#0a0d13", strokeWidth: 1, fill: "#7dd3fc" }}
+                        activeDot={{ r: 5, fill: "#e0f2fe", stroke: "#38bdf8", strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 10,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    color: "#475569",
+                    fontSize: 10,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  <span>
+                    Start:{" "}
+                    {auditDailyUsage[0]
+                      ? new Date(auditDailyUsage[0].date).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                      })
+                      : "-"}
+                  </span>
+                  <span>Peak: {maxDailyRequests} req/day</span>
+                  <span>
+                    End:{" "}
+                    {auditDailyUsage[auditDailyUsage.length - 1]
+                      ? new Date(
+                        auditDailyUsage[auditDailyUsage.length - 1].date
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                      })
+                      : "-"}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#0f1117",
+                  border: "1px solid #1e2330",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "14px 18px",
+                    borderBottom: "1px solid #1e2330",
+                    background: "#0a0d13",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#94a3b8",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Recent API Logs
+                  </span>
+                  <span
+                    style={{
+                      color: "#475569",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {recentLogs.length} entries
+                  </span>
+                </div>
+
+                <div style={{ overflowX: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                    }}
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          background: "#0a0d13",
+                          borderBottom: "1px solid #1e2330",
+                        }}
+                      >
+                        {["Time", "Path", "Status", "Duration", "IP"].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "12px 16px",
+                              textAlign: "left",
+                              color: "#475569",
+                              fontSize: 10,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.1em",
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentLogs.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            style={{
+                              padding: 48,
+                              textAlign: "center",
+                              color: "#334155",
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontSize: 12,
+                            }}
+                          >
+                            No logs yet for this account.
+                          </td>
+                        </tr>
+                      ) : (
+                        recentLogs.map((log) => (
+                          <tr
+                            key={log.id}
+                            style={{
+                              borderBottom: "1px solid #141820",
+                            }}
+                          >
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#94a3b8",
+                                fontSize: 11,
+                                fontFamily: "'JetBrains Mono', monospace",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {new Date(log.createdAt).toLocaleString("en-IN")}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#cbd5e1",
+                                fontSize: 12,
+                                fontFamily: "'JetBrains Mono', monospace",
+                                maxWidth: 420,
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {log.path}
+                            </td>
+                            <td style={{ padding: "12px 16px" }}>
+                              <span
+                                style={{
+                                  color:
+                                    log.statusCode >= 200 && log.statusCode < 400
+                                      ? "#6ee7b7"
+                                      : "#fda4af",
+                                  fontFamily: "'JetBrains Mono', monospace",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {log.statusCode}
+                              </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#93c5fd",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: 12,
+                              }}
+                            >
+                              {Number(log.duration).toFixed(2)} ms
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                color: "#64748b",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: 11,
+                              }}
+                            >
+                              {log.ip}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── Tab: Orders ───────────────────────────────────────────────── */}
           {activeTab === "orders" && (
             <div
@@ -3179,13 +3563,13 @@ console.log(data);`;
                             >
                               {o.createdAt
                                 ? new Date(o.createdAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "numeric",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
+                                  "en-IN",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )
                                 : "—"}
                             </span>
                           </td>

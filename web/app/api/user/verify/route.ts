@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/db";
 import User from "@/lib/db/models/User";
+import AuditLog from "@/lib/db/models/AuditLog";
 import {
   getAuthCookieName,
   getAuthTokenFromCookies,
   verifyAuthToken,
 } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await connectToDatabase();
 
@@ -45,6 +46,67 @@ export async function GET() {
       return response;
     }
 
+    const email = String(user.email || "").trim().toLowerCase();
+    const { searchParams } = new URL(request.url);
+    const daysParam = Number(searchParams.get("days") || 14);
+    const timelineDays = daysParam === 30 ? 30 : 14;
+    const now = new Date();
+    const usageFromDate = new Date(now);
+    usageFromDate.setDate(usageFromDate.getDate() - (timelineDays - 1));
+    usageFromDate.setHours(0, 0, 0, 0);
+
+    const [dailyUsageRaw, recentLogsRaw] = await Promise.all([
+      AuditLog.aggregate([
+        {
+          $match: {
+            email,
+            createdAt: { $gte: usageFromDate },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            },
+            requests: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      AuditLog.find({ email })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .select("email statusCode path ip duration createdAt")
+        .lean(),
+    ]);
+
+    const dailyUsageMap = new Map<string, number>(
+      dailyUsageRaw.map((item: { _id: string; requests: number }) => [
+        item._id,
+        item.requests,
+      ])
+    );
+
+    const dailyUsage = Array.from({ length: timelineDays }, (_, idx) => {
+      const day = new Date(usageFromDate);
+      day.setDate(usageFromDate.getDate() + idx);
+      const date = day.toISOString().slice(0, 10);
+      return {
+        date,
+        requests: dailyUsageMap.get(date) || 0,
+      };
+    });
+
+    const recentLogs = recentLogsRaw.map((log) => ({
+      id: log._id.toString(),
+      email: log.email,
+      statusCode: log.statusCode,
+      path: log.path,
+      ip: log.ip,
+      duration: log.duration,
+      createdAt: log.createdAt,
+    }));
+
     return NextResponse.json(
       {
         success: true,
@@ -60,6 +122,11 @@ export async function GET() {
           plan: user.plan,
           billingDate: user.billingDate,
           expirationDate: user.expirationDate,
+        },
+        logs: {
+          timelineDays,
+          dailyUsage,
+          recent: recentLogs,
         },
       },
       { status: 200 }
