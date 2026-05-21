@@ -348,6 +348,22 @@ const toDateTimeLocalValue = (value?: string | null) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
+const maskEmail = (email: string) => {
+  const [localPart, domainPart] = email.split("@");
+  if (!localPart || !domainPart) return "*****";
+
+  if (localPart.length <= 2) {
+    return `${localPart[0] || "*"}***@${domainPart}`;
+  }
+
+  const visibleStart = localPart.slice(0, 2);
+  const visibleEnd = localPart.slice(-1);
+  return `${visibleStart}***${visibleEnd}@${domainPart}`;
+};
+
+const displayEmail = (email: string, showSensitiveInfo: boolean) =>
+  showSensitiveInfo ? email : maskEmail(email);
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
   return (
@@ -456,7 +472,7 @@ function BillingTimer({ user }: { user: User }) {
 }
 
 // ─── Edit User Modal ──────────────────────────────────────────────────────────
-function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: string, updates: Partial<User>) => void; onClose: () => void }) {
+function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: User; onSave: (id: string, updates: Partial<User>) => void; onClose: () => void; showSensitiveInfo: boolean }) {
   const [draft, setDraft] = useState({ ...user });
 
   return (
@@ -478,7 +494,9 @@ function EditUserModal({ user, onSave, onClose }: { user: User; onSave: (id: str
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <p style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 15, margin: 0 }}>Edit User</p>
-            <p style={{ color: "#64748b", fontSize: 12, margin: "4px 0 0", fontFamily: "'JetBrains Mono', monospace" }}>{user.email}</p>
+            <p style={{ color: "#64748b", fontSize: 12, margin: "4px 0 0", fontFamily: "'JetBrains Mono', monospace" }}>
+              {displayEmail(user.email, showSensitiveInfo)}
+            </p>
           </div>
           <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <IconX />
@@ -620,6 +638,7 @@ function EmailComposerModal({
   onHtmlChange,
   onSend,
   onClose,
+  showSensitiveInfo,
 }: {
   mode: "single" | "all";
   targetUser: User | null;
@@ -632,11 +651,12 @@ function EmailComposerModal({
   onHtmlChange: (value: string) => void;
   onSend: () => void;
   onClose: () => void;
+  showSensitiveInfo: boolean;
 }) {
   const title = mode === "all" ? "Send Product Email to Audience" : "Send Product Email";
   const recipientText = mode === "all"
     ? `${getEmailAudienceLabel(audienceFilter)} (${filteredCount})`
-    : targetUser?.email || "Selected user";
+    : targetUser?.email ? displayEmail(targetUser.email, showSensitiveInfo) : "Selected user";
 
   return (
     <div
@@ -733,11 +753,13 @@ function CreateOrderModal({
   creating,
   onSubmit,
   onClose,
+  showSensitiveInfo,
 }: {
   users: User[];
   creating: boolean;
   onSubmit: (payload: ManualCreateOrderPayload) => Promise<void>;
   onClose: () => void;
+  showSensitiveInfo: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [selectedUserEmail, setSelectedUserEmail] = useState("");
@@ -829,7 +851,7 @@ function CreateOrderModal({
                   padding: "8px 10px", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
                 }}
               >
-                {u.email}
+                {displayEmail(u.email, showSensitiveInfo)}
               </button>
             )) : (
               <p style={{ color: "#475569", padding: "10px 12px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>No users found</p>
@@ -838,7 +860,7 @@ function CreateOrderModal({
 
           {selectedUser && (
             <p style={{ color: "#6ee7b7", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
-              Selected: {selectedUser.email}
+              Selected: {displayEmail(selectedUser.email, showSensitiveInfo)}
             </p>
           )}
 
@@ -956,6 +978,7 @@ export default function AdminPanel() {
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [createOrderFeedback, setCreateOrderFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -1339,6 +1362,7 @@ export default function AdminPanel() {
           user={editingUser}
           onSave={updateUser}
           onClose={() => setEditingUser(null)}
+          showSensitiveInfo={showSensitiveInfo}
         />
       )}
       {viewingOrder && (
@@ -1357,6 +1381,7 @@ export default function AdminPanel() {
           onHtmlChange={setEmailHtml}
           onSend={sendEmail}
           onClose={() => setEmailComposerOpen(false)}
+          showSensitiveInfo={showSensitiveInfo}
         />
       )}
       {createOrderOpen && (
@@ -1365,6 +1390,7 @@ export default function AdminPanel() {
           creating={creatingOrder}
           onSubmit={createManualOrder}
           onClose={() => setCreateOrderOpen(false)}
+          showSensitiveInfo={showSensitiveInfo}
         />
       )}
 
@@ -1394,6 +1420,18 @@ export default function AdminPanel() {
                 </div>
               )}
               <button
+                onClick={() => setShowSensitiveInfo((prev) => !prev)}
+                style={{
+                  background: showSensitiveInfo ? "#2a1f0f" : "#0f2a1d",
+                  border: `1px solid ${showSensitiveInfo ? "#4a3a1f" : "#1a4731"}`,
+                  color: showSensitiveInfo ? "#fb923c" : "#6ee7b7",
+                  borderRadius: 6, padding: "5px 12px", fontSize: 12, cursor: "pointer",
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                {showSensitiveInfo ? "Hide Sensitive Info" : "Show Sensitive Info"}
+              </button>
+              <button
                 onClick={refreshAll}
                 style={{
                   background: "#1a1f2e", border: "1px solid #2d3548", color: "#94a3b8",
@@ -1418,7 +1456,7 @@ export default function AdminPanel() {
               { label: "Total Users", value: users.length, sub: `${users.filter((u) => u.active).length} active`, color: "#6ee7b7" },
               { label: "Pro / Enterprise", value: users.filter((u) => u.plan !== "free").length, sub: "paid plans", color: "#a78bfa" },
               { label: "Avg Requests/Day", value: avgRequestsPerDay.toLocaleString("en-IN"), sub: `last ${logsTimelineDays} days`, color: "#60a5fa" },
-              { label: "Total Revenue", value: `₹${(totalRevenue).toFixed(0)}`, sub: "from paid orders", color: "#fbbf24" },
+              { label: "Total Revenue", value: showSensitiveInfo ? `₹${(totalRevenue).toFixed(0)}` : "*****", sub: "from paid orders", color: "#fbbf24" },
             ].map((s) => (
               <div key={s.label} style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 10, padding: "18px 20px" }}>
                 <p style={{ color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>{s.label}</p>
@@ -1554,7 +1592,9 @@ export default function AdminPanel() {
                             </div>
                             <div>
                               <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>{u.name || "—"}</p>
-                              <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>{u.email}</p>
+                              <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>
+                                {displayEmail(u.email, showSensitiveInfo)}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -1660,7 +1700,7 @@ export default function AdminPanel() {
                           <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#94a3b8", fontSize: 11 }}>{o.orderId}</span>
                         </td>
                         <td style={{ padding: "14px 16px", color: "#cbd5e1", fontSize: 13 }}>
-                          {o.userId?.email || <span style={{ color: "#334155" }}>N/A</span>}
+                          {o.userId?.email ? displayEmail(o.userId.email, showSensitiveInfo) : <span style={{ color: "#334155" }}>N/A</span>}
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
@@ -1757,7 +1797,7 @@ export default function AdminPanel() {
                           <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#94a3b8", fontSize: 11 }}>{o.orderId}</span>
                         </td>
                         <td style={{ padding: "14px 16px", color: "#cbd5e1", fontSize: 13 }}>
-                          {o.userId?.email || <span style={{ color: "#334155" }}>N/A</span>}
+                          {o.userId?.email ? displayEmail(o.userId.email, showSensitiveInfo) : <span style={{ color: "#334155" }}>N/A</span>}
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
@@ -2089,7 +2129,9 @@ export default function AdminPanel() {
                             </div>
                             <div>
                               <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>{u.name || "—"}</p>
-                              <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>{u.email}</p>
+                              <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>
+                                {displayEmail(u.email, showSensitiveInfo)}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -2415,7 +2457,7 @@ export default function AdminPanel() {
                                 whiteSpace: "nowrap",
                               }}
                             >
-                              {log.email}
+                              {displayEmail(log.email, showSensitiveInfo)}
                             </td>
                             <td
                               style={{
