@@ -90,7 +90,7 @@ if (result.success) {
 
 if (result.success) {
   console.log(result.data.statusNote);
-  console.log(result.data.stations[0]);
+  console.log(result.data.timeline);
 }`,
   },
   {
