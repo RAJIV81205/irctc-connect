@@ -232,7 +232,7 @@ if (result.success) {
 
 ### 3. `trackTrain(trainNumber, date?)`
 
-Get real-time live status of a train on a given date, including station-wise delays and coach positions.
+Get real-time live status of a train with a unified station timeline (stoppages + intermediate stations in route order).
 
 **Parameters:**
 
@@ -246,15 +246,21 @@ Get real-time live status of a train on a given date, including station-wise del
 const result = await trackTrain('12301', '31-03-2026');
 
 if (result.success) {
-  const { trainNo, trainName, statusNote, stations } = result.data;
+  const { trainNo, trainName, statusNote, currentStationCode, timeline } = result.data;
 
   console.log(`🚂 ${trainName} (${trainNo})`);
   console.log(`📍 Status: ${statusNote}`);
+  console.log(`🎯 Current station code: ${currentStationCode}`);
 
-  stations.forEach(stn => {
-    console.log(`\n🚉 ${stn.stationName} (${stn.stationCode}) — PF ${stn.platform}`);
-    console.log(`   Arr: ${stn.arrival.scheduled} → ${stn.arrival.actual} ${stn.arrival.delay}`);
-    console.log(`   Dep: ${stn.departure.scheduled} → ${stn.departure.actual} ${stn.departure.delay}`);
+  timeline.forEach(point => {
+    console.log(`\n🚉 ${point.stationName} (${point.stationCode})`);
+    console.log(`   Type: ${point.type} | Status: ${point.status}`);
+
+    if (point.type === 'stoppage') {
+      console.log(`   PF: ${point.platform || '-'}`);
+      console.log(`   Arr: ${point.arrival.scheduled} → ${point.arrival.actual} ${point.arrival.delay}`);
+      console.log(`   Dep: ${point.departure.scheduled} → ${point.departure.actual} ${point.departure.delay}`);
+    }
   });
 }
 ```
@@ -269,9 +275,12 @@ if (result.success) {
     date: "31-Mar-2026",
     statusNote: "Arrived at HOWRAH JN(HWH) — On Time",
     lastUpdate: "31-Mar-2026 10:01",
-    totalStations: 8,
-    stations: [
+    totalStations: 8, // stoppage count from source
+    currentStationCode: "HWH",
+    timeline: [
       {
+        type: "stoppage", // stoppage | intermediate
+        status: "passed", // passed | current | upcoming
         stationCode: "NDLS", stationName: "NEW DELHI",
         platform: "16", distanceKm: "0",
         arrival:   { scheduled: "SRC", actual: "SRC",        delay: ""        },
@@ -281,8 +290,14 @@ if (result.success) {
           { type: "3A",  number: "B1",  position: "5" }
           // ...
         ]
+      },
+      {
+        type: "intermediate",
+        status: "current",
+        stationCode: "SZM",
+        stationName: "SUBZI MANDI"
       }
-      // ... more stations
+      // ... more timeline points
     ]
   }
 }
