@@ -135,13 +135,19 @@ async function generateInvoicePdf(user: IUser): Promise<Buffer> {
   };
 
   const response = await fetch("https://invoice-generator.com", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${invoiceApiKey}`,
-    },
-    body: JSON.stringify(invoicePayload),
-  });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${invoiceApiKey}`,  // ← add this
+  },
+  body: JSON.stringify({
+    ...invoicePayload,
+    payment_terms: "Paid",           // shows "Paid" in payment terms field
+    amount_paid: planDetails.amount,           // ← makes balance = ₹0.00
+    amount_paid_title: "Amount Paid",
+    balance_title: "Amount Due",     // "Amount Due: ₹0.00" instead of "Balance Due"
+  }),
+});
 
   if (!response.ok) {
     const text = await response.text();
