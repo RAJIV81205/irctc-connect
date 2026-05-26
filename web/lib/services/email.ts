@@ -69,8 +69,12 @@ async function getInvoicePlanDetails(user: IUser): Promise<InvoicePlanDetails> {
     const offerActive = isOfferActive(config.offerEndsAt);
 
     const plan =
-      config.plans.find((item) => (item.userPlan || "").toLowerCase() === normalizedPlan) ||
-      config.plans.find((item) => item.planType.toLowerCase() === normalizedPlan) ||
+      config.plans.find(
+        (item) => (item.userPlan || "").toLowerCase() === normalizedPlan,
+      ) ||
+      config.plans.find(
+        (item) => item.planType.toLowerCase() === normalizedPlan,
+      ) ||
       null;
 
     if (!plan) {
@@ -101,7 +105,9 @@ async function getInvoicePlanDetails(user: IUser): Promise<InvoicePlanDetails> {
 // ─── Invoice Generator ───────────────────────────────────────────────────────
 
 async function generateInvoicePdf(user: IUser): Promise<Buffer> {
-  const billingDate = user.billingDate ? new Date(user.billingDate) : new Date();
+  const billingDate = user.billingDate
+    ? new Date(user.billingDate)
+    : new Date();
   const nextBillingDate = addOneMonth(billingDate);
   const planDetails = await getInvoicePlanDetails(user);
   const invoiceApiKey = process.env.INVOICE_API_KEY;
@@ -138,9 +144,15 @@ async function generateInvoicePdf(user: IUser): Promise<Buffer> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${invoiceApiKey}`,
+      Authorization: `Bearer ${process.env.INVOICE_GENERATOR_API_KEY}`, // ← add this
     },
-    body: JSON.stringify(invoicePayload),
+    body: JSON.stringify({
+      ...invoicePayload,
+      payment_terms: "Paid", // shows "Paid" in payment terms field
+      amount_paid: planDetails.amount, // ← makes balance = ₹0.00
+      amount_paid_title: "Amount Paid",
+      balance_title: "Amount Due", // "Amount Due: ₹0.00" instead of "Balance Due"
+    }),
   });
 
   if (!response.ok) {
@@ -156,7 +168,9 @@ async function generateInvoicePdf(user: IUser): Promise<Buffer> {
 
 const welcomeTemplateHtml = (user: IUser): string => {
   const firstName = user.name.split(" ")[0];
-  const billingDate = user.billingDate ? new Date(user.billingDate) : new Date();
+  const billingDate = user.billingDate
+    ? new Date(user.billingDate)
+    : new Date();
   const nextBillingDate = addOneMonth(billingDate);
 
   return `
@@ -332,7 +346,10 @@ export async function sendWelcomeEmail(userId: string) {
   try {
     invoicePdf = await generateInvoicePdf(user);
   } catch (err) {
-    console.error("Invoice generation failed, sending email without attachment:", err);
+    console.error(
+      "Invoice generation failed, sending email without attachment:",
+      err,
+    );
   }
 
   const firstName = user.name.split(" ")[0];
@@ -400,7 +417,7 @@ export async function sendRawHtmlEmailBatch({
       subject: email.subject,
       html: email.html,
     })),
-    { batchValidation: "permissive" }
+    { batchValidation: "permissive" },
   );
 
   if (error) {
@@ -411,7 +428,7 @@ export async function sendRawHtmlEmailBatch({
   const failedIndices = new Set(
     (data.errors || [])
       .map((entry) => entry.index)
-      .filter((index) => Number.isInteger(index) && index >= 0)
+      .filter((index) => Number.isInteger(index) && index >= 0),
   );
 
   const failedEmails = emails
