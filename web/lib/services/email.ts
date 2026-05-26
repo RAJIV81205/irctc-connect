@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import User from "../db/models/User";
+import { getOrCreatePlanConfig, isOfferActive } from "@/lib/plans/config";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -51,34 +52,112 @@ function formatDate(date: Date): string {
   });
 }
 
-function daysUntil(future: Date): number {
-  const now = new Date();
-  const diff = future.getTime() - now.getTime();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-}
-
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-// ─── Template ────────────────────────────────────────────────────────────────
+type InvoicePlanDetails = {
+  displayName: string;
+  amount: number;
+};
 
-const newSubsTemplateHtml = (user: IUser): string => {
-  const billingDate = user.billingDate
-    ? new Date(user.billingDate)
-    : new Date();
+async function getInvoicePlanDetails(user: IUser): Promise<InvoicePlanDetails> {
+  const normalizedPlan = user.plan.toLowerCase();
+
+  try {
+    const config = await getOrCreatePlanConfig();
+    const offerActive = isOfferActive(config.offerEndsAt);
+
+    const plan =
+      config.plans.find((item) => (item.userPlan || "").toLowerCase() === normalizedPlan) ||
+      config.plans.find((item) => item.planType.toLowerCase() === normalizedPlan) ||
+      null;
+
+    if (!plan) {
+      return {
+        displayName: `${capitalize(user.plan)} Plan`,
+        amount: 0,
+      };
+    }
+
+    const amount =
+      offerActive || typeof plan.originalPrice !== "number"
+        ? plan.price
+        : plan.originalPrice;
+
+    return {
+      displayName: plan.name || `${capitalize(user.plan)} Plan`,
+      amount: Math.max(0, Number(amount) || 0),
+    };
+  } catch (error) {
+    console.error("Failed to resolve plan config for invoice:", error);
+    return {
+      displayName: `${capitalize(user.plan)} Plan`,
+      amount: 0,
+    };
+  }
+}
+
+// ─── Invoice Generator ───────────────────────────────────────────────────────
+
+async function generateInvoicePdf(user: IUser): Promise<Buffer> {
+  const billingDate = user.billingDate ? new Date(user.billingDate) : new Date();
   const nextBillingDate = addOneMonth(billingDate);
-  const daysLeft = daysUntil(nextBillingDate);
-  const formattedNextBilling = formatDate(nextBillingDate);
-  const firstName = user.name.split(" ")[0];
+  const planDetails = await getInvoicePlanDetails(user);
+  const invoiceApiKey = process.env.INVOICE_API_KEY;
 
-  // Badge colour based on days left
-  const urgencyColor =
-    daysLeft > 20 ? "#166534" : daysLeft > 10 ? "#1e40af" : "#92400e";
-  const urgencyBg =
-    daysLeft > 20 ? "#f0fdf4" : daysLeft > 10 ? "#eff6ff" : "#fffbeb";
-  const urgencyBorder =
-    daysLeft > 20 ? "#bbf7d0" : daysLeft > 10 ? "#bfdbfe" : "#fde68a";
+  if (!invoiceApiKey) {
+    throw new Error("INVOICE_API_KEY is not configured");
+  }
+
+  // invoice-generator.com accepts JSON and returns raw PDF bytes
+  const invoicePayload = {
+    logo: "https://irctc.rajivdubey.tech/icon.png",
+    from: "Rajiv Dubey\nIRCTC Connect\nirctc.rajivdubey.tech\nlucky81205@gmail.com",
+    to: `${user.name}\n${user.email}`,
+    number: `INV-${Date.now()}`,
+    date: formatDate(billingDate),
+    due_date: formatDate(nextBillingDate),
+    currency: "INR",
+    items: [
+      {
+        name: `IRCTC Connect — ${planDetails.displayName}`,
+        description: `${user.limit.toLocaleString("en-IN")} API calls/month · Valid till ${formatDate(nextBillingDate)}`,
+        quantity: 1,
+        unit_cost: planDetails.amount,
+      },
+    ],
+    notes:
+      "Thank you for subscribing to IRCTC Connect! If you need a higher limit or have any questions, reply to this email or reach me on Signal.",
+    terms: "Payment is non-refundable.",
+    // tax_title: "GST",  // uncomment + add `tax` field if applicable
+    // tax: 18,
+  };
+
+  const response = await fetch("https://invoice-generator.com", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${invoiceApiKey}`,
+    },
+    body: JSON.stringify(invoicePayload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Invoice generation failed (${response.status}): ${text}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+// ─── Email Template ──────────────────────────────────────────────────────────
+
+const welcomeTemplateHtml = (user: IUser): string => {
+  const firstName = user.name.split(" ")[0];
+  const billingDate = user.billingDate ? new Date(user.billingDate) : new Date();
+  const nextBillingDate = addOneMonth(billingDate);
 
   return `
 <!DOCTYPE html>
@@ -95,8 +174,6 @@ const newSubsTemplateHtml = (user: IUser): string => {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
 ">
-
-  <!-- Outer wrapper -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
     style="min-height: 100vh; padding: 40px 16px;">
     <tr>
@@ -113,376 +190,170 @@ const newSubsTemplateHtml = (user: IUser): string => {
             border: 1px solid #e4e4e7;
           ">
 
-          <!-- ── Header ─────────────────────────────────────── -->
+          <!-- Header -->
           <tr>
-            <td style="
-              background: #18181b;
-              padding: 36px 40px 28px;
-              text-align: center;
-            ">
-              <!-- Logo -->
+            <td style="background: #18181b; padding: 36px 40px 28px; text-align: center;">
               <img
                 src="https://irctc.rajivdubey.tech/icon.png"
                 alt="IRCTC Connect"
-                width="56"
-                height="56"
-                style="
-                  border-radius: 12px;
-                  border: 1px solid rgba(255,255,255,0.12);
-                  display: block;
-                  margin: 0 auto 14px;
-                "
+                width="52" height="52"
+                style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); display: block; margin: 0 auto 14px;"
               />
-              <h1 style="
-                margin: 0 0 4px;
-                color: #ffffff;
-                font-size: 22px;
-                font-weight: 600;
-                letter-spacing: -0.3px;
-              ">IRCTC Connect</h1>
-              <p style="
-                margin: 0;
-                color: #a1a1aa;
-                font-size: 12px;
-                letter-spacing: 1.5px;
-                text-transform: uppercase;
-              ">Your Smart Rail Companion</p>
-            </td>
-          </tr>
-
-          <!-- ── Greeting ───────────────────────────────────── -->
-          <tr>
-            <td style="padding: 36px 40px 0;">
-              <h2 style="
-                margin: 0 0 10px;
-                font-size: 20px;
-                font-weight: 600;
-                color: #18181b;
-              ">Welcome aboard, ${firstName}! 🎉</h2>
-              <p style="
-                margin: 0;
-                font-size: 14px;
-                line-height: 1.7;
-                color: #71717a;
-              ">
-                Your <strong style="color: #18181b;">${capitalize(user.plan)} Plan</strong>
-                subscription is now active. Here's everything you need to know to get started.
+              <h1 style="margin: 0 0 4px; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px;">
+                IRCTC Connect
+              </h1>
+              <p style="margin: 0; color: #a1a1aa; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;">
+                Your Smart Rail Companion
               </p>
             </td>
           </tr>
 
-          <!-- ── Plan Summary Card ──────────────────────────── -->
+          <!-- Body -->
           <tr>
-            <td style="padding: 24px 40px 0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                style="
-                  background: #fafafa;
-                  border: 1px solid #e4e4e7;
-                  border-radius: 12px;
-                  overflow: hidden;
-                ">
-                <tr>
-                  <td style="padding: 22px 24px;">
-                    <p style="
-                      margin: 0 0 16px;
-                      font-size: 11px;
-                      font-weight: 600;
-                      letter-spacing: 1.5px;
-                      text-transform: uppercase;
-                      color: #71717a;
-                    ">📋 Your Subscription Details</p>
+            <td style="padding: 36px 40px 32px;">
 
-                    <!-- Row: Plan -->
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                      style="margin-bottom: 12px;">
+              <!-- Greeting -->
+              <h2 style="margin: 0 0 16px; font-size: 20px; font-weight: 600; color: #18181b;">
+                Thanks, ${firstName}! 🙏
+              </h2>
+
+              <!-- Personal note -->
+              <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.75; color: #3f3f46;">
+                Really appreciate you subscribing to IRCTC Connect. I built this as a side project to make
+                working with IRCTC data easy for developers, and it genuinely means a lot when someone finds it useful.
+              </p>
+              <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.75; color: #3f3f46;">
+                You're on the <strong style="color: #18181b;">${capitalize(user.plan)} Plan</strong> —
+                that gives you <strong style="color: #18181b;">${user.limit.toLocaleString("en-IN")} API calls/month</strong>,
+                renewing on <strong style="color: #18181b;">${formatDate(nextBillingDate)}</strong>.
+                Your invoice is attached to this email.
+              </p>
+              <p style="margin: 0 0 28px; font-size: 15px; line-height: 1.75; color: #3f3f46;">
+                If you ever need a higher limit, a custom plan, or just run into something that's not working right —
+                <strong style="color: #18181b;">please reach out directly.</strong>
+                I'm just one person running this, so I read every message personally and try to respond fast.
+              </p>
+
+              <!-- Reach out options -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                style="background: #fafafa; border: 1px solid #e4e4e7; border-radius: 12px; margin-bottom: 28px;">
+                <tr>
+                  <td style="padding: 20px 24px;">
+                    <p style="margin: 0 0 14px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #71717a;">
+                      Ways to reach me
+                    </p>
+
+                    <!-- Email row -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
                       <tr>
-                        <td style="font-size: 13px; color: #71717a;">Plan</td>
-                        <td align="right">
-                          <span style="
-                            background: #18181b;
-                            color: #ffffff;
-                            font-size: 11px;
-                            font-weight: 600;
-                            padding: 3px 10px;
-                            border-radius: 20px;
-                          ">${capitalize(user.plan)}</span>
+                        <td width="28" style="font-size: 16px; vertical-align: middle;">✉️</td>
+                        <td style="font-size: 14px; color: #3f3f46; vertical-align: middle;">
+                          Reply to this email
+                          <span style="color: #a1a1aa; font-size: 13px;"> — I'll get it directly</span>
                         </td>
                       </tr>
                     </table>
 
-                    <!-- Divider -->
-                    <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 12px 0;" />
-
-                    <!-- Row: API Limit -->
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                      style="margin-bottom: 12px;">
-                      <tr>
-                        <td style="font-size: 13px; color: #71717a;">API / Request Limit</td>
-                        <td align="right" style="
-                          font-size: 13px;
-                          font-weight: 600;
-                          color: #18181b;
-                        ">${user.limit.toLocaleString("en-IN")} calls / month</td>
-                      </tr>
-                    </table>
-
-                    <!-- Divider -->
-                    <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 12px 0;" />
-
-                    <!-- Row: Next Billing -->
+                    <!-- Signal row -->
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="font-size: 13px; color: #71717a;">Next Billing Date</td>
-                        <td align="right" style="
-                          font-size: 13px;
-                          font-weight: 600;
-                          color: #18181b;
-                        ">${formattedNextBilling}</td>
+                        <td width="28" style="font-size: 16px; vertical-align: middle;">💬</td>
+                        <td style="font-size: 14px; color: #3f3f46; vertical-align: middle;">
+                          <a href="https://signal.me/#eu/F8kHmQ5nKhO1ifpDuDcFXpAMg05zBLyi5GXx6MdLmNH9U1plPehLiKIkFp4aVHtw"
+                            target="_blank" rel="noopener noreferrer"
+                            style="color: #18181b; font-weight: 600; text-decoration: underline;">
+                            Signal
+                          </a>
+                          <span style="color: #a1a1aa; font-size: 13px;"> — fastest response</span>
+                        </td>
                       </tr>
                     </table>
-                  </td>
-                </tr>
-
-                <!-- Days-left banner -->
-                <tr>
-                  <td style="
-                    background: ${urgencyBg};
-                    border-top: 1px solid ${urgencyBorder};
-                    padding: 10px 24px;
-                    text-align: center;
-                  ">
-                    <span style="
-                      display: inline-block;
-                      width: 8px;
-                      height: 8px;
-                      border-radius: 50%;
-                      background: ${urgencyColor};
-                      margin-right: 7px;
-                      vertical-align: middle;
-                    "></span>
-                    <span style="
-                      font-size: 13px;
-                      font-weight: 500;
-                      color: ${urgencyColor};
-                      vertical-align: middle;
-                    ">
-                      ${daysLeft} day${daysLeft !== 1 ? "s" : ""} remaining in your current billing cycle
-                    </span>
                   </td>
                 </tr>
               </table>
+
+              <!-- CTA -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="https://irctc.rajivdubey.tech/dashboard" target="_blank" rel="noopener noreferrer"
+                      style="
+                        display: inline-block;
+                        background: #18181b;
+                        color: #ffffff;
+                        text-decoration: none;
+                        font-size: 14px;
+                        font-weight: 600;
+                        padding: 12px 32px;
+                        border-radius: 8px;
+                        letter-spacing: 0.2px;
+                      ">
+                      Go to Dashboard →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
             </td>
           </tr>
 
-         <!-- ── Features ───────────────────────────────────── -->
-<tr>
-  <td style="padding: 28px 40px 0;">
-    <p style="
-      margin: 0 0 16px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #71717a;
-    ">✨ What's Included in the Latest Update</p>
-
-    <!-- Feature 1 -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-      style="margin-bottom: 14px;">
-      <tr>
-        <td width="40" valign="top">
-          <div style="
-            width: 32px; height: 32px;
-            background: #f4f4f5;
-            border: 1px solid #e4e4e7;
-            border-radius: 8px;
-            text-align: center;
-            line-height: 32px;
-            font-size: 15px;
-          ">🎫</div>
-        </td>
-        <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
-            PNR Status & Journey Details
-          </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
-            Real-time booking status, passenger confirmation, seat and journey information.
-          </p>
-        </td>
-      </tr>
-    </table>
-
-    <!-- Feature 2 -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-      style="margin-bottom: 14px;">
-      <tr>
-        <td width="40" valign="top">
-          <div style="
-            width: 32px; height: 32px;
-            background: #f4f4f5;
-            border: 1px solid #e4e4e7;
-            border-radius: 8px;
-            text-align: center;
-            line-height: 32px;
-            font-size: 15px;
-          ">🚆</div>
-        </td>
-        <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
-            Live Train Tracking
-          </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
-            Track live train location, delays, station-wise timings and real-time running status.
-          </p>
-        </td>
-      </tr>
-    </table>
-
-    <!-- Feature 3 -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-      style="margin-bottom: 14px;">
-      <tr>
-        <td width="40" valign="top">
-          <div style="
-            width: 32px; height: 32px;
-            background: #f4f4f5;
-            border: 1px solid #e4e4e7;
-            border-radius: 8px;
-            text-align: center;
-            line-height: 32px;
-            font-size: 15px;
-          ">🔍</div>
-        </td>
-        <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
-            Train Search & Availability
-          </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
-            Search trains between stations and check seat availability with fare breakdown.
-          </p>
-        </td>
-      </tr>
-    </table>
-
-    <!-- Feature 4 -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td width="40" valign="top">
-          <div style="
-            width: 32px; height: 32px;
-            background: #f4f4f5;
-            border: 1px solid #e4e4e7;
-            border-radius: 8px;
-            text-align: center;
-            line-height: 32px;
-            font-size: 15px;
-          ">🏢</div>
-        </td>
-        <td style="padding-left: 12px;">
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #18181b;">
-            Live at Station
-          </p>
-          <p style="margin: 2px 0 0; font-size: 13px; color: #71717a; line-height: 1.5;">
-            View upcoming trains at any station with real-time arrival and departure information.
-          </p>
-        </td>
-      </tr>
-    </table>
-  </td>
-</tr>
-
-          <!-- ── CTA ────────────────────────────────────────── -->
+          <!-- Footer -->
           <tr>
-            <td style="padding: 32px 40px 0; text-align: center;">
-              <a href="https://irctc.rajivdubey.tech/dashboard" target="_blank" rel="noopener noreferrer"
-                style="
-                  display: inline-block;
-                  background: #18181b;
-                  color: #ffffff;
-                  text-decoration: none;
-                  font-size: 14px;
-                  font-weight: 600;
-                  padding: 12px 32px;
-                  border-radius: 8px;
-                  letter-spacing: 0.2px;
-                "
-              >
-                Explore Your Dashboard →
-              </a>
-            </td>
-          </tr>
-
-          <!-- ── Signal CTA ─────────────────────────────────── -->
-          <tr>
-            <td style="padding: 12px 40px 0; text-align: center;">
-              <a href="https://signal.me/#eu/F8kHmQ5nKhO1ifpDuDcFXpAMg05zBLyi5GXx6MdLmNH9U1plPehLiKIkFp4aVHtw" target="_blank" rel="noopener noreferrer"
-                style="
-                  display: inline-block;
-                  background: #ffffff;
-                  color: #3d3d3d;
-                  text-decoration: none;
-                  font-size: 14px;
-                  font-weight: 500;
-                  padding: 11px 32px;
-                  border-radius: 8px;
-                  border: 1px solid #d4d4d8;
-                  letter-spacing: 0.2px;
-                "
-              >
-                Contact me on Signal
-              </a>
-            </td>
-          </tr>
-
-          <!-- ── Footer ─────────────────────────────────────── -->
-          <tr>
-            <td style="
-              background: #fafafa;
-              border-top: 1px solid #e4e4e7;
-              padding: 24px 40px;
-              margin-top: 32px;
-              text-align: center;
-            ">
-              <p style="margin: 0 0 6px; font-size: 13px; color: #71717a;">
-                Questions? Reply to this email — we're happy to help.
-              </p>
-              <p style="margin: 0; font-size: 12px; color: #a1a1aa;">
-                © ${new Date().getFullYear()} IRCTC Connect · 
+            <td style="background: #fafafa; border-top: 1px solid #e4e4e7; padding: 20px 40px; text-align: center;">
+              <p style="margin: 0 0 4px; font-size: 13px; color: #71717a;">
+                Built with ❤️ by Rajiv Dubey ·
                 <a href="https://irctc.rajivdubey.tech" style="color: #18181b; text-decoration: none;">irctc.rajivdubey.tech</a>
               </p>
-              <p style="margin: 8px 0 0; font-size: 11px; color: #d4d4d8;">
+              <p style="margin: 0; font-size: 11px; color: #d4d4d8;">
                 You're receiving this because you subscribed with ${user.email}
               </p>
             </td>
           </tr>
 
         </table>
-        <!-- /Card -->
 
       </td>
     </tr>
   </table>
-
 </body>
 </html>
   `.trim();
 };
 
-// ─── Send Function ────────────────────────────────────────────────────────────
+// ─── Send Welcome Email (with Invoice) ───────────────────────────────────────
 
 export async function sendWelcomeEmail(userId: string) {
   const user = await User.findById(userId);
-  if (!user) {
-    throw new Error("User not found");
+  if (!user) throw new Error("User not found");
+
+  // Generate invoice PDF — if this fails, we still want the email to send,
+  // so we catch and log, then send without attachment.
+  let invoicePdf: Buffer | null = null;
+  try {
+    invoicePdf = await generateInvoicePdf(user);
+  } catch (err) {
+    console.error("Invoice generation failed, sending email without attachment:", err);
   }
 
-  const { data, error } = await resend.emails.send({
+  const firstName = user.name.split(" ")[0];
+
+  const emailPayload: Parameters<typeof resend.emails.send>[0] = {
     from: `${senderName} <${senderEmail}>`,
     to: [user.email],
     replyTo: `${replyToName} <${replyToEmail}>`,
-    subject: `Welcome to IRCTC Connect, ${user.name.split(" ")[0]}! Your ${capitalize(user.plan)} Plan is Active 🚆`,
-    html: newSubsTemplateHtml(user),
-  });
+    subject: `Thanks for subscribing, ${firstName}! 🚆 Invoice inside`,
+    html: welcomeTemplateHtml(user),
+    ...(invoicePdf && {
+      attachments: [
+        {
+          filename: `irctc-connect-invoice-${Date.now()}.pdf`,
+          content: invoicePdf.toString("base64"),
+        },
+      ],
+    }),
+  };
+
+  const { data, error } = await resend.emails.send(emailPayload);
 
   if (error) {
     console.error("Failed to send welcome email:", error);
@@ -492,6 +363,8 @@ export async function sendWelcomeEmail(userId: string) {
   console.log(`Welcome email sent to ${user.email} | ID: ${data?.id}`);
   return data;
 }
+
+// ─── Raw helpers (unchanged) ─────────────────────────────────────────────────
 
 export async function sendRawHtmlEmail({
   to,
@@ -517,9 +390,7 @@ export async function sendRawHtmlEmail({
 export async function sendRawHtmlEmailBatch({
   emails,
 }: SendRawHtmlBatchEmailParams): Promise<SendRawHtmlBatchEmailResult> {
-  if (emails.length === 0) {
-    return { sentCount: 0, failedEmails: [] };
-  }
+  if (emails.length === 0) return { sentCount: 0, failedEmails: [] };
 
   const { data, error } = await resend.batch.send(
     emails.map((email) => ({
