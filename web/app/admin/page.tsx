@@ -978,7 +978,7 @@ export default function AdminPanel() {
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [createOrderFeedback, setCreateOrderFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(true);
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -1429,7 +1429,7 @@ export default function AdminPanel() {
                   fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
-                {showSensitiveInfo ? "Hide Sensitive Info" : "Show Sensitive Info"}
+                {showSensitiveInfo ? "Hide" : "Show"}
               </button>
               <button
                 onClick={refreshAll}
