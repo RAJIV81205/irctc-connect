@@ -979,6 +979,8 @@ export default function AdminPanel() {
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [createOrderFeedback, setCreateOrderFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(true);
+  const [userSearch, setUserSearch] = useState("");
+  const [userPlanFilter, setUserPlanFilter] = useState<"all" | "free" | "pro" | "advance">("all");
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -1053,6 +1055,19 @@ export default function AdminPanel() {
   const recentLogs = logsData?.logs?.recent ?? [];
   const filteredEmailUsers = users.filter((user) => matchesEmailAudienceFilter(user, emailAudienceFilter));
   const dataLoading = usersValidating || ordersValidating || issuesValidating || plansValidating || logsValidating;
+  const normalizedUserSearch = userSearch.trim().toLowerCase();
+  const filteredUsers = users.filter((user) => {
+    const plan = (user.plan || "free").toLowerCase();
+    const matchesPlan =
+      userPlanFilter === "all" ||
+      (userPlanFilter === "advance"
+        ? plan === "enterprise" || plan === "advance"
+        : plan === userPlanFilter);
+    if (!matchesPlan) return false;
+    if (!normalizedUserSearch) return true;
+    const haystack = `${user.name || ""} ${user.email || ""}`.toLowerCase();
+    return haystack.includes(normalizedUserSearch);
+  });
 
   // ── Check session on mount ──────────────────────────────────────────────────
   useEffect(() => {
@@ -1452,7 +1467,7 @@ export default function AdminPanel() {
 
           {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
-            {[
+              {[
               { label: "Total Users", value: users.length, sub: `${users.filter((u) => u.active).length} active`, color: "#6ee7b7" },
               { label: "Pro / Enterprise", value: users.filter((u) => u.plan !== "free").length, sub: "paid plans", color: "#a78bfa" },
               { label: "Avg Requests/Day", value: avgRequestsPerDay.toLocaleString("en-IN"), sub: `last ${logsTimelineDays} days`, color: "#60a5fa" },
@@ -1483,7 +1498,7 @@ export default function AdminPanel() {
                 }}
               >
                 {tab === "users"
-                  ? `Users (${users.length})`
+                  ? `Users (${filteredUsers.length})`
                   : tab === "orders"
                   ? `Paid Orders (${paidOrders.length})`
                   : tab === "unpaid"
@@ -1566,6 +1581,57 @@ export default function AdminPanel() {
           {/* Users Table */}
           {activeTab === "users" && (
             <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderBottom: "1px solid #1e2330",
+                  background: "#0a0d13",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <input
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="Search name or email"
+                    style={{
+                      background: "#1a1f2e",
+                      border: "1px solid #2d3548",
+                      color: "#e2e8f0",
+                      borderRadius: 6,
+                      padding: "7px 10px",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      minWidth: 220,
+                    }}
+                  />
+                  <select
+                    value={userPlanFilter}
+                    onChange={(e) => setUserPlanFilter(e.target.value as "all" | "free" | "pro" | "advance")}
+                    style={{
+                      background: "#1a1f2e",
+                      border: "1px solid #2d3548",
+                      color: "#e2e8f0",
+                      borderRadius: 6,
+                      padding: "7px 10px",
+                      fontSize: 12,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    <option value="all">All plans</option>
+                    <option value="free">Free</option>
+                    <option value="pro">Pro</option>
+                    <option value="advance">Advance</option>
+                  </select>
+                </div>
+                <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Showing {filteredUsers.length} of {users.length}
+                </span>
+              </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
@@ -1576,7 +1642,7 @@ export default function AdminPanel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((u) => (
+                    {filteredUsers.map((u) => (
                       <tr key={u._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1638,7 +1704,7 @@ export default function AdminPanel() {
                         </td>
                       </tr>
                     ))}
-                    {users.length === 0 && (
+                    {filteredUsers.length === 0 && (
                       <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
                     )}
                   </tbody>
