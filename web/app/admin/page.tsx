@@ -1221,10 +1221,19 @@ export default function AdminPanel() {
     setSavingPlans(true);
     setPlansFeedback(null);
     try {
+      const sanitizedDraft: PlansConfig = {
+        ...planDraft,
+        plans: planDraft.plans.map((plan) => ({
+          ...plan,
+          features: (plan.features || [])
+            .map((feature) => ({ ...feature, text: feature.text.trim() }))
+            .filter((feature) => feature.text.length > 0),
+        })),
+      };
       const res = await fetch("/api/admin/plans", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(planDraft),
+        body: JSON.stringify(sanitizedDraft),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -2100,8 +2109,6 @@ export default function AdminPanel() {
                                     ...item,
                                     features: e.target.value
                                       .split("\n")
-                                      .map((line) => line.trim())
-                                      .filter(Boolean)
                                       .map((text) => ({ text, highlight: false })),
                                   }
                                 : item
