@@ -8,6 +8,7 @@ type PaymentStateInput = {
   orderId: string;
   orderStatus?: string | null;
   paymentStatus?: string | null;
+  transactionReference?: string | null;
   source: "webhook" | "status_sync";
 };
 
@@ -20,7 +21,13 @@ function normalizeOrderStatus(status?: string | null) {
   if (normalized === "PAID") return "paid";
   if (normalized === "ACTIVE") return "active";
   if (normalized === "EXPIRED") return "expired";
-  if (normalized === "TERMINATED" || normalized === "CANCELLED") return "cancelled";
+  if (
+    normalized === "TERMINATED" ||
+    normalized === "CANCELLED" ||
+    normalized === "USER_DROPPED"
+  ) {
+    return "cancelled";
+  }
   if (normalized === "FAILED") return "failed";
   return "created";
 }
@@ -46,6 +53,9 @@ export async function applyOrderPaymentState(input: PaymentStateInput) {
   order.paymentStatus = paymentStatus;
   if (input.orderStatus) {
     order.cashfreeOrderStatus = input.orderStatus;
+  }
+  if (input.transactionReference) {
+    order.transactionReference = input.transactionReference;
   }
   if (input.source === "webhook") {
     order.lastWebhookAt = new Date();
@@ -101,12 +111,14 @@ async function grantPlanToUser(userId: string, planType: PaidPlanType) {
 export async function syncOrderWithCashfree(
   order: Pick<OrderDocument, "orderId">,
   cashfreeOrderStatus?: string,
-  cashfreePaymentStatus?: string
+  cashfreePaymentStatus?: string,
+  transactionReference?: string | null
 ) {
   return applyOrderPaymentState({
     orderId: order.orderId,
     orderStatus: cashfreeOrderStatus,
     paymentStatus: cashfreePaymentStatus,
+    transactionReference,
     source: "status_sync",
   });
 }

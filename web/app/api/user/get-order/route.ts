@@ -66,6 +66,7 @@ export async function GET(request: Request) {
     if (shouldSync) {
       type PaymentEntityLike = {
         payment_status?: string;
+        cf_payment_id?: string | number;
       };
 
       const [orderResponse, paymentsResponse] = await Promise.all([
@@ -83,7 +84,10 @@ export async function GET(request: Request) {
       await syncOrderWithCashfree(
         order,
         cfOrderStatus,
-        latestPayment?.payment_status || undefined
+        latestPayment?.payment_status || undefined,
+        latestPayment?.cf_payment_id
+          ? String(latestPayment.cf_payment_id)
+          : null
       );
     }
 

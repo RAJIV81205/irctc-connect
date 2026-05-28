@@ -4,16 +4,46 @@ import { cashfree } from "@/lib/payments/cashfree";
 import { applyOrderPaymentState } from "@/lib/payments/order";
 
 type CashfreeWebhookPayload = {
+  type?: string;
   data?: {
     order?: {
       order_id?: string;
       order_status?: string;
     };
     payment?: {
+      cf_payment_id?: string | number;
       payment_status?: string;
     };
   };
 };
+
+function getVerifiedWebhookPayload(
+  verified: unknown,
+  rawBody: string
+): CashfreeWebhookPayload {
+  const objectPayload =
+    typeof verified === "object" && verified !== null && "object" in verified
+      ? (verified as { object?: unknown }).object
+      : verified;
+
+  if (typeof objectPayload === "string") {
+    return JSON.parse(objectPayload) as CashfreeWebhookPayload;
+  }
+
+  if (typeof objectPayload === "object" && objectPayload !== null) {
+    return objectPayload as CashfreeWebhookPayload;
+  }
+
+  return JSON.parse(rawBody) as CashfreeWebhookPayload;
+}
+
+function getOrderStatusForPaymentStatus(paymentStatus?: string | null) {
+  const normalized = paymentStatus?.toUpperCase();
+  if (normalized === "SUCCESS") return "PAID";
+  if (normalized === "FAILED") return "FAILED";
+  if (normalized === "USER_DROPPED") return "USER_DROPPED";
+  return null;
+}
 
 export async function POST(request: Request) {
   try {
@@ -36,10 +66,13 @@ export async function POST(request: Request) {
       timestamp
     );
 
-    const eventPayload = verified.object as CashfreeWebhookPayload;
+    const eventPayload = getVerifiedWebhookPayload(verified, rawBody);
     const orderId = eventPayload?.data?.order?.order_id;
     const paymentStatus = eventPayload?.data?.payment?.payment_status || null;
-    const orderStatus = eventPayload?.data?.order?.order_status || null;
+    const orderStatus =
+      eventPayload?.data?.order?.order_status ||
+      getOrderStatusForPaymentStatus(paymentStatus);
+    const transactionReference = eventPayload?.data?.payment?.cf_payment_id;
 
     if (!orderId) {
       return NextResponse.json(
@@ -50,9 +83,11 @@ export async function POST(request: Request) {
 
     await applyOrderPaymentState({
       orderId,
-      orderStatus:
-        orderStatus || (paymentStatus === "SUCCESS" ? "PAID" : null),
+      orderStatus,
       paymentStatus,
+      transactionReference: transactionReference
+        ? String(transactionReference)
+        : null,
       source: "webhook",
     });
 

@@ -9,8 +9,8 @@ import {
 import { connectToDatabase } from "@/lib/db/db";
 import {
   cashfree,
+  getCashfreeCheckoutMode,
   getAppReturnUrl,
-  getExternalOrderDataUrl,
   getWebhookUrl,
 } from "@/lib/payments/cashfree";
 import { isPaidPlanType } from "@/lib/payments/plans";
@@ -101,6 +101,13 @@ export async function POST(request: Request) {
     const cashfreeResponse = await cashfree.PGCreateOrder(cashfreeRequest);
     const cfOrder = cashfreeResponse.data;
 
+    if (!cfOrder.payment_session_id) {
+      return NextResponse.json(
+        { success: false, message: "payment session was not created" },
+        { status: 502 }
+      );
+    }
+
     const createdOrderDoc = await Order.create({
       userId: user._id,
       orderId: cfOrder.order_id || orderId,
@@ -114,42 +121,20 @@ export async function POST(request: Request) {
       paymentStatus: "PENDING",
       cashfreeOrderStatus: cfOrder.order_status || "ACTIVE",
     });
-    const createdOrder = {
-      orderId: createdOrderDoc.orderId,
-      paymentSessionId: createdOrderDoc.paymentSessionId,
-      planType: createdOrderDoc.planType,
-      amount: createdOrderDoc.amount,
-      currency: createdOrderDoc.currency,
-      status: createdOrderDoc.status,
-    };
-
-    const redirectUrl = new URL(getExternalOrderDataUrl());
-    redirectUrl.searchParams.set("order_id", createdOrder.orderId);
-    redirectUrl.searchParams.set(
-      "payment_session_id",
-      createdOrder.paymentSessionId || ""
-    );
-    redirectUrl.searchParams.set("plan_type", createdOrder.planType);
-    redirectUrl.searchParams.set("amount", String(createdOrder.amount));
-    redirectUrl.searchParams.set("currency", createdOrder.currency);
-    redirectUrl.searchParams.set(
-      "app_return_url",
-      getAppReturnUrl().replace("{order_id}", createdOrder.orderId)
-    );
 
     return NextResponse.json(
       {
         success: true,
         message: "order created",
         order: {
-          orderId: createdOrder.orderId,
-          paymentSessionId: createdOrder.paymentSessionId,
-          planType: createdOrder.planType,
-          amount: createdOrder.amount,
-          currency: createdOrder.currency,
-          status: createdOrder.status,
+          orderId: createdOrderDoc.orderId,
+          paymentSessionId: createdOrderDoc.paymentSessionId,
+          planType: createdOrderDoc.planType,
+          amount: createdOrderDoc.amount,
+          currency: createdOrderDoc.currency,
+          status: createdOrderDoc.status,
         },
-        redirectUrl: redirectUrl.toString(),
+        cashfreeMode: getCashfreeCheckoutMode(),
       },
       { status: 201 }
     );

@@ -1,17 +1,30 @@
 import { Cashfree, CFEnvironment } from "cashfree-pg";
 
-const clientId = process.env.CASHFREE_CLIENT_ID;
-const clientSecret = process.env.CASHFREE_CLIENT_SECRET;
+const envName = process.env.CASHFREE_ENVIRONMENT?.toLowerCase();
+const isSandbox = envName === "sandbox";
+
+const clientId = isSandbox
+  ? process.env.CASHFREE_CLIENT_TEST_ID || process.env.CASHFREE_CLIENT_ID
+  : process.env.CASHFREE_CLIENT_ID;
+const clientSecret = isSandbox
+  ? process.env.CASHFREE_CLIENT_TEST_SECRET || process.env.CASHFREE_CLIENT_SECRET
+  : process.env.CASHFREE_CLIENT_SECRET;
 
 if (!clientId || !clientSecret) {
-  throw new Error("CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET are required");
+  throw new Error(
+    isSandbox
+      ? "CASHFREE_CLIENT_TEST_ID and CASHFREE_CLIENT_TEST_SECRET are required for sandbox"
+      : "CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET are required"
+  );
 }
 
-const envName = process.env.CASHFREE_ENVIRONMENT?.toLowerCase();
-const environment =
-  envName === "sandbox" ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION;
+const environment = isSandbox ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION;
 
 export const cashfree = new Cashfree(environment, clientId, clientSecret);
+
+export function getCashfreeCheckoutMode() {
+  return isSandbox ? "sandbox" : "production";
+}
 
 export function getWebhookUrl() {
   const directWebhookUrl = process.env.PAYMENT_WEBHOOK_URL;
