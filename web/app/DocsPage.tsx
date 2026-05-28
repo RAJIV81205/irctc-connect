@@ -373,87 +373,86 @@ ${responseFormats.error}
     } catch {}
   };
 
-  const sectionStyle = { marginBottom: 28, scrollMarginTop: 104 } as const;
+  const sectionClass = "docs-section";
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#070910",
-        color: "#e2e8f0",
-        paddingTop: 64,
-      }}
-    >
+    <div className="min-h-screen bg-[#f6f7f9] pt-16 text-slate-950">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap');
-        .docs-shell { max-width: 1320px; margin: 0 auto; padding: 28px 24px 56px; position: relative; z-index: 2; }
-        .docs-card { background: #0f1117; border: 1px solid #1e2330; border-radius: 12px; min-width: 0; max-width: 100%; }
-        .docs-muted { color: #64748b; font-family: 'JetBrains Mono', monospace; }
-        .docs-title { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; }
         .docs-code-wrap pre { background: transparent !important; margin: 0 !important; }
-        .docs-endpoint-signature {
-          display: block;
-          width: 100%;
-          max-width: 100%;
-          box-sizing: border-box;
-          white-space: pre-wrap;
-          overflow-wrap: anywhere;
-          word-break: break-word;
-        }
         .docs-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-        .docs-scroll::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 4px; }
-        .docs-endpoint-stack { display: grid; gap: 26px; }
+        .docs-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .docs-section { margin-bottom: 30px; scroll-margin-top: 104px; }
+        .docs-card {
+          min-width: 0;
+          max-width: 100%;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          background: #ffffff;
+          box-shadow: 0 12px 28px rgba(15,23,42,0.04);
+        }
+        .docs-card-hover {
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .docs-card-hover:hover {
+          transform: translateY(-3px);
+          border-color: #a7f3d0;
+          box-shadow: 0 16px 34px rgba(15,23,42,0.08);
+        }
+        .docs-chip {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border-radius: 8px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          padding: 9px 13px;
+          color: #334155;
+          font-size: 13px;
+          font-weight: 700;
+          text-decoration: none;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+        .docs-chip:hover {
+          transform: translateY(-2px);
+          border-color: #cbd5e1;
+          box-shadow: 0 12px 24px rgba(15,23,42,0.08);
+        }
+        .docs-chip-primary {
+          border-color: #0f172a;
+          background: #0f172a;
+          color: #ffffff;
+        }
+        @keyframes docs-fade-up {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .docs-reveal { animation: docs-fade-up 0.55s ease both; }
         @media (max-width: 1024px) {
           .docs-shell { padding: 20px 14px 40px; }
-          .docs-endpoint-stack { gap: 20px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .docs-reveal,
+          .docs-card-hover,
+          .docs-card-hover:hover,
+          .docs-chip,
+          .docs-chip:hover {
+            animation: none;
+            transform: none;
+            transition: none;
+          }
         }
       `}</style>
 
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 0,
-          overflow: "hidden",
-        }}
-      >
+      <div className="docs-shell relative z-[2] mx-auto max-w-[1320px] px-6 py-8">
         <div
+          className="grid gap-6"
           style={{
-            position: "absolute",
-            top: "4%",
-            left: "8%",
-            width: 580,
-            height: 300,
-            borderRadius: "50%",
-            background:
-              "radial-gradient(ellipse, rgba(52,211,153,0.06) 0%, transparent 72%)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            right: "8%",
-            top: "18%",
-            width: 520,
-            height: 260,
-            borderRadius: "50%",
-            background:
-              "radial-gradient(ellipse, rgba(96,165,250,0.07) 0%, transparent 72%)",
-          }}
-        />
-      </div>
-
-      <div className="docs-shell">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isDesktop ? "280px 1fr" : "1fr",
-            gap: 24,
+            gridTemplateColumns: isDesktop ? "280px minmax(0, 1fr)" : "1fr",
           }}
         >
           <aside
-            className="docs-scroll"
+            className="docs-scroll rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
             style={{
               position: isDesktop ? "sticky" : "fixed",
               top: isDesktop ? 84 : 74,
@@ -462,42 +461,17 @@ ${responseFormats.error}
               alignSelf: "start",
               maxHeight: isDesktop ? "calc(100vh - 100px)" : "calc(100vh - 88px)",
               overflowY: "auto",
-              padding: 14,
-              background: "#0f1117",
-              border: "1px solid #1e2330",
-              borderRadius: 12,
               zIndex: 20,
               transform: sidebarOpen || isDesktop ? "translateX(0)" : "translateX(-120%)",
               transition: "transform 0.22s ease",
             }}
           >
-            {/* <p
-              style={{
-                color: "#94a3b8",
-                fontSize: 11,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                fontFamily: "'JetBrains Mono', monospace",
-                marginBottom: 10,
-              }}
-            >
-              Documentation
-            </p> */}
             {sidebarGroups.map((group) => (
-              <div key={group.title} style={{ marginBottom: 16 }}>
-                <p
-                  style={{
-                    color: "#475569",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    margin: "8px 6px",
-                  }}
-                >
+              <div key={group.title} className="mb-4 last:mb-0">
+                <p className="mx-2 mb-2 text-xs font-semibold uppercase text-slate-400">
                   {group.title}
                 </p>
-                <div style={{ display: "grid", gap: 4 }}>
+                <div className="grid gap-1">
                   {group.items.map((section) => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -505,26 +479,13 @@ ${responseFormats.error}
                       <button
                         key={section.id}
                         onClick={() => scrollToSection(section.id)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 9,
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: 8,
-                          border: isActive
-                            ? "1px solid #2d4060"
-                            : "1px solid transparent",
-                          background: isActive ? "#1e2a3a" : "transparent",
-                          color: isActive ? "#60a5fa" : "#64748b",
-                          cursor: "pointer",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          textAlign: "left",
-                          transition: "all 0.15s",
-                        }}
+                        className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
+                          isActive
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                        }`}
                       >
-                        <Icon size={14} />
+                        <Icon size={15} />
                         <span>{section.label}</span>
                       </button>
                     );
@@ -534,152 +495,54 @@ ${responseFormats.error}
             ))}
           </aside>
 
-          <main style={{ minWidth: 0, maxWidth: "100%", overflowX: "hidden" }}>
-            <section id="introduction" style={sectionStyle}>
-              <div className="docs-card" style={{ padding: isDesktop ? 30 : 20, marginBottom: 16 }}>
-                <p className="docs-muted" style={{ fontSize: 11, marginBottom: 8 }}>
-                  IRCTC CONNECT SDK
+          <main className="min-w-0 max-w-full overflow-x-hidden">
+            <section id="introduction" className={`${sectionClass} docs-reveal`}>
+              <div className="docs-card p-6 sm:p-8">
+                <p className="mb-3 inline-flex rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800">
+                  IRCTC Connect SDK
                 </p>
-                <h1
-                  className="docs-title"
-                  style={{
-                    fontSize: "clamp(30px, 5vw, 52px)",
-                    lineHeight: 1.05,
-                    marginBottom: 14,
-                  }}
-                >
-                  Irctc Connect SDK Documentation
+                <h1 className="max-w-4xl text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl">
+                  Clean railway API documentation for production apps.
                 </h1>
-                <p
-                  style={{
-                    color: "#94a3b8",
-                    maxWidth: 820,
-                    lineHeight: 1.75,
-                    fontSize: 14,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  Get installation, quick start,
-                  endpoint references, validation rules, and live playground flow in
-                  one place.
+                <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+                  Install the Node.js SDK, configure your API key, and call
+                  typed methods for PNR status, train info, live tracking,
+                  station boards, train search, and seat availability.
                 </p>
 
-                <div
-                  style={{
-                    marginTop: 18,
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <Link
-                    href="/dashboard"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 7,
-                      padding: "9px 13px",
-                      borderRadius: 8,
-                      background: "linear-gradient(135deg, #059669, #047857)",
-                      border: "1px solid #047857",
-                      color: "#fff",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      textDecoration: "none",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    Open Dashboard <ChevronRight size={13} />
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href="/dashboard" className="docs-chip docs-chip-primary">
+                    Open Dashboard <ChevronRight size={14} />
                   </Link>
                   <a
                     href="https://www.npmjs.com/package/irctc-connect"
                     target="_blank"
                     rel="noreferrer"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 7,
-                      padding: "9px 13px",
-                      borderRadius: 8,
-                      background: "#1a1f2e",
-                      border: "1px solid #2d3548",
-                      color: "#94a3b8",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      textDecoration: "none",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
+                    className="docs-chip"
                   >
                     View NPM Package
                   </a>
-                  <button
-                    onClick={copyAIDocsMarkdown}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 7,
-                      padding: "9px 13px",
-                      borderRadius: 8,
-                      background: copiedAIMarkdown ? "#0f2a1d" : "#1a1f2e",
-                      border: copiedAIMarkdown
-                        ? "1px solid #1a4731"
-                        : "1px solid #2d3548",
-                      color: copiedAIMarkdown ? "#6ee7b7" : "#94a3b8",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      cursor: "pointer",
-                    }}
-                  >
+                  <button onClick={copyAIDocsMarkdown} className="docs-chip">
                     {copiedAIMarkdown ? "Markdown Copied" : "Copy AI Markdown"}
                   </button>
-                  <Link
-                    href="/dashboard"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 7,
-                      padding: "9px 13px",
-                      borderRadius: 8,
-                      background: "#1a1f2e",
-                      border: "1px solid #2d3548",
-                      color: "#93c5fd",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      textDecoration: "none",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    Try in Playground <ChevronRight size={13} />
+                  <Link href="/dashboard" className="docs-chip">
+                    Try Playground <ChevronRight size={14} />
                   </Link>
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                  gap: 14,
-                }}
-              >
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {[
-                  { label: "Endpoints", value: "6", color: "#60a5fa" },
-                  { label: "Runtime", value: "Node 14+", color: "#6ee7b7" },
-                  { label: "Auth", value: "API Key", color: "#fbbf24" },
-                  { label: "SDK", value: "irctc-connect", color: "#a78bfa" },
+                  { label: "Endpoints", value: "6" },
+                  { label: "Runtime", value: "Node 14+" },
+                  { label: "Auth", value: "API Key" },
+                  { label: "SDK", value: "irctc-connect" },
                 ].map((stat) => (
-                  <div key={stat.label} className="docs-card" style={{ padding: 14 }}>
-                    <p className="docs-muted" style={{ fontSize: 10, marginBottom: 8 }}>
+                  <div key={stat.label} className="docs-card docs-card-hover p-4">
+                    <p className="text-xs font-semibold uppercase text-slate-500">
                       {stat.label}
                     </p>
-                    <p
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 800,
-                        color: stat.color,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
+                    <p className="mt-2 font-mono text-lg font-semibold text-slate-950">
                       {stat.value}
                     </p>
                   </div>
@@ -687,59 +550,26 @@ ${responseFormats.error}
               </div>
             </section>
 
-            <section id="installation" style={sectionStyle}>
+            <section id="installation" className={sectionClass}>
               <SectionHeader title="Installation" icon={Package} />
-              <div className="docs-card" style={{ overflow: "hidden" }}>
-                <div
-                  style={{
-                    padding: "10px 12px",
-                    borderBottom: "1px solid #1e2330",
-                    background: "#0a0d13",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <span className="docs-muted" style={{ fontSize: 11 }}>
-                    Terminal
-                  </span>
+              <div className="docs-card overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-3">
+                  <span className="font-mono text-xs text-slate-400">Terminal</span>
                   <button
                     onClick={copyInstall}
-                    style={{
-                      borderRadius: 6,
-                      border: "1px solid #2d3548",
-                      background: copiedInstall ? "#0f2a1d" : "#1a1f2e",
-                      color: copiedInstall ? "#6ee7b7" : "#94a3b8",
-                      cursor: "pointer",
-                      padding: "4px 8px",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
+                    className="rounded-md border border-slate-700 px-2 py-1 font-mono text-xs text-slate-300 transition hover:bg-slate-900"
                   >
                     {copiedInstall ? "Copied" : "Copy"}
                   </button>
                 </div>
-                <div style={{ padding: 14, background: "#0a0d13" }}>
-                  <code
-                    style={{
-                      color: "#6ee7b7",
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 13,
-                    }}
-                  >
+                <div className="bg-slate-950 p-4">
+                  <code className="font-mono text-sm text-emerald-300">
                     {installSnippet}
                   </code>
                 </div>
               </div>
 
-              <div
-                style={{
-                  marginTop: 14,
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                  gap: 14,
-                }}
-              >
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <InfoPanel
                   title="Requirements"
                   items={[
@@ -760,108 +590,40 @@ ${responseFormats.error}
               </div>
             </section>
 
-            <section id="quickstart" style={sectionStyle}>
+            <section id="quickstart" className={sectionClass}>
               <SectionHeader title="Quick Start" icon={Rocket} />
-              <div
-                style={{
-                  background: "#1a1060",
-                  border: "1px solid #2d1f8a",
-                  color: "#c4b5fd",
-                  borderRadius: 10,
-                  padding: "11px 13px",
-                  fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  marginBottom: 12,
-                  lineHeight: 1.6,
-                }}
-              >
-                Call <code>configure(apiKey)</code> once at app startup before any
+              <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
+                Call <code className="font-mono">configure(apiKey)</code> once at app startup before any
                 request method.
               </div>
               <CodePanel language="javascript" code={quickStartSnippet} />
             </section>
 
-            <div className="docs-endpoint-stack">
+            <div className="grid gap-7">
               {endpointSections.map((endpoint) => (
-                <section key={endpoint.id} id={endpoint.id} style={sectionStyle}>
+                <section key={endpoint.id} id={endpoint.id} className={sectionClass}>
                   <SectionHeader title={endpoint.title} icon={endpoint.icon} />
-                  <div className="docs-card" style={{ padding: isDesktop ? 20 : 14 }}>
-                    <p
-                      style={{
-                        color: "#94a3b8",
-                        fontSize: 13,
-                        lineHeight: 1.78,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        marginBottom: 14,
-                      }}
-                    >
+                  <div className="docs-card p-4 sm:p-5">
+                    <p className="mb-4 text-sm leading-7 text-slate-600">
                       {endpoint.description}
                     </p>
-                    <code
-                      className="docs-endpoint-signature"
-                      style={{
-                        padding: "6px 10px",
-                        background: "#0a0d13",
-                        border: "1px solid #2d3548",
-                        borderRadius: 7,
-                        color: "#93c5fd",
-                        fontSize: 12,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        marginBottom: 16,
-                      }}
-                    >
+                    <code className="mb-4 block rounded-md border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-sm text-emerald-700">
                       {endpoint.signature}
                     </code>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: 10,
-                        marginBottom: 16,
-                      }}
-                    >
+                    <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                       {endpoint.params.map((param) => (
                         <div
                           key={param.name}
-                          style={{
-                            background: "#0a0d13",
-                            border: "1px solid #1e2330",
-                            borderRadius: 9,
-                            padding: 11,
-                          }}
+                          className="rounded-lg border border-slate-200 bg-slate-50 p-3"
                         >
-                          <p
-                            style={{
-                              color: "#e2e8f0",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              marginBottom: 6,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              overflowWrap: "anywhere",
-                            }}
-                          >
+                          <p className="break-words font-mono text-sm font-semibold text-slate-950">
                             {param.name}
                           </p>
-                          <p
-                            style={{
-                              color: "#60a5fa",
-                              fontSize: 11,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              marginBottom: 4,
-                            }}
-                          >
+                          <p className="mt-1 font-mono text-xs text-emerald-700">
                             {param.type}
                           </p>
-                          <p
-                            style={{
-                              color: "#64748b",
-                              fontSize: 11,
-                              lineHeight: 1.6,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              overflowWrap: "anywhere",
-                            }}
-                          >
+                          <p className="mt-2 break-words text-xs leading-5 text-slate-600">
                             {param.desc}
                           </p>
                         </div>
@@ -873,107 +635,38 @@ ${responseFormats.error}
               ))}
             </div>
 
-            <section id="playground" style={sectionStyle}>
+            <section id="playground" className={sectionClass}>
               <SectionHeader title="Playground" icon={Gamepad2} />
-              <div className="docs-card" style={{ padding: 16 }}>
-                <p
-                  style={{
-                    color: "#94a3b8",
-                    lineHeight: 1.7,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 13,
-                    marginBottom: 14,
-                  }}
-                >
-                  The live playground is now available directly inside your user
-                  panel. Use it to run real API calls with your account key and see
-                  latency + JSON responses in the same dashboard workspace.
+              <div className="docs-card p-5">
+                <p className="mb-4 max-w-3xl text-sm leading-7 text-slate-600">
+                  The live playground is available inside your user panel. Use it
+                  to run real API calls with your account key and inspect latency
+                  plus JSON responses in the same dashboard workspace.
                 </p>
-                <Link
-                  href="/dashboard"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    textDecoration: "none",
-                    color: "#fff",
-                    background: "linear-gradient(135deg, #059669, #047857)",
-                    border: "1px solid #047857",
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  Open Playground Tab <ChevronRight size={13} />
+                <Link href="/dashboard" className="docs-chip docs-chip-primary">
+                  Open Playground Tab <ChevronRight size={14} />
                 </Link>
               </div>
             </section>
 
-            <section id="validation" style={sectionStyle}>
+            <section id="validation" className={sectionClass}>
               <SectionHeader title="Input Validation" icon={CheckCircle} />
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                  gap: 12,
-                }}
-              >
-                <InfoPanel
-                  title="PNR"
-                  items={[
-                    "Exactly 10 digits",
-                    "Numeric input only",
-                    "Reject malformed values early",
-                  ]}
-                />
-                <InfoPanel
-                  title="Train Number"
-                  items={[
-                    "Exactly 5 digits",
-                    "Treat as string to preserve zeros",
-                    "No spaces or symbols",
-                  ]}
-                />
-                <InfoPanel
-                  title="Date"
-                  items={[
-                    "DD-MM-YYYY format",
-                    "Validate real calendar date",
-                    "Use same format across APIs",
-                  ]}
-                />
-                <InfoPanel
-                  title="Station Code"
-                  items={[
-                    "Uppercase station code",
-                    "Examples: NDLS, BCT, HWH",
-                    "Trim extra whitespace",
-                  ]}
-                />
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <InfoPanel title="PNR" items={["Exactly 10 digits", "Numeric input only", "Reject malformed values early"]} />
+                <InfoPanel title="Train Number" items={["Exactly 5 digits", "Treat as string to preserve zeros", "No spaces or symbols"]} />
+                <InfoPanel title="Date" items={["DD-MM-YYYY format", "Validate real calendar date", "Use same format across APIs"]} />
+                <InfoPanel title="Station Code" items={["Uppercase station code", "Examples: NDLS, BCT, HWH", "Trim extra whitespace"]} />
               </div>
             </section>
 
-            <section id="status-codes" style={sectionStyle}>
+            <section id="status-codes" className={sectionClass}>
               <SectionHeader title="Status Codes" icon={BarChart3} />
-              <div className="docs-card" style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <div className="docs-card overflow-x-auto">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                    <tr className="border-b border-slate-200 bg-slate-50">
                       {["Code", "Full Form", "Description"].map((head) => (
-                        <th
-                          key={head}
-                          style={{
-                            color: "#475569",
-                            fontSize: 10,
-                            letterSpacing: "0.1em",
-                            textTransform: "uppercase",
-                            textAlign: "left",
-                            padding: "11px 12px",
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
+                        <th key={head} className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">
                           {head}
                         </th>
                       ))}
@@ -989,42 +682,14 @@ ${responseFormats.error}
                       ["TQWL", "Tatkal Quota WL", "Tatkal waiting"],
                       ["GNWL", "General WL", "General waiting list"],
                     ].map(([code, full, desc]) => (
-                      <tr key={code} style={{ borderBottom: "1px solid #141820" }}>
-                        <td style={{ padding: "11px 12px" }}>
-                          <code
-                            style={{
-                              background: "#0b1a2c",
-                              border: "1px solid #1e3a5f",
-                              borderRadius: 6,
-                              color: "#93c5fd",
-                              padding: "2px 6px",
-                              fontSize: 11,
-                              fontFamily: "'JetBrains Mono', monospace",
-                            }}
-                          >
+                      <tr key={code} className="border-b border-slate-100 last:border-b-0">
+                        <td className="px-4 py-3">
+                          <code className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-xs text-emerald-800">
                             {code}
                           </code>
                         </td>
-                        <td
-                          style={{
-                            color: "#cbd5e1",
-                            fontSize: 12,
-                            padding: "11px 12px",
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
-                          {full}
-                        </td>
-                        <td
-                          style={{
-                            color: "#94a3b8",
-                            fontSize: 12,
-                            padding: "11px 12px",
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
-                          {desc}
-                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-slate-800">{full}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{desc}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1032,78 +697,25 @@ ${responseFormats.error}
               </div>
             </section>
 
-            <section id="errors" style={{ marginBottom: 52, scrollMarginTop: 104 }}>
+            <section id="errors" className="docs-section mb-14">
               <SectionHeader title="Error Handling" icon={AlertTriangle} />
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                  gap: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <div
-                  style={{
-                    background: "#0f2a1d",
-                    border: "1px solid #1a4731",
-                    borderRadius: 10,
-                    padding: 12,
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#6ee7b7",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Success Response
-                  </p>
-                  <pre
-                    style={{
-                      color: "#d1fae5",
-                      margin: 0,
-                      fontSize: 11,
-                      lineHeight: 1.6,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >{`{
+              <div className="mb-3 grid gap-3 md:grid-cols-2">
+                <ResponsePanel
+                  tone="success"
+                  title="Success Response"
+                  code={`{
   success: true,
   data: { ... }
-}`}</pre>
-                </div>
-                <div
-                  style={{
-                    background: "#2a0f0f",
-                    border: "1px solid #4a1f1f",
-                    borderRadius: 10,
-                    padding: 12,
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#fda4af",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Error Response
-                  </p>
-                  <pre
-                    style={{
-                      color: "#fecdd3",
-                      margin: 0,
-                      fontSize: 11,
-                      lineHeight: 1.6,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >{`{
+}`}
+                />
+                <ResponsePanel
+                  tone="error"
+                  title="Error Response"
+                  code={`{
   success: false,
   message: "Error message"
-}`}</pre>
-                </div>
+}`}
+                />
               </div>
               <InfoPanel
                 title="Common Error Scenarios"
@@ -1124,15 +736,7 @@ ${responseFormats.error}
       {sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 10,
-            background: "rgba(0, 0, 0, 0.5)",
-            border: "none",
-            cursor: "pointer",
-            display: isDesktop ? "none" : "block",
-          }}
+          className="fixed inset-0 z-10 cursor-pointer border-0 bg-slate-950/40 lg:hidden"
           aria-label="Close sidebar overlay"
         />
       )}
@@ -1148,69 +752,22 @@ function SectionHeader({
   icon: LucideIcon;
 }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 9,
-        marginBottom: 10,
-      }}
-    >
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          background: "#1a1f2e",
-          border: "1px solid #2d3548",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#93c5fd",
-        }}
-      >
-        <Icon size={15} />
+    <div className="mb-3 flex items-center gap-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700">
+        <Icon size={17} />
       </div>
-      <h2
-        style={{
-          color: "#f1f5f9",
-          fontSize: 20,
-          lineHeight: 1.2,
-          fontFamily: "'Syne', sans-serif",
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {title}
-      </h2>
+      <h2 className="text-2xl font-semibold text-slate-950">{title}</h2>
     </div>
   );
 }
 
 function InfoPanel({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="docs-card" style={{ padding: 13 }}>
-      <p
-        style={{
-          color: "#cbd5e1",
-          fontSize: 12,
-          marginBottom: 8,
-          fontWeight: 700,
-          fontFamily: "'JetBrains Mono', monospace",
-        }}
-      >
-        {title}
-      </p>
-      <div style={{ display: "grid", gap: 7 }}>
+    <div className="docs-card docs-card-hover p-4">
+      <p className="mb-3 text-sm font-semibold text-slate-950">{title}</p>
+      <div className="grid gap-2">
         {items.map((item) => (
-          <p
-            key={item}
-            style={{
-              color: "#94a3b8",
-              fontSize: 12,
-              lineHeight: 1.55,
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
+          <p key={item} className="text-sm leading-6 text-slate-600">
             {item}
           </p>
         ))}
@@ -1219,68 +776,44 @@ function InfoPanel({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function CodePanel({ language, code }: { language: string; code: string }) {
+function ResponsePanel({
+  title,
+  code,
+  tone,
+}: {
+  title: string;
+  code: string;
+  tone: "success" | "error";
+}) {
+  const isSuccess = tone === "success";
   return (
     <div
-      className="docs-card docs-code-wrap"
-      style={{
-        overflow: "hidden",
-        borderColor: "#1f2937",
-      }}
+      className={`rounded-lg border p-4 ${
+        isSuccess
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-red-200 bg-red-50"
+      }`}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "9px 12px",
-          borderBottom: "1px solid #1e2330",
-          background: "#0a0d13",
-        }}
-      >
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "#f87171",
-          }}
-        />
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "#fbbf24",
-          }}
-        />
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "#34d399",
-          }}
-        />
-        <span
-          style={{
-            marginLeft: 8,
-            color: "#64748b",
-            fontSize: 11,
-            fontFamily: "'JetBrains Mono', monospace",
-          }}
-        >
-          {language}
-        </span>
+      <p className={`mb-3 text-sm font-semibold ${isSuccess ? "text-emerald-800" : "text-red-800"}`}>
+        {title}
+      </p>
+      <pre className={`m-0 font-mono text-xs leading-6 ${isSuccess ? "text-emerald-900" : "text-red-900"}`}>
+        {code}
+      </pre>
+    </div>
+  );
+}
+
+function CodePanel({ language, code }: { language: string; code: string }) {
+  return (
+    <div className="docs-card docs-code-wrap overflow-hidden border-slate-800 bg-slate-950">
+      <div className="flex items-center gap-1.5 border-b border-slate-800 bg-slate-950 px-4 py-3">
+        <div className="h-2 w-2 rounded-full bg-red-400" />
+        <div className="h-2 w-2 rounded-full bg-amber-300" />
+        <div className="h-2 w-2 rounded-full bg-emerald-300" />
+        <span className="ml-2 font-mono text-xs text-slate-500">{language}</span>
       </div>
-      <div
-        style={{
-          background: "#0a0d13",
-          padding: "8px 10px",
-          overflowX: "auto",
-          maxWidth: "100%",
-        }}
-      >
+      <div className="max-w-full overflow-x-auto bg-slate-950 px-3 py-2">
         <SyntaxHighlighter
           language={language}
           style={nightOwl}
@@ -1289,7 +822,7 @@ function CodePanel({ language, code }: { language: string; code: string }) {
             fontSize: 12,
             lineHeight: 1.72,
             background: "transparent",
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "var(--font-geist-mono), monospace",
             minWidth: "max-content",
           }}
         >
