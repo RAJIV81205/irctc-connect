@@ -4,6 +4,17 @@ import { useEffect, useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import useSWR from "swr";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import {
+  checkPNRStatus,
+  configure,
+  getAvailability,
+  getTrainInfo,
+  liveAtStation,
+  searchTrainBetweenStations,
+  trackTrain,
+} from "irctc-connect";
 import {
   Area,
   AreaChart,
@@ -261,7 +272,52 @@ function Loader({ text = "Loading..." }: { text?: string }) {
       <p style={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, letterSpacing: "0.08em" }}>
         {text}
       </p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes responseShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }`}</style>
+    </div>
+  );
+}
+
+function PlaygroundResponseSkeleton() {
+  const lineWidths = ["92%", "84%", "88%", "66%", "90%", "72%", "58%"];
+  return (
+    <div
+      style={{
+        minHeight: 360,
+        maxHeight: 520,
+        overflow: "hidden",
+        padding: "2px 0",
+      }}
+    >
+      <style>{`@keyframes responseShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }`}</style>
+      <div
+        style={{
+          width: 96,
+          height: 10,
+          borderRadius: 999,
+          marginBottom: 14,
+          background:
+            "linear-gradient(90deg, rgba(45,53,72,0.65) 25%, rgba(71,85,105,0.38) 50%, rgba(45,53,72,0.65) 75%)",
+          backgroundSize: "200% 100%",
+          animation: "responseShimmer 1.4s ease-in-out infinite",
+        }}
+      />
+      {lineWidths.map((width, index) => (
+        <div
+          key={`${width}-${index}`}
+          style={{
+            width,
+            height: 10,
+            borderRadius: 999,
+            marginBottom: index === lineWidths.length - 1 ? 0 : 10,
+            background:
+              "linear-gradient(90deg, rgba(30,41,59,0.7) 25%, rgba(71,85,105,0.42) 50%, rgba(30,41,59,0.7) 75%)",
+            backgroundSize: "200% 100%",
+            animation: "responseShimmer 1.4s ease-in-out infinite",
+            animationDelay: `${index * 0.08}s`,
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -358,6 +414,18 @@ const toDateTimeLocalValue = (value?: string | null) => {
 
   const pad = (num: number) => String(num).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const toInputDate = (ddmmyyyy: string) => {
+  if (!ddmmyyyy || !ddmmyyyy.includes("-")) return "";
+  const [dd, mm, yyyy] = ddmmyyyy.split("-");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const fromInputDate = (yyyymmdd: string) => {
+  if (!yyyymmdd || !yyyymmdd.includes("-")) return "";
+  const [yyyy, mm, dd] = yyyymmdd.split("-");
+  return `${dd}-${mm}-${yyyy}`;
 };
 
 const maskEmail = (email: string) => {
@@ -971,7 +1039,7 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "topups" | "plans" | "email" | "issues" | "logs">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "topups" | "plans" | "email" | "issues" | "playground" | "logs">("users");
   const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
@@ -993,6 +1061,25 @@ export default function AdminPanel() {
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(true);
   const [userSearch, setUserSearch] = useState("");
   const [userPlanFilter, setUserPlanFilter] = useState<"all" | "free" | "pro" | "advance">("all");
+  const [adminApiKey, setAdminApiKey] = useState<string | null>(null);
+  const [playgroundAction, setPlaygroundAction] = useState<
+    "pnr" | "train" | "track" | "station" | "search" | "availability"
+  >("pnr");
+  const [playgroundInput, setPlaygroundInput] = useState({
+    pnr: "",
+    trainNumber: "",
+    journeyDate: "",
+    stationCode: "",
+    fromStation: "",
+    toStation: "",
+    classCode: "SL",
+    quota: "GN",
+  });
+  const [playgroundLoading, setPlaygroundLoading] = useState(false);
+  const [playgroundError, setPlaygroundError] = useState("");
+  const [playgroundStatus, setPlaygroundStatus] = useState<number | null>(null);
+  const [playgroundDuration, setPlaygroundDuration] = useState<number | null>(null);
+  const [playgroundResponse, setPlaygroundResponse] = useState("");
 
   // ── SWR hooks — only active once authenticated ──────────────────────────────
   const {
@@ -1094,14 +1181,32 @@ export default function AdminPanel() {
     return haystack.includes(normalizedUserSearch);
   });
 
+  const loadAdminSession = async () => {
+    try {
+      const res = await fetch("/api/admin/verify");
+      if (!res.ok) {
+        setIsAdmin(false);
+        setAdminApiKey(null);
+        return;
+      }
+      const data = await res.json();
+      setIsAdmin(true);
+      setAdminApiKey(data.user?.apiKey ?? null);
+    } catch (error) {
+      console.error(error);
+      setIsAdmin(false);
+      setAdminApiKey(null);
+    }
+  };
+
   // ── Check session on mount ──────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/admin/verify");
-        if (res.ok) setIsAdmin(true);
-      } catch (e) { console.error(e); }
-      finally { setAuthLoading(false); }
+        await loadAdminSession();
+      } finally {
+        setAuthLoading(false);
+      }
     })();
   }, []);
 
@@ -1130,11 +1235,124 @@ export default function AdminPanel() {
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || "Admin login failed");
-      setIsAdmin(true);
+      await loadAdminSession();
       // SWR keys become non-null now — data fetches automatically
     } catch (err: unknown) {
       setLoginError(getErrorMessage(err, "Login failed"));
     } finally { setAuthLoading(false); }
+  };
+
+  const resetPlaygroundMeta = () => {
+    setPlaygroundError("");
+    setPlaygroundStatus(null);
+    setPlaygroundDuration(null);
+    setPlaygroundResponse("");
+  };
+
+  const runPlayground = async () => {
+    if (!adminApiKey) {
+      setPlaygroundError("Admin API key not found. Re-login to refresh it.");
+      return;
+    }
+
+    setPlaygroundLoading(true);
+    resetPlaygroundMeta();
+    const start = performance.now();
+
+    try {
+      configure(adminApiKey);
+      let result: unknown;
+
+      switch (playgroundAction) {
+        case "pnr":
+          if (!/^\d{10}$/.test(playgroundInput.pnr)) {
+            throw new Error("PNR must be exactly 10 digits");
+          }
+          result = await checkPNRStatus(playgroundInput.pnr);
+          break;
+        case "train":
+          if (!/^\d{5}$/.test(playgroundInput.trainNumber)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          result = await getTrainInfo(playgroundInput.trainNumber);
+          break;
+        case "track":
+          if (!/^\d{5}$/.test(playgroundInput.trainNumber)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(playgroundInput.journeyDate)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+          result = await trackTrain(playgroundInput.trainNumber, playgroundInput.journeyDate);
+          break;
+        case "station":
+          if (!playgroundInput.stationCode.trim()) {
+            throw new Error("Station code is required");
+          }
+          result = await liveAtStation(playgroundInput.stationCode.trim().toUpperCase());
+          break;
+        case "search":
+          if (!playgroundInput.fromStation.trim() || !playgroundInput.toStation.trim()) {
+            throw new Error("From and To station codes are required");
+          }
+          if (playgroundInput.journeyDate && !/^\d{2}-\d{2}-\d{4}$/.test(playgroundInput.journeyDate)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+          result = await searchTrainBetweenStations(
+            playgroundInput.fromStation.trim().toUpperCase(),
+            playgroundInput.toStation.trim().toUpperCase(),
+            playgroundInput.journeyDate || undefined
+          );
+          break;
+        case "availability":
+          if (!/^\d{5}$/.test(playgroundInput.trainNumber)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          if (!playgroundInput.fromStation.trim() || !playgroundInput.toStation.trim()) {
+            throw new Error("From and To station codes are required");
+          }
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(playgroundInput.journeyDate)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+          result = await getAvailability(
+            playgroundInput.trainNumber,
+            playgroundInput.fromStation.trim().toUpperCase(),
+            playgroundInput.toStation.trim().toUpperCase(),
+            playgroundInput.journeyDate,
+            playgroundInput.classCode,
+            playgroundInput.quota,
+          );
+          break;
+      }
+
+      const codeGuess =
+        typeof result === "object" &&
+        result !== null &&
+        "statusCode" in result &&
+        typeof (result as { statusCode?: unknown }).statusCode === "number"
+          ? ((result as { statusCode: number }).statusCode ?? 200)
+          : 200;
+      setPlaygroundStatus(codeGuess);
+      setPlaygroundResponse(JSON.stringify(result, null, 2) || "{}");
+    } catch (error: unknown) {
+      const err = error as { message?: string; status?: number; response?: { status?: number } };
+      setPlaygroundError(err?.message || "Something went wrong");
+      setPlaygroundStatus(err?.status || err?.response?.status || 500);
+      setPlaygroundResponse(
+        JSON.stringify(
+          {
+            success: false,
+            message: err?.message || "Something went wrong",
+            statusCode: err?.status || err?.response?.status || 500,
+          },
+          null,
+          2,
+        ),
+      );
+    } finally {
+      setPlaygroundDuration(Math.round(performance.now() - start));
+      setPlaygroundLoading(false);
+    }
   };
 
   // Optimistic update: patch cache instantly, revalidate after PUT
@@ -1518,7 +1736,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid", "topups", "plans", "email", "logs", "issues"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "topups", "plans", "email", "logs", "issues", "playground"] as const).map((tab) => (
               <button
                 key={tab}
                 className="tab-btn"
@@ -1546,7 +1764,9 @@ export default function AdminPanel() {
                   ? "Email"
                   : tab === "logs"
                   ? `Logs${recentLogs.length ? ` (${recentLogs.length > 99 ? "99+" : recentLogs.length})` : ""}`
-                  : `Issues (${issues.length})`}
+                  : tab === "issues"
+                  ? `Issues (${issues.length})`
+                  : "Playground"}
               </button>
             ))}
           </div>
@@ -2813,6 +3033,514 @@ export default function AdminPanel() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "playground" && (
+            <div style={{ display: "grid", gap: 16, gridTemplateColumns: "1.1fr 0.9fr" }}>
+              <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, padding: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
+                  <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 700 }}>API Playground</p>
+                  <span
+                    style={{
+                      color: adminApiKey ? "#6ee7b7" : "#fca5a5",
+                      background: adminApiKey ? "#0f2a1d" : "#2a0f0f",
+                      border: `1px solid ${adminApiKey ? "#1a4731" : "#4a1f1f"}`,
+                      borderRadius: 6,
+                      padding: "3px 8px",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {adminApiKey ? "Admin API key" : "API key missing"}
+                  </span>
+                </div>
+                <p
+                  style={{
+                    color: "#64748b",
+                    fontSize: 12,
+                    lineHeight: 1.7,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    marginBottom: 18,
+                  }}
+                >
+                  Run quick real requests without leaving the admin console. Results appear on the right panel with status and latency.
+                </p>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+                  {[
+                    { id: "pnr", label: "PNR" },
+                    { id: "train", label: "Train" },
+                    { id: "track", label: "Track" },
+                    { id: "station", label: "Station" },
+                    { id: "search", label: "Search" },
+                    { id: "availability", label: "Availability" },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setPlaygroundAction(item.id as typeof playgroundAction);
+                        resetPlaygroundMeta();
+                      }}
+                      style={{
+                        background:
+                          playgroundAction === item.id ? "#1e2a3a" : "#131722",
+                        border:
+                          playgroundAction === item.id
+                            ? "1px solid #2d4060"
+                            : "1px solid #1f2432",
+                        color:
+                          playgroundAction === item.id ? "#60a5fa" : "#64748b",
+                        borderRadius: 6,
+                        padding: "7px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {playgroundAction === "pnr" && (
+                    <input
+                      value={playgroundInput.pnr}
+                      onChange={(e) =>
+                        setPlaygroundInput((prev) => ({
+                          ...prev,
+                          pnr: e.target.value.replace(/\D/g, ""),
+                        }))
+                      }
+                      maxLength={10}
+                      placeholder="PNR number (10 digits)"
+                      style={{
+                        gridColumn: "1 / -1",
+                        background: "#0a0d13",
+                        border: "1px solid #2d3548",
+                        borderRadius: 8,
+                        padding: "11px 12px",
+                        color: "#cbd5e1",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        outline: "none",
+                      }}
+                    />
+                  )}
+
+                  {playgroundAction === "train" && (
+                    <input
+                      value={playgroundInput.trainNumber}
+                      onChange={(e) =>
+                        setPlaygroundInput((prev) => ({
+                          ...prev,
+                          trainNumber: e.target.value.replace(/\D/g, ""),
+                        }))
+                      }
+                      maxLength={5}
+                      placeholder="Train number (5 digits)"
+                      style={{
+                        gridColumn: "1 / -1",
+                        background: "#0a0d13",
+                        border: "1px solid #2d3548",
+                        borderRadius: 8,
+                        padding: "11px 12px",
+                        color: "#cbd5e1",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        outline: "none",
+                      }}
+                    />
+                  )}
+
+                  {playgroundAction === "track" && (
+                    <>
+                      <input
+                        value={playgroundInput.trainNumber}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            trainNumber: e.target.value.replace(/\D/g, ""),
+                          }))
+                        }
+                        maxLength={5}
+                        placeholder="Train number"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(playgroundInput.journeyDate)}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            journeyDate: fromInputDate(e.target.value),
+                          }))
+                        }
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {playgroundAction === "station" && (
+                    <input
+                      value={playgroundInput.stationCode}
+                      onChange={(e) =>
+                        setPlaygroundInput((prev) => ({
+                          ...prev,
+                          stationCode: e.target.value.toUpperCase(),
+                        }))
+                      }
+                      placeholder="Station code (e.g. NDLS)"
+                      style={{
+                        gridColumn: "1 / -1",
+                        background: "#0a0d13",
+                        border: "1px solid #2d3548",
+                        borderRadius: 8,
+                        padding: "11px 12px",
+                        color: "#cbd5e1",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        outline: "none",
+                      }}
+                    />
+                  )}
+
+                  {playgroundAction === "search" && (
+                    <>
+                      <input
+                        value={playgroundInput.fromStation}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            fromStation: e.target.value.toUpperCase(),
+                          }))
+                        }
+                        placeholder="From station code"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        value={playgroundInput.toStation}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            toStation: e.target.value.toUpperCase(),
+                          }))
+                        }
+                        placeholder="To station code"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(playgroundInput.journeyDate)}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            journeyDate: fromInputDate(e.target.value),
+                          }))
+                        }
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {playgroundAction === "availability" && (
+                    <>
+                      <input
+                        value={playgroundInput.trainNumber}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            trainNumber: e.target.value.replace(/\D/g, ""),
+                          }))
+                        }
+                        maxLength={5}
+                        placeholder="Train number"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(playgroundInput.journeyDate)}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            journeyDate: fromInputDate(e.target.value),
+                          }))
+                        }
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        value={playgroundInput.fromStation}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            fromStation: e.target.value.toUpperCase(),
+                          }))
+                        }
+                        placeholder="From station"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        value={playgroundInput.toStation}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            toStation: e.target.value.toUpperCase(),
+                          }))
+                        }
+                        placeholder="To station"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <select
+                        value={playgroundInput.classCode}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            classCode: e.target.value,
+                          }))
+                        }
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      >
+                        {["SL", "3A", "2A", "1A", "CC", "EC", "2S"].map((coach) => (
+                          <option key={coach} value={coach}>
+                            {coach}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={playgroundInput.quota}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            quota: e.target.value,
+                          }))
+                        }
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      >
+                        {["GN", "TQ", "LD", "PT", "SS"].map((quota) => (
+                          <option key={quota} value={quota}>
+                            {quota}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
+                  <button
+                    onClick={runPlayground}
+                    disabled={playgroundLoading}
+                    style={{
+                      background: playgroundLoading
+                        ? "#1a1f2e"
+                        : "linear-gradient(135deg, #059669, #047857)",
+                      border: playgroundLoading ? "1px solid #2d3548" : "1px solid #047857",
+                      color: playgroundLoading ? "#64748b" : "#ffffff",
+                      borderRadius: 8,
+                      padding: "10px 16px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: playgroundLoading ? "not-allowed" : "pointer",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {playgroundLoading ? "Running..." : "Run Request"}
+                  </button>
+                  {playgroundStatus !== null && (
+                    <span
+                      style={{
+                        color: playgroundStatus < 400 ? "#6ee7b7" : "#fca5a5",
+                        background: playgroundStatus < 400 ? "#0f2a1d" : "#2a0f0f",
+                        border: `1px solid ${playgroundStatus < 400 ? "#1a4731" : "#4a1f1f"}`,
+                        borderRadius: 6,
+                        padding: "3px 8px",
+                        fontSize: 11,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      HTTP {playgroundStatus}
+                    </span>
+                  )}
+                  {playgroundDuration !== null && (
+                    <span
+                      style={{
+                        color: "#93c5fd",
+                        background: "#0b1a2c",
+                        border: "1px solid #1e3a5f",
+                        borderRadius: 6,
+                        padding: "3px 8px",
+                        fontSize: 11,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {playgroundDuration}ms
+                    </span>
+                  )}
+                </div>
+
+                {playgroundError && (
+                  <p style={{ marginTop: 10, color: "#fda4af", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {playgroundError}
+                  </p>
+                )}
+              </div>
+
+              <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden", minHeight: 420 }}>
+                <div
+                  style={{
+                    background: "#0a0d13",
+                    borderBottom: "1px solid #1e2330",
+                    padding: "12px 14px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#94a3b8",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Response
+                  </span>
+                  <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                    JSON
+                  </span>
+                </div>
+                <div style={{ padding: 14, height: "100%" }}>
+                  {playgroundLoading ? (
+                    <PlaygroundResponseSkeleton />
+                  ) : (
+                    <SyntaxHighlighter
+                      language="json"
+                      style={nightOwl}
+                      customStyle={{
+                        margin: 0,
+                        background: "transparent",
+                        fontSize: 12,
+                        lineHeight: 1.7,
+                        minHeight: 360,
+                        maxHeight: 520,
+                        borderRadius: 8,
+                        overflow: "auto",
+                        padding: 0,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {playgroundResponse || `{
+  "message": "Run a request to preview the live response"
+}`}
+                    </SyntaxHighlighter>
+                  )}
+                </div>
               </div>
             </div>
           )}
