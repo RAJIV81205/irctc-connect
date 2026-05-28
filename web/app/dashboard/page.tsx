@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import useSWR from "swr";
@@ -80,6 +80,20 @@ type UserOrdersResponse = {
 };
 
 type ApiCodeLanguage = "javascript" | "python" | "curl";
+type CashfreeCheckoutMode = "sandbox" | "production";
+
+type CashfreeCheckoutClient = {
+  checkout: (options: {
+    paymentSessionId: string;
+    redirectTarget: "_modal";
+  }) => Promise<unknown>;
+};
+
+declare global {
+  interface Window {
+    Cashfree?: (options: { mode: CashfreeCheckoutMode }) => CashfreeCheckoutClient;
+  }
+}
 
 const fetcher = async <T,>(url: string): Promise<T> => {
   const res = await fetch(url);
@@ -91,6 +105,54 @@ const fetcher = async <T,>(url: string): Promise<T> => {
 
   return data as T;
 };
+
+let cashfreeLoadPromise: Promise<void> | null = null;
+
+function loadCashfreeSdk(): Promise<void> {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Cashfree checkout is unavailable"));
+  }
+
+  if (window.Cashfree) return Promise.resolve();
+  if (cashfreeLoadPromise) return cashfreeLoadPromise;
+
+  cashfreeLoadPromise = new Promise<void>((resolve, reject) => {
+    const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${CASHFREE_SDK_URL}"]`,
+    );
+
+    if (existing) {
+      if (window.Cashfree) return resolve();
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("Failed to load Cashfree SDK")),
+        { once: true },
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = CASHFREE_SDK_URL;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
+    document.head.appendChild(script);
+  });
+
+  cashfreeLoadPromise.catch(() => {
+    cashfreeLoadPromise = null;
+  });
+
+  return cashfreeLoadPromise;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return fallback;
+}
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
 function Loader({ text = "Loading..." }: { text?: string }) {
@@ -618,6 +680,13 @@ export default function DashboardPage() {
   const [regeneratingKey, setRegeneratingKey] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [keyVisible, setKeyVisible] = useState(false);
+  const [limitPurchaseLoading, setLimitPurchaseLoading] = useState(false);
+  const [limitPurchaseMessage, setLimitPurchaseMessage] = useState<string | null>(
+    null,
+  );
+  const [verifiedReturnOrderId, setVerifiedReturnOrderId] = useState<string | null>(
+    null,
+  );
   const [activeTab, setActiveTab] = useState<
     "overview" | "apikey" | "apiendpoints" | "playground" | "logs" | "orders"
   >("overview");
@@ -681,6 +750,13 @@ export default function DashboardPage() {
   const orders = ordersData?.orders ?? [];
   const loading = userLoading || ordersLoading;
   const refreshing = userValidating || ordersValidating;
+  const pricingBaseRequests = 20_000;
+  const pricingStepRequests = 10_000;
+  const pricingStepCost = 100;
+  const pricingBaseCost = 200;
+  const pricingMaxSteps = 48;
+  const pricingRequests = pricingBaseRequests + pricingStep * pricingStepRequests;
+  const pricingAmount = pricingBaseCost + pricingStep * pricingStepCost;
   const billing = useBillingTimer(dbUser);
   const activeExpirationTimestamp = dbUser?.expirationDate
     ? new Date(dbUser.expirationDate).getTime()
@@ -699,6 +775,117 @@ export default function DashboardPage() {
     mutateUser();
     mutateOrders();
   };
+
+  const verifyLimitTopup = useCallback(
+    async (orderId: string) => {
+      setLimitPurchaseLoading(true);
+      setLimitPurchaseMessage("Verifying payment...");
+
+      try {
+        const response = await fetch("/api/user/increase-limit", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId }),
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.message || "Unable to verify payment");
+        }
+
+        if (!data?.paid) {
+          setLimitPurchaseMessage("Payment is still pending. Please retry in a moment.");
+          return data;
+        }
+
+        setLimitPurchaseMessage(
+          `Limit increased by ${Number(data.extraLimit || 0).toLocaleString(
+            "en-IN",
+          )} requests.`,
+        );
+        await mutateUser();
+        return data;
+      } catch (error: unknown) {
+        setLimitPurchaseMessage(
+          getErrorMessage(error, "Payment verification failed. Please try again."),
+        );
+        throw error;
+      } finally {
+        setLimitPurchaseLoading(false);
+      }
+    },
+    [mutateUser],
+  );
+
+  const startLimitTopupPayment = async () => {
+    if (limitPurchaseLoading) return;
+
+    setLimitPurchaseLoading(true);
+    setLimitPurchaseMessage(null);
+
+    try {
+      const response = await fetch("/api/user/increase-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ extraLimit: pricingRequests }),
+      });
+      const data = await response.json();
+      const order = data?.order as
+        | {
+          orderId?: string;
+          paymentSessionId?: string;
+        }
+        | undefined;
+
+      if (!response.ok || !order?.orderId || !order?.paymentSessionId) {
+        throw new Error(data?.message || "Unable to create payment order");
+      }
+
+      await loadCashfreeSdk();
+      if (!window.Cashfree) {
+        throw new Error("Cashfree checkout failed to load. Please refresh and try again.");
+      }
+
+      setLimitPurchaseMessage("Opening secure payment popup...");
+      const cashfree = window.Cashfree({
+        mode: data?.cashfreeMode === "sandbox" ? "sandbox" : "production",
+      });
+
+      try {
+        await cashfree.checkout({
+          paymentSessionId: order.paymentSessionId,
+          redirectTarget: "_modal",
+        });
+      } catch {
+        // Cashfree may reject when the modal is dismissed; the server status is authoritative.
+      }
+
+      await verifyLimitTopup(order.orderId);
+    } catch (error: unknown) {
+      setLimitPurchaseMessage(
+        getErrorMessage(error, "Unable to process limit add-on. Please try again."),
+      );
+      setLimitPurchaseLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentReturn = params.get("payment_return");
+    const orderId = params.get("order_id");
+    if (
+      paymentReturn !== "limit" ||
+      !orderId ||
+      verifiedReturnOrderId === orderId
+    ) {
+      return;
+    }
+
+    setVerifiedReturnOrderId(orderId);
+    verifyLimitTopup(orderId).catch(() => {
+      // Message state is already set by verifyLimitTopup.
+    });
+  }, [verifiedReturnOrderId, verifyLimitTopup]);
 
   const onLogout = async () => {
     try {
@@ -1019,14 +1206,8 @@ console.log(data);`;
     (process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL || "/pricing").replace(/^["']|["']$/g, "");
 
   const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
-  const pricingBaseRequests = 20_000;
-  const pricingStepRequests = 10_000;
-  const pricingStepCost = 100;
-  const pricingBaseCost = 200;
-  const pricingMaxSteps = 48;
-  const pricingRequests = pricingBaseRequests + pricingStep * pricingStepRequests;
-  const pricingAmount = pricingBaseCost + pricingStep * pricingStepCost;
-  const pricingAtUpperCap = pricingStep === pricingMaxSteps;
+  const canBuyLimitTopup =
+    normalizedPlan === "pro" || normalizedPlan === "enterprise" || normalizedPlan === "advanced";
 
   return (
     <>
@@ -1907,91 +2088,130 @@ console.log(data);`;
                 </div>
               </div>
 
-              <div
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  padding: 24,
-                }}
-              >
-                <p
-                  style={{
-                    color: "#475569",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginBottom: 18,
-                  }}
-                >
-                  Pricing Calculator
-                </p>
-
+              {canBuyLimitTopup && (
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    marginBottom: 14,
+                    background: "#0f1117",
+                    border: "1px solid #1e2330",
+                    borderRadius: 12,
+                    padding: 24,
                   }}
                 >
-                  <span
+                  <p
                     style={{
-                      color: "#cbd5e1",
-                      fontSize: 13,
+                      color: "#475569",
+                      fontSize: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      marginBottom: 18,
+                    }}
+                  >
+                    Pricing Calculator
+                  </p>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "#cbd5e1",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      Requests:{" "}
+                      <b style={{ color: "#93c5fd" }}>
+                        {pricingRequests.toLocaleString("en-IN")}
+                      </b>
+                    </span>
+                    <span
+                      style={{
+                        color: "#6ee7b7",
+                        fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Add-on: ₹{pricingAmount.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min={0}
+                    max={pricingMaxSteps}
+                    step={1}
+                    value={pricingStep}
+                    onChange={(e) => setPricingStep(Number(e.target.value))}
+                    style={{
+                      width: "100%",
+                      accentColor: "#34d399",
+                      cursor: limitPurchaseLoading ? "wait" : "pointer",
+                    }}
+                    disabled={limitPurchaseLoading}
+                  />
+
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      color: "#475569",
+                      fontSize: 11,
                       fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
-                    Requests:{" "}
-                    <b style={{ color: "#93c5fd" }}>
-                      {pricingRequests.toLocaleString("en-IN")}
-                      {pricingAtUpperCap ? "+" : ""}
-                    </b>
-                  </span>
-                  <span
+                    <span>20,000 reqs</span>
+                    <span>10k = +₹100</span>
+                  </div>
+
+                  <button
+                    onClick={startLimitTopupPayment}
+                    disabled={limitPurchaseLoading}
                     style={{
-                      color: "#6ee7b7",
-                      fontSize: 13,
+                      width: "100%",
+                      marginTop: 18,
+                      border: "1px solid #047857",
+                      background: limitPurchaseLoading ? "#12312e" : "#059669",
+                      color: "#ffffff",
+                      borderRadius: 8,
+                      padding: "12px 14px",
+                      cursor: limitPurchaseLoading ? "wait" : "pointer",
+                      fontSize: 12,
+                      fontWeight: 800,
                       fontFamily: "'JetBrains Mono', monospace",
-                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
                     }}
                   >
-                    Add-on: ₹{pricingAmount.toLocaleString("en-IN")}
-                    {pricingAtUpperCap ? "+" : ""}
-                  </span>
-                </div>
+                    {limitPurchaseLoading ? "Processing..." : "Increase Limit"}
+                  </button>
 
-                <input
-                  type="range"
-                  min={0}
-                  max={pricingMaxSteps}
-                  step={1}
-                  value={pricingStep}
-                  onChange={(e) => setPricingStep(Number(e.target.value))}
-                  style={{
-                    width: "100%",
-                    accentColor: "#34d399",
-                    cursor: "pointer",
-                  }}
-                />
-
-                <div
-                  style={{
-                    marginTop: 8,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    color: "#475569",
-                    fontSize: 11,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  <span>20,000 reqs</span>
-                  <span>∞ (10k = +₹100)</span>
+                  {limitPurchaseMessage && (
+                    <p
+                      style={{
+                        marginTop: 12,
+                        color: limitPurchaseMessage.toLowerCase().includes("failed")
+                          ? "#fca5a5"
+                          : "#94a3b8",
+                        fontSize: 11,
+                        lineHeight: 1.6,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {limitPurchaseMessage}
+                    </p>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
