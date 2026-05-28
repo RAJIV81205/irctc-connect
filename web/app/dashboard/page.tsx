@@ -1197,14 +1197,6 @@ console.log(data);`;
     },
   ] as const;
   const normalizedPlan = (dbUser.plan || "").toLowerCase();
-  const isEnterpriseLikePlan =
-    normalizedPlan === "enterprise" || normalizedPlan === "advanced";
-  const planActionLabel = isEnterpriseLikePlan
-    ? "Increase Limit"
-    : "Upgrade Plan";
-  const enterpriseContactUrl =
-    (process.env.NEXT_PUBLIC_PAYMENT_CONTACT_URL || "/pricing").replace(/^["']|["']$/g, "");
-
   const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
   const canBuyLimitTopup =
     normalizedPlan === "pro" || normalizedPlan === "enterprise" || normalizedPlan === "advanced";
@@ -1846,35 +1838,6 @@ console.log(data);`;
                     </div>
                   ))}
 
-                  <button
-                    onClick={() => {
-                      if (isEnterpriseLikePlan) {
-                        if (enterpriseContactUrl.startsWith("http") || enterpriseContactUrl.startsWith("mailto:")) {
-                          window.location.href = enterpriseContactUrl;
-                        } else {
-                          router.push(enterpriseContactUrl);
-                        }
-                        return;
-                      }
-                      router.push("/pricing");
-                    }}
-                    style={{
-                      marginTop: 18,
-                      width: "100%",
-                      background: isEnterpriseLikePlan ? "#0f2233" : "#0f2a1d",
-                      border: `1px solid ${isEnterpriseLikePlan ? "#1a3a5c" : "#1a4731"}`,
-                      color: isEnterpriseLikePlan ? "#60a5fa" : "#6ee7b7",
-                      borderRadius: 8,
-                      padding: "10px 14px",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      letterSpacing: "0.02em",
-                    }}
-                  >
-                    {planActionLabel}
-                  </button>
                 </div>
 
                 {/* Usage + Billing card */}
@@ -2172,6 +2135,19 @@ console.log(data);`;
                     <span>20,000 reqs</span>
                     <span>10k = +₹100</span>
                   </div>
+
+                  <p
+                    style={{
+                      marginTop: 10,
+                      color: "#64748b",
+                      fontSize: 11,
+                      lineHeight: 1.6,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    Note: Limit top-ups add requests only and do not extend your
+                    plan expiry.
+                  </p>
 
                   <button
                     onClick={startLimitTopupPayment}
