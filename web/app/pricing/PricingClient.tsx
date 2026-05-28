@@ -11,15 +11,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   Star,
-  Heart,
-  Terminal,
-  Sparkles,
   ShieldCheck,
   X,
   AlertCircle,
   CheckCircle2,
   Info,
   Loader2,
+  Mail,
+  Package,
+  Zap,
 } from "lucide-react";
 
 import type { PricingPlan, PaidPlanType } from "../../lib/constants";
@@ -171,22 +171,19 @@ export default function PricingClient({
 
 function PricingPageSkeleton() {
   return (
-    <div className="relative min-h-screen bg-[#050816] text-white">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:60px_60px]" />
-      <div className="relative z-10 px-6 py-28">
+    <div className="min-h-screen bg-[#f6f7f9] px-5 pt-28 pb-14 text-slate-950 sm:px-6 lg:pt-32">
+      <div>
         <div className="mx-auto max-w-7xl">
-          {/* Hero skeleton */}
-          <div className="mb-24 flex flex-col items-center gap-6">
-            <div className="h-8 w-64 animate-pulse rounded-full bg-white/10" />
-            <div className="h-20 w-96 animate-pulse rounded-2xl bg-white/10" />
-            <div className="h-6 w-80 animate-pulse rounded-xl bg-white/5" />
+          <div className="mb-10 max-w-3xl">
+            <div className="h-8 w-56 animate-pulse rounded-md bg-slate-200" />
+            <div className="mt-6 h-16 max-w-2xl animate-pulse rounded-lg bg-slate-200" />
+            <div className="mt-4 h-6 max-w-xl animate-pulse rounded-md bg-slate-200" />
           </div>
-          {/* Card skeletons */}
-          <div className="grid gap-8 lg:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="h-[600px] animate-pulse rounded-[32px] border border-white/10 bg-white/[0.04]"
+                className="h-[520px] animate-pulse rounded-lg border border-slate-200 bg-white"
                 style={{ animationDelay: `${i * 100}ms` }}
               />
             ))}
@@ -217,9 +214,9 @@ function NoticeBar({
   if (!notice) return null;
 
   const styles: Record<NoticeKind, string> = {
-    success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-    error: "border-red-500/30 bg-red-500/10 text-red-200",
-    info: "border-cyan-500/30 bg-cyan-500/10 text-cyan-200",
+    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    error: "border-red-200 bg-red-50 text-red-700",
+    info: "border-sky-200 bg-sky-50 text-sky-800",
   };
 
   const Icon = {
@@ -232,7 +229,7 @@ function NoticeBar({
     <div
       role="status"
       aria-live="polite"
-      className={`mx-auto mb-10 flex max-w-3xl items-start gap-3 rounded-2xl border px-5 py-4 backdrop-blur-xl ${styles[notice.kind]}`}
+      className={`mb-8 flex max-w-3xl items-start gap-3 rounded-lg border px-4 py-3 ${styles[notice.kind]}`}
     >
       <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
       <p className="flex-1 text-sm leading-relaxed">{notice.text}</p>
@@ -361,39 +358,39 @@ function PaymentModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-xl"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-6 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isCreatingOrder) onCancel();
       }}
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg overflow-y-auto rounded-[32px] border border-white/10 bg-[#0b1220]/90 p-8 shadow-[0_0_80px_rgba(0,0,0,0.5)]"
+        className="w-full max-w-lg overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 text-slate-950 shadow-2xl sm:p-8"
         style={{ maxHeight: "90dvh" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/10">
-          <ShieldCheck className="h-8 w-8 text-emerald-300" aria-hidden="true" />
+        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
+          <ShieldCheck className="h-6 w-6 text-emerald-700" aria-hidden="true" />
         </div>
 
-        <h3 id="modal-title" className="text-3xl font-bold">
+        <h3 id="modal-title" className="text-2xl font-semibold">
           Secure Checkout
         </h3>
 
-        <p className="mt-4 leading-relaxed text-slate-400">
+        <p className="mt-3 leading-7 text-slate-600">
           A secure Cashfree popup will open to complete payment for the{" "}
-          <span className="font-semibold uppercase text-emerald-300">{selectedPlan}</span> plan.
+          <span className="font-semibold uppercase text-emerald-700">{selectedPlan}</span> plan.
           You can safely dismiss this at any time.
         </p>
 
-        <ul className="mt-6 space-y-2 text-sm text-slate-400">
+        <ul className="mt-6 space-y-2 text-sm text-slate-600">
           {[
             "256-bit SSL encrypted transaction",
             "Payment processed by Cashfree — card data never stored here",
             "Instant plan activation on success",
           ].map((item) => (
             <li key={item} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+              <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
               {item}
             </li>
           ))}
@@ -403,7 +400,7 @@ function PaymentModal({
           <button
             onClick={onCancel}
             disabled={isCreatingOrder}
-            className="rounded-2xl border border-white/10 px-5 py-3 text-slate-300 transition-all hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>
@@ -413,7 +410,7 @@ function PaymentModal({
             onClick={onConfirm}
             disabled={isCreatingOrder}
             aria-busy={isCreatingOrder}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-5 py-3 font-bold text-black transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isCreatingOrder && (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -442,7 +439,6 @@ function PricingPageContent({
 
   const [authState, setAuthState] = useState<AuthState>({ status: "loading" });
   const [notice, setNotice] = useState<Notice>(null);
-  const [noticeIdCounter, setNoticeIdCounter] = useState(0);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanType | null>(null);
@@ -461,11 +457,7 @@ function PricingPageContent({
 
   const showNotice = useCallback(
     (kind: NoticeKind, text: string) => {
-      setNoticeIdCounter((c) => {
-        const id = c + 1;
-        setNotice({ id, kind, text });
-        return id;
-      });
+      setNotice({ id: Date.now(), kind, text });
     },
     [],
   );
@@ -589,7 +581,7 @@ function PricingPageContent({
     }
 
     if (authState.status === "unauthenticated") {
-      router.push("/login?redirect=/pricing");
+      router.push("/auth?redirect=/pricing");
       return;
     }
 
@@ -668,7 +660,7 @@ function PricingPageContent({
       return {
         label: plan.buttonText,
         disabled: false,
-        action: () => router.push("/signup"),
+        action: () => router.push("/auth?redirect=/pricing"),
       };
     }
 
@@ -678,7 +670,7 @@ function PricingPageContent({
       return {
         label: "Login to Continue",
         disabled: false, // clickable — redirects to login
-        action: () => router.push("/login?redirect=/pricing"),
+        action: () => router.push("/auth?redirect=/pricing"),
       };
     }
 
@@ -696,56 +688,83 @@ function PricingPageContent({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050816] text-white">
+    <div className="min-h-screen bg-[#f6f7f9] text-slate-950">
+      <style>{`
+        @keyframes pricing-fade-up {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
 
-      {/* ── Background ──────────────────────────────────────────────────── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-40 -left-40 h-[32rem] w-[32rem] rounded-full bg-emerald-500/20 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-[35rem] w-[35rem] rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:60px_60px]" />
-      </div>
+        .pricing-reveal {
+          animation: pricing-fade-up 0.65s ease both;
+        }
 
-      <main className="relative z-10 px-6 py-28">
+        .pricing-card {
+          transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+        }
+
+        .pricing-card:hover {
+          transform: translateY(-4px);
+          border-color: #a7f3d0;
+          box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+        }
+
+        .pricing-action {
+          transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+        }
+
+        .pricing-action:hover {
+          transform: translateY(-2px);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .pricing-reveal {
+            animation: none;
+          }
+
+          .pricing-card,
+          .pricing-action,
+          .pricing-card:hover,
+          .pricing-action:hover {
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
+
+      <main className="px-5 pt-28 pb-14 sm:px-6 lg:pt-32">
         <div className="mx-auto max-w-7xl">
-
-          {/* ── Hero ──────────────────────────────────────────────────────── */}
-          <header className="mb-24 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-5 py-2 text-sm font-medium text-emerald-300 backdrop-blur-xl">
-              <Heart className="h-4 w-4 fill-emerald-400" aria-hidden="true" />
-              Sponsor the Open Source Project
+          <header className="pricing-reveal mb-10 max-w-3xl">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800">
+              <Package className="h-4 w-4" aria-hidden="true" />
+              Pricing for railway API access
             </div>
 
-            <h1 className="mt-8 text-5xl font-black leading-tight tracking-tight md:text-7xl">
-              Simple Pricing
-              <span className="mt-2 block bg-gradient-to-r from-emerald-300 via-cyan-300 to-emerald-500 bg-clip-text text-transparent">
-                Built for Scale
-              </span>
+            <h1 className="text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              Choose the right request limit for your app.
             </h1>
 
-            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-400">
-              Powerful request limits, premium support, and scalable
-              infrastructure designed for modern applications.
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+              Start free, then upgrade when your product needs higher usage,
+              paid access, and support for production railway integrations.
             </p>
           </header>
 
-          {/* ── Notice ────────────────────────────────────────────────────── */}
           <NoticeBar notice={notice} onDismiss={dismissNotice} />
 
-          {/* ── Auth loading bar ───────────────────────────────────────────── */}
           {authState.status === "loading" && (
             <div
               role="status"
               aria-label="Checking login status"
-              className="mx-auto mb-8 flex max-w-sm items-center justify-center gap-2 text-sm text-slate-500"
+              className="mb-8 flex max-w-sm items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600"
             >
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Checking login status…
+              Checking login status...
             </div>
           )}
 
-          {/* ── Pricing cards ─────────────────────────────────────────────── */}
-          <section aria-label="Pricing plans">
-            <div className="grid gap-8 lg:grid-cols-3">
+          <section aria-label="Pricing plans" className="pricing-reveal" style={{ animationDelay: "120ms" }}>
+            <div className="grid gap-5 lg:grid-cols-3">
               {initialPlans.map((plan) => {
                 const btnState = getButtonState(plan);
                 const isPopular = plan.planType === "advance";
@@ -761,142 +780,117 @@ function PricingPageContent({
                   <article
                     key={plan.id}
                     aria-label={`${plan.name} plan`}
-                    className={`group relative overflow-hidden rounded-[32px] border backdrop-blur-2xl transition-all duration-500 hover:-translate-y-2 ${
+                    className={`pricing-card relative flex min-h-[540px] flex-col rounded-lg border bg-white p-6 shadow-sm ${
                       isPopular
-                        ? "border-emerald-400/30 bg-white/[0.08] shadow-[0_0_80px_rgba(16,185,129,0.15)]"
-                        : "border-white/10 bg-white/[0.04]"
+                        ? "border-emerald-300 ring-1 ring-emerald-200"
+                        : "border-slate-200"
                     }`}
                   >
-                    {/* Glow */}
-                    {isPopular && (
-                      <div
-                        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-400/10 to-transparent"
-                        aria-hidden="true"
-                      />
-                    )}
-
-                    {/* Popular badge */}
-                    {isPopular && (
-                      <div
-                        className="absolute right-5 top-5 flex items-center gap-1 rounded-full bg-emerald-400 px-3 py-1 text-xs font-bold text-black"
-                        aria-label="Most popular plan"
-                      >
-                        <Star className="h-3 w-3 fill-black" aria-hidden="true" />
-                        POPULAR
-                      </div>
-                    )}
-
-                    <div className="relative z-10 p-8">
-
-                      {/* Icon */}
-                      <div
-                        className={`mb-8 flex h-16 w-16 items-center justify-center rounded-2xl ${
-                          isPopular
-                            ? "bg-emerald-400/15 text-emerald-300"
-                            : "bg-white/5 text-white"
-                        }`}
-                        aria-hidden="true"
-                      >
+                    <div className="mb-6 flex items-start justify-between gap-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
                         {isPopular ? (
-                          <Sparkles className="h-7 w-7" />
+                          <Zap className="h-5 w-5" aria-hidden="true" />
                         ) : (
-                          <Terminal className="h-7 w-7" />
+                          <Package className="h-5 w-5" aria-hidden="true" />
                         )}
                       </div>
+                      {isPopular && (
+                        <div
+                          className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800"
+                          aria-label="Most popular plan"
+                        >
+                          <Star className="h-3 w-3 fill-emerald-700" aria-hidden="true" />
+                          Popular
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Title + description */}
-                      <h2 className="text-3xl font-bold">{plan.name}</h2>
-                      <p className="mt-4 text-sm leading-relaxed text-slate-400">{plan.description}</p>
+                    <h2 className="text-2xl font-semibold text-slate-950">{plan.name}</h2>
+                    <p className="mt-3 min-h-[52px] text-sm leading-6 text-slate-600">{plan.description}</p>
 
-                      {/* Price block */}
-                      <div className="mt-10">
-                        {isOfferActive && plan.originalPrice && discountPercent && (
-                          <div className="mb-3 flex items-center gap-3">
-                            <span className="text-lg text-slate-500 line-through" aria-label={`Original price ${plan.originalPrice}`}>
-                              {plan.originalPrice}
+                    <div className="mt-7">
+                      {isOfferActive && plan.originalPrice && discountPercent && (
+                        <div className="mb-3 flex items-center gap-3">
+                          <span className="text-base text-slate-400 line-through" aria-label={`Original price ${plan.originalPrice}`}>
+                            {plan.originalPrice}
+                          </span>
+                          <span
+                            className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
+                            aria-label={`${discountPercent}% discount`}
+                          >
+                            {discountPercent}% off
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-end gap-2">
+                        <span className="text-4xl font-semibold text-slate-950" aria-label={`Price: ${displayedPrice}`}>
+                          {displayedPrice}
+                        </span>
+                        <span className="mb-1 text-sm text-slate-500">{plan.period}</span>
+                      </div>
+
+                      {!timeLeft.expired && plan.originalPrice && (
+                        <div
+                          className="mt-4 inline-flex rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
+                          aria-live="polite"
+                          aria-label={`Offer ends in ${timeLeft.days} days ${timeLeft.hours} hours ${timeLeft.minutes} minutes ${timeLeft.seconds} seconds`}
+                        >
+                          Offer ends in&nbsp;
+                          <span aria-hidden="true">
+                            {timeLeft.days}d {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={btnState.action}
+                      disabled={btnState.disabled}
+                      aria-label={`${btnState.label} — ${plan.name} plan`}
+                      className={`pricing-action mt-7 w-full rounded-md px-4 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
+                        btnState.disabled
+                          ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                          : isPopular
+                            ? "bg-slate-950 text-white shadow-sm hover:bg-slate-800 hover:shadow-lg"
+                            : "border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 hover:shadow-md"
+                      }`}
+                    >
+                      {authState.status === "loading" && plan.planType !== "free" ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                          Checking...
+                        </span>
+                      ) : (
+                        btnState.label
+                      )}
+                    </button>
+
+                    <div className="mt-7 border-t border-slate-200 pt-6">
+                      <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                        Includes
+                      </div>
+
+                      <ul className="space-y-3" role="list">
+                        {plan.features.map((feature, i) => (
+                          <li key={i} className="flex items-start gap-3">
+                            <span
+                              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50"
+                              aria-hidden="true"
+                            >
+                              <Check className="h-3 w-3 text-emerald-700" />
                             </span>
                             <span
-                              className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-300"
-                              aria-label={`${discountPercent}% discount`}
+                              className={`text-sm leading-6 ${
+                                feature.highlight ? "font-semibold text-slate-950" : "text-slate-600"
+                              }`}
                             >
-                              {discountPercent}% OFF
+                              {feature.text}
                             </span>
-                          </div>
-                        )}
-
-                        <div className="flex items-end gap-2">
-                          <span className="text-6xl font-black tracking-tight" aria-label={`Price: ${displayedPrice}`}>
-                            {displayedPrice}
-                          </span>
-                          <span className="mb-2 text-slate-400">{plan.period}</span>
-                        </div>
-
-                        {/* Countdown */}
-                        {!timeLeft.expired && plan.originalPrice && (
-                          <div
-                            className="mt-5 inline-flex rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-sm text-amber-200"
-                            aria-live="polite"
-                            aria-label={`Offer ends in ${timeLeft.days} days ${timeLeft.hours} hours ${timeLeft.minutes} minutes ${timeLeft.seconds} seconds`}
-                          >
-                            Offer ends in&nbsp;
-                            <span aria-hidden="true">
-                              {timeLeft.days}d {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* CTA button */}
-                      <button
-                        onClick={btnState.action}
-                        disabled={btnState.disabled}
-                        aria-label={`${btnState.label} — ${plan.name} plan`}
-                        className={`mt-10 w-full rounded-2xl py-4 font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
-                          btnState.disabled
-                            ? "cursor-not-allowed bg-white/5 text-slate-500"
-                            : isPopular
-                            ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-black hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(16,185,129,0.35)]"
-                            : "bg-white/5 hover:bg-white/10"
-                        }`}
-                      >
-                        {authState.status === "loading" && plan.planType !== "free" ? (
-                          <span className="inline-flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                            Checking…
-                          </span>
-                        ) : (
-                          btnState.label
-                        )}
-                      </button>
-
-                      {/* Features */}
-                      <div className="mt-10 border-t border-white/10 pt-8">
-                        <div className="mb-5 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
-                          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                          Features
-                        </div>
-
-                        <ul className="space-y-4" role="list">
-                          {plan.features.map((feature, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <div
-                                className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10"
-                                aria-hidden="true"
-                              >
-                                <Check className="h-3 w-3 text-emerald-300" />
-                              </div>
-                              <span
-                                className={`text-sm leading-relaxed ${
-                                  feature.highlight ? "font-semibold text-white" : "text-slate-300"
-                                }`}
-                              >
-                                {feature.text}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </article>
                 );
@@ -904,18 +898,18 @@ function PricingPageContent({
             </div>
           </section>
 
-          {/* ── Enterprise / Contact ───────────────────────────────────────── */}
           <section
             aria-label="Enterprise pricing"
-            className="mx-auto mt-20 max-w-4xl rounded-[32px] border border-cyan-400/20 bg-cyan-400/5 p-10 backdrop-blur-2xl"
+            className="pricing-reveal mt-10 rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+            style={{ animationDelay: "220ms" }}
           >
-            <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+            <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
               <div>
-                <p className="text-sm font-bold uppercase tracking-widest text-cyan-300">
-                  Need a Custom Plan?
+                <p className="text-sm font-semibold uppercase text-emerald-700">
+                  Need a custom plan?
                 </p>
-                <h2 className="mt-3 text-3xl font-bold">Enterprise &amp; Team Pricing</h2>
-                <p className="mt-4 max-w-2xl leading-relaxed text-slate-400">
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">Enterprise and team pricing</h2>
+                <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                   Need higher request limits, dedicated support, or custom infrastructure?
                   Contact us and we&apos;ll create a custom plan for your business.
                 </p>
@@ -925,19 +919,18 @@ function PricingPageContent({
                 href={contactUrl}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-6 py-4 font-semibold text-cyan-200 transition-all hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                className="pricing-action inline-flex shrink-0 items-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
+                <Mail className="h-4 w-4" aria-hidden="true" />
                 Contact Support
               </a>
             </div>
           </section>
 
-          {/* ── Footer note ───────────────────────────────────────────────── */}
-          <p className="mx-auto mt-12 max-w-2xl text-center leading-relaxed text-slate-500">
+          <p className="mt-8 max-w-2xl leading-7 text-slate-500">
             By purchasing a premium plan, you are directly helping support and sustain this
             open-source project. Thank you.
           </p>
-
         </div>
       </main>
 

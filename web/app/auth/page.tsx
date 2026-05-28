@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
+import {
+  ArrowLeft,
+  BarChart3,
+  CheckCircle2,
+  KeyRound,
+  Loader2,
+  Route,
+  ShieldCheck,
+  Terminal,
+} from "lucide-react";
 import { auth, googleProvider } from "@/lib/firebase";
 
 type LoginApiResponse = {
@@ -51,65 +61,334 @@ export default function AuthPage() {
   };
 
   return (
-    <main
-      className="relative min-h-screen overflow-hidden text-slate-100"
-      style={{
-        background:
-          "radial-gradient(circle at 12% -5%, rgba(5,150,105,0.2), transparent 36%), radial-gradient(circle at 88% 110%, rgba(6,182,212,0.16), transparent 40%), #070910",
-        fontFamily: "'Syne', sans-serif",
-      }}
-    >
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap');`}</style>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
+    <main className="auth-root">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        .auth-root {
+          min-height: 100vh;
+          padding: 112px 24px 56px;
           background:
-            "linear-gradient(180deg, rgba(148,163,184,0.06) 0%, rgba(7,9,16,0.2) 18%, rgba(7,9,16,0.85) 100%)",
-        }}
-      />
-      <div className="relative mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center px-6 py-16">
-        <div
-          className="w-full rounded-3xl p-8 text-center shadow-2xl backdrop-blur-xl md:p-10"
-          style={{
-            background: "rgba(15,17,23,0.9)",
-            border: "1px solid #1e2330",
-            boxShadow: "0 30px 60px rgba(2,6,23,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
-          }}
-        >
-          <p
-            className="mb-3 text-xs uppercase tracking-[0.18em] text-emerald-300/80"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            Secure Developer Access
-          </p>
-          <h1 className="text-3xl font-bold text-slate-100 md:text-4xl">Welcome to IRCTC Connect</h1>
-          <p
-            className="mt-4 text-sm text-slate-300"
-            style={{ fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.7 }}
-          >
-            Continue with Google to access your dashboard, manage your API key,
-            and start shipping railway data integrations in minutes.
+            linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,250,251,0.96)),
+            radial-gradient(circle at 12% 14%, rgba(5,150,105,0.12), transparent 34%),
+            radial-gradient(circle at 88% 20%, rgba(15,23,42,0.08), transparent 32%);
+          color: #0a0c10;
+          font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        }
+
+        .auth-shell {
+          width: 100%;
+          max-width: 520px;
+          min-height: calc(100vh - 168px);
+          margin: 0 auto;
+          display: grid;
+          place-items: center;
+        }
+
+        .auth-story,
+        .auth-card {
+          border: 1px solid #e5e7eb;
+          background: rgba(255,255,255,0.88);
+          box-shadow: 0 22px 55px rgba(15,23,42,0.08);
+        }
+
+        .auth-story {
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          border-radius: 18px;
+          padding: 36px;
+        }
+
+        .auth-story:before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(#eef2f7 1px, transparent 1px),
+            linear-gradient(90deg, #eef2f7 1px, transparent 1px);
+          background-size: 42px 42px;
+          mask-image: linear-gradient(90deg, rgba(0,0,0,0.42), transparent 72%);
+          pointer-events: none;
+        }
+
+        .auth-content {
+          position: relative;
+          z-index: 1;
+          max-width: 680px;
+        }
+
+        .auth-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 7px 12px;
+          border: 1px solid #bbf7d0;
+          border-radius: 999px;
+          background: #ecfdf5;
+          color: #047857;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .auth-title {
+          margin-top: 24px;
+          max-width: 720px;
+          font-size: clamp(38px, 5vw, 66px);
+          line-height: 1.02;
+          letter-spacing: -0.035em;
+          font-weight: 700;
+        }
+
+        .auth-copy {
+          margin-top: 22px;
+          max-width: 620px;
+          color: #5b6472;
+          font-size: 17px;
+          line-height: 1.85;
+        }
+
+        .auth-preview {
+          position: relative;
+          z-index: 1;
+          margin-top: 42px;
+          max-width: 720px;
+          display: grid;
+          grid-template-columns: 1.05fr 0.95fr;
+          gap: 14px;
+        }
+
+        .auth-mini-card {
+          border: 1px solid #e5e7eb;
+          border-radius: 14px;
+          background: #ffffff;
+          padding: 16px;
+        }
+
+        .auth-mini-dark {
+          border-color: #1f2937;
+          background: #0d1117;
+          color: #e5e7eb;
+        }
+
+        .auth-route {
+          display: grid;
+          gap: 13px;
+          margin-top: 16px;
+        }
+
+        .auth-route-row {
+          display: grid;
+          grid-template-columns: 24px 1fr auto;
+          gap: 10px;
+          align-items: center;
+          font-size: 13px;
+          color: #374151;
+        }
+
+        .auth-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #10b981;
+          box-shadow: 0 0 0 5px #d1fae5;
+          justify-self: center;
+        }
+
+        .auth-line {
+          width: 1px;
+          height: 24px;
+          background: #d1d5db;
+          justify-self: center;
+        }
+
+        .auth-code {
+          margin-top: 14px;
+          display: grid;
+          gap: 8px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+          color: #9ca3af;
+        }
+
+        .auth-code strong {
+          color: #6ee7b7;
+          font-weight: 500;
+        }
+
+        .auth-card {
+          width: min(100%, 440px);
+          align-self: center;
+          border-radius: 18px;
+          padding: 26px;
+        }
+
+        .auth-card-icon {
+          display: flex;
+          width: 48px;
+          height: 48px;
+          align-items: center;
+          justify-content: center;
+          border-radius: 12px;
+          background: #ecfdf5;
+          color: #047857;
+        }
+
+        .auth-card h2 {
+          margin-top: 22px;
+          font-size: 28px;
+          line-height: 1.2;
+          letter-spacing: -0.02em;
+          font-weight: 700;
+        }
+
+        .auth-card p {
+          margin-top: 12px;
+          color: #64748b;
+          font-size: 14px;
+          line-height: 1.7;
+        }
+
+        .auth-google {
+          margin-top: 26px;
+          display: flex;
+          width: 100%;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          border: 0;
+          border-radius: 10px;
+          background: #0a0c10;
+          color: #ffffff;
+          padding: 14px 18px;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 14px 28px rgba(15,23,42,0.18);
+          transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+        }
+
+        .auth-google:hover {
+          transform: translateY(-2px);
+          background: #1f2937;
+          box-shadow: 0 18px 34px rgba(15,23,42,0.22);
+        }
+
+        .auth-google:disabled {
+          cursor: not-allowed;
+          opacity: 0.65;
+          transform: none;
+          box-shadow: none;
+        }
+
+        .auth-google-mark {
+          display: inline-flex;
+          width: 24px;
+          height: 24px;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          background: #ffffff;
+        }
+
+        .auth-error {
+          margin-top: 14px;
+          border: 1px solid #fecaca;
+          border-radius: 10px;
+          background: #fef2f2;
+          padding: 11px 12px;
+          color: #b91c1c;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .auth-assurance {
+          margin-top: 22px;
+          display: grid;
+          gap: 10px;
+          border-top: 1px solid #e5e7eb;
+          padding-top: 20px;
+        }
+
+        .auth-assurance-item {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          color: #475569;
+          font-size: 13px;
+          line-height: 1.55;
+        }
+
+        .auth-back {
+          margin-top: 22px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          color: #64748b;
+          font-size: 14px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: color 0.18s ease;
+        }
+
+        .auth-back:hover {
+          color: #0a0c10;
+        }
+
+        @keyframes auth-in {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes auth-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-7px); }
+        }
+
+        .auth-anim-1 { animation: auth-in 0.65s ease both; }
+        .auth-anim-2 { animation: auth-in 0.65s ease 0.12s both; }
+        .auth-float { animation: auth-in 0.7s ease 0.18s both, auth-float 7s ease-in-out 1s infinite; }
+
+        @media (max-width: 960px) {
+          .auth-root { padding: 96px 16px 40px; }
+          .auth-shell { min-height: auto; }
+          .auth-card { align-self: stretch; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .auth-anim-1,
+          .auth-anim-2,
+          .auth-float,
+          .auth-google,
+          .auth-google:hover {
+            animation: none;
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
+
+      <div className="auth-shell">
+        <section className="auth-card auth-anim-2">
+          <div className="auth-card-icon">
+            <KeyRound size={22} />
+          </div>
+          <h2>Sign in to continue</h2>
+          <p>
+            Use the Google account you want attached to your IRCTC Connect
+            developer workspace.
           </p>
 
           <button
             type="button"
             onClick={onGoogleLogin}
             disabled={loading}
-            className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl px-6 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
-            style={{
-              background: loading ? "#1a1f2e" : "linear-gradient(135deg, #059669, #047857)",
-              border: "1px solid rgba(16,185,129,0.45)",
-              boxShadow: loading ? "none" : "0 14px 30px rgba(5,150,105,0.24)",
-              fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.02em",
-            }}
+            className="auth-google"
           >
-            <span
-              aria-hidden
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white"
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" role="img" aria-label="Google">
+            <span className="auth-google-mark" aria-hidden>
+              <svg viewBox="0 0 24 24" width="15" height="15" role="img" aria-label="Google">
                 <path
                   fill="#EA4335"
                   d="M12 10.2v3.9h5.5c-.2 1.3-1.5 3.8-5.5 3.8-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.2 14.7 2.3 12 2.3 6.6 2.3 2.3 6.6 2.3 12S6.6 21.7 12 21.7c6.9 0 9.6-4.8 9.6-7.3 0-.5-.1-.9-.1-1.3H12z"
@@ -128,26 +407,36 @@ export default function AuthPage() {
                 />
               </svg>
             </span>
-            {loading ? "Signing You In..." : "Continue with Google"}
+            {loading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Signing in
+              </>
+            ) : (
+              "Continue with Google"
+            )}
           </button>
 
-          {error && (
-            <p
-              className="mt-4 text-sm text-red-300"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              {error}
-            </p>
-          )}
+          {error && <p className="auth-error">{error}</p>}
 
-          <Link
-            href="/"
-            className="mt-6 inline-block text-sm font-medium text-slate-300 transition hover:text-slate-100"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            Back to home page
+          <div className="auth-assurance">
+            {[
+              "No password to remember.",
+              "Your API key remains private inside your dashboard.",
+              "You can sign out or regenerate access anytime.",
+            ].map((item) => (
+              <div key={item} className="auth-assurance-item">
+                <CheckCircle2 size={16} color="#059669" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+
+          <Link href="/" className="auth-back">
+            <ArrowLeft size={16} />
+            Back to home
           </Link>
-        </div>
+        </section>
       </div>
     </main>
   );
