@@ -54,6 +54,18 @@ interface Order {
   createdAt?: string;
 }
 
+interface Topup {
+  _id: string;
+  orderId: string;
+  userId?: { email: string };
+  amount: number;
+  currency: string;
+  extraLimit: number;
+  status: string;
+  credited: boolean;
+  createdAt?: string;
+}
+
 interface ManualCreateOrderPayload {
   email: string;
   amount: number;
@@ -959,7 +971,7 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "plans" | "email" | "issues" | "logs">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "topups" | "plans" | "email" | "issues" | "logs">("users");
   const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
@@ -1001,6 +1013,17 @@ export default function AdminPanel() {
     mutate: mutateOrders,
   } = useSWR<{ success: boolean; orders: Order[] }>(
     isAdmin ? "/api/admin/orders" : null,
+    fetcher,
+    { revalidateOnFocus: true, refreshInterval: 60_000 }
+  );
+
+  const {
+    data: topupsData,
+    isLoading: topupsLoading,
+    isValidating: topupsValidating,
+    mutate: mutateTopups,
+  } = useSWR<{ success: boolean; topups: Topup[] }>(
+    isAdmin ? "/api/admin/topups" : null,
     fetcher,
     { revalidateOnFocus: true, refreshInterval: 60_000 }
   );
@@ -1050,11 +1073,13 @@ export default function AdminPanel() {
   const users      = usersData?.users ?? [];
   const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
   const unpaidOrders = (ordersData?.orders ?? []).filter((o) => o.status !== "paid");
+  const topups = topupsData?.topups ?? [];
+  const paidTopups = topups.filter((t) => t.status === "paid");
   const issues = issuesData?.issues ?? [];
   const auditDailyUsage = logsData?.logs?.dailyUsage ?? [];
   const recentLogs = logsData?.logs?.recent ?? [];
   const filteredEmailUsers = users.filter((user) => matchesEmailAudienceFilter(user, emailAudienceFilter));
-  const dataLoading = usersValidating || ordersValidating || issuesValidating || plansValidating || logsValidating;
+  const dataLoading = usersValidating || ordersValidating || topupsValidating || issuesValidating || plansValidating || logsValidating;
   const normalizedUserSearch = userSearch.trim().toLowerCase();
   const filteredUsers = users.filter((user) => {
     const plan = (user.plan || "free").toLowerCase();
@@ -1136,7 +1161,7 @@ export default function AdminPanel() {
     }
   };
 
-  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateIssues(); mutatePlans(); mutateLogs(); };
+  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateTopups(); mutateIssues(); mutatePlans(); mutateLogs(); };
 
   const clearAllUnpaidOrders = async () => {
     if (unpaidOrders.length === 0 || clearingUnpaid) return;
@@ -1285,7 +1310,7 @@ export default function AdminPanel() {
 
   // ── Loading screen ──────────────────────────────────────────────────────────
   if (authLoading) return <Loader text="Authenticating..." />;
-  if (isAdmin && (usersLoading || ordersLoading || issuesLoading || plansLoading || logsLoading)) return <Loader text="Fetching data..." />;
+  if (isAdmin && (usersLoading || ordersLoading || topupsLoading || issuesLoading || plansLoading || logsLoading)) return <Loader text="Fetching data..." />;
 
   // ── Login screen ────────────────────────────────────────────────────────────
   if (!isAdmin) {
@@ -1357,7 +1382,8 @@ export default function AdminPanel() {
   }
 
   // ── Dashboard ───────────────────────────────────────────────────────────────
-  const totalRevenue  = paidOrders.reduce((acc, o) => acc + o.amount, 0);
+  const totalRevenue  = paidOrders.reduce((acc, o) => acc + o.amount, 0)
+    + paidTopups.reduce((acc, t) => acc + t.amount, 0);
   const maxDailyRequests = Math.max(1, ...auditDailyUsage.map((entry) => entry.requests));
   const chartData = auditDailyUsage.map((entry) => ({
     ...entry,
@@ -1480,7 +1506,7 @@ export default function AdminPanel() {
               { label: "Total Users", value: users.length, sub: `${users.filter((u) => u.active).length} active`, color: "#6ee7b7" },
               { label: "Pro / Enterprise", value: users.filter((u) => u.plan !== "free").length, sub: "paid plans", color: "#a78bfa" },
               { label: "Avg Requests/Day", value: avgRequestsPerDay.toLocaleString("en-IN"), sub: `last ${logsTimelineDays} days`, color: "#60a5fa" },
-              { label: "Total Revenue", value: showSensitiveInfo ? `₹${(totalRevenue).toFixed(0)}` : "*****", sub: "from paid orders", color: "#fbbf24" },
+              { label: "Total Revenue", value: showSensitiveInfo ? `₹${(totalRevenue).toFixed(0)}` : "*****", sub: "orders + topups", color: "#fbbf24" },
             ].map((s) => (
               <div key={s.label} style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 10, padding: "18px 20px" }}>
                 <p style={{ color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>{s.label}</p>
@@ -1492,7 +1518,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid", "plans", "email", "logs", "issues"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "topups", "plans", "email", "logs", "issues"] as const).map((tab) => (
               <button
                 key={tab}
                 className="tab-btn"
@@ -1512,6 +1538,8 @@ export default function AdminPanel() {
                   ? `Paid Orders (${paidOrders.length})`
                   : tab === "unpaid"
                   ? `Unpaid Orders (${unpaidOrders.length})`
+                  : tab === "topups"
+                  ? `Topups (${topups.length})`
                   : tab === "plans"
                   ? "Plans"
                   : tab === "email"
@@ -1909,6 +1937,93 @@ export default function AdminPanel() {
                     ))}
                     {unpaidOrders.length === 0 && (
                       <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No unpaid orders found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Topups Table */}
+          {activeTab === "topups" && (
+            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderBottom: "1px solid #1e2330",
+                  background: "#0a0d13",
+                }}
+              >
+                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Paid limit topups
+                </span>
+                <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Total: {showSensitiveInfo ? `₹${paidTopups.reduce((sum, t) => sum + t.amount, 0).toFixed(0)}` : "*****"}
+                </span>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
+                      {["Order ID", "User", "Amount", "Extra Limit", "Status", "Credited", "Date"].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "12px 16px",
+                            textAlign: "left",
+                            color: "#475569",
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topups.map((t) => (
+                      <tr key={t._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#94a3b8", fontSize: 11 }}>{t.orderId}</span>
+                        </td>
+                        <td style={{ padding: "14px 16px", color: "#cbd5e1", fontSize: 13 }}>
+                          {t.userId?.email ? displayEmail(t.userId.email, showSensitiveInfo) : <span style={{ color: "#334155" }}>N/A</span>}
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
+                            ₹{t.amount.toFixed(2)}
+                          </span>
+                          <span style={{ color: "#334155", fontSize: 10, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{t.currency}</span>
+                        </td>
+                        <td style={{ padding: "14px 16px", color: "#93c5fd", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+                          {t.extraLimit.toLocaleString("en-IN")}
+                        </td>
+                        <td style={{ padding: "14px 16px" }}><StatusBadge status={t.status} /></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {t.credited
+                              ? <><span style={{ color: "#34d399" }}><IconCheck /></span><span style={{ color: "#6ee7b7" }}>Yes</span></>
+                              : <><span style={{ color: "#64748b" }}><IconX /></span><span style={{ color: "#64748b" }}>No</span></>
+                            }
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ color: "#64748b", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {t.createdAt ? new Date(t.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {topups.length === 0 && (
+                      <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No topups found</td></tr>
                     )}
                   </tbody>
                 </table>
