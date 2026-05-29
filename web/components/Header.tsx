@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronRight, LogOut, Menu, X } from "lucide-react";
 import { useTheme } from "../app/ThemeProvider";
-import SearchCommand from "./SearchCommand";
 
 type VerifiedUser = {
   id: string;
@@ -67,10 +66,6 @@ export function Header() {
     }
   };
 
-  const scrollToSection = (sectionId: string) => {
-    if (pathname !== "/docs") { router.push(`/docs#${sectionId}`); return; }
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   return (
     <>
@@ -471,11 +466,6 @@ export function Header() {
 
           {/* Right: auth + mobile button */}
           <div className="hdr-auth">
-            {isDocsPage && (
-              <div className="hidden sm:block">
-                <SearchCommand onNavigate={scrollToSection} />
-              </div>
-            )}
 
             {!loading && (
               <div className="hidden md:flex items-center gap-2">
@@ -497,19 +487,14 @@ export function Header() {
               </div>
             )}
 
-            {isDocsPage ? (
-              <div className="md:hidden">
-                <SearchCommand onNavigate={scrollToSection} />
-              </div>
-            ) : (
-              <button
-                className="hdr-mobile-btn"
-                onClick={() => setMobileMenuOpen(true)}
-                aria-label="Open menu"
-              >
-                <Menu size={15} />
-              </button>
-            )}
+            {/* Mobile menu button */}
+            <button
+              className="hdr-mobile-btn"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu size={15} />
+            </button>
           </div>
 
         </div>
