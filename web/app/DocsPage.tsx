@@ -477,6 +477,7 @@ ${responseFormats.error}
                     const isActive = activeSection === section.id;
                     return (
                       <button
+                        type="button"
                         key={section.id}
                         onClick={() => scrollToSection(section.id)}
                         className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
@@ -522,7 +523,7 @@ ${responseFormats.error}
                   >
                     View NPM Package
                   </a>
-                  <button onClick={copyAIDocsMarkdown} className="docs-chip">
+                  <button type="button" onClick={copyAIDocsMarkdown} className="docs-chip">
                     {copiedAIMarkdown ? "Markdown Copied" : "Copy AI Markdown"}
                   </button>
                   <Link href="/dashboard" className="docs-chip">
@@ -556,6 +557,7 @@ ${responseFormats.error}
                 <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-3">
                   <span className="font-mono text-xs text-slate-400">Terminal</span>
                   <button
+                    type="button"
                     onClick={copyInstall}
                     className="rounded-md border border-slate-700 px-2 py-1 font-mono text-xs text-slate-300 transition hover:bg-slate-900"
                   >
@@ -735,6 +737,7 @@ ${responseFormats.error}
 
       {sidebarOpen && (
         <button
+          type="button"
           onClick={() => setSidebarOpen(false)}
           className="fixed inset-0 z-10 cursor-pointer border-0 bg-slate-950/40 lg:hidden"
           aria-label="Close sidebar overlay"

@@ -586,7 +586,9 @@ function useBillingTimer(user: DbUser | null) {
 function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
   return (
     <div
+      role="presentation"
       onClick={onClose}
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
       style={{
         position: "fixed",
         inset: 0,
@@ -622,7 +624,9 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
             Order Details
           </span>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close order details"
             style={{
               color: "#64748b",
               background: "none",
@@ -1415,6 +1419,7 @@ console.log(data);`;
                 </div>
               )}
               <button
+                type="button"
                 className="dash-header-btn"
                 onClick={refreshAll}
                 style={{
@@ -1436,6 +1441,7 @@ console.log(data);`;
               </button>
 
               <button
+                type="button"
                 className="dash-header-btn"
                 onClick={onLogout}
                 style={{
@@ -1472,6 +1478,7 @@ console.log(data);`;
         >
           <div className="mobile-quick-links">
             <button
+              type="button"
               onClick={() => router.push("/docs")}
               style={{
                 flex: 1,
@@ -1489,6 +1496,7 @@ console.log(data);`;
               Docs
             </button>
             <button
+              type="button"
               onClick={() => router.push("/pricing")}
               style={{
                 flex: 1,
@@ -1658,6 +1666,7 @@ console.log(data);`;
               ] as const
             ).map((tab) => (
               <button
+                type="button"
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
@@ -1673,7 +1682,7 @@ console.log(data);`;
                   cursor: "pointer",
                   fontWeight: 700,
                   letterSpacing: "0.02em",
-                  transition: "all 0.15s",
+                  transition: "background 0.15s, color 0.15s, border-color 0.15s",
                 }}
               >
                 {tab.label}
@@ -2150,6 +2159,7 @@ console.log(data);`;
                   </p>
 
                   <button
+                    type="button"
                     onClick={startLimitTopupPayment}
                     disabled={limitPurchaseLoading}
                     style={{
@@ -2319,8 +2329,10 @@ console.log(data);`;
                     }}
                   >
                     <button
+                      type="button"
                       onClick={() => setKeyVisible(!keyVisible)}
                       title={keyVisible ? "Hide key" : "Reveal key"}
+                      aria-label={keyVisible ? "Hide API key" : "Reveal API key"}
                       disabled={regeneratingKey}
                       style={{
                         background: "none",
@@ -2336,8 +2348,10 @@ console.log(data);`;
                       {keyVisible ? <IconEyeOff /> : <IconEye />}
                     </button>
                     <button
+                      type="button"
                       onClick={copyApiKey}
                       title={copied ? "Copied" : "Copy key"}
+                      aria-label={copied ? "API key copied" : "Copy API key"}
                       disabled={regeneratingKey}
                       style={{
                         background: "none",
@@ -2356,6 +2370,7 @@ console.log(data);`;
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={regenerateApiKey}
                   disabled={regeneratingKey}
                   style={{
@@ -2372,7 +2387,7 @@ console.log(data);`;
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
-                    transition: "all 0.2s",
+                    transition: "background 0.2s, color 0.2s, box-shadow 0.2s",
                     boxShadow: "0 0 16px rgba(5,150,105,0.3)",
                   }}
                 >
@@ -2791,6 +2806,7 @@ console.log(data);`;
                     { id: "seat", label: "Seat" },
                   ].map((item) => (
                     <button
+                      type="button"
                       key={item.id}
                       onClick={() => {
                         setPlaygroundAction(item.id as typeof playgroundAction);
@@ -2811,7 +2827,7 @@ console.log(data);`;
                         fontWeight: 700,
                         cursor: "pointer",
                         fontFamily: "'JetBrains Mono', monospace",
-                        transition: "all 0.15s",
+                        transition: "background 0.15s, color 0.15s, border-color 0.15s",
                       }}
                     >
                       {item.label}
@@ -3103,6 +3119,7 @@ console.log(data);`;
                   }}
                 >
                   <button
+                    type="button"
                     onClick={runPlayground}
                     disabled={playgroundLoading}
                     style={{
@@ -3284,6 +3301,7 @@ console.log(data);`;
                   >
                     {([14, 30] as const).map((days) => (
                       <button
+                        type="button"
                         key={days}
                         onClick={() => setLogsTimelineDays(days)}
                         style={{
@@ -3771,6 +3789,7 @@ console.log(data);`;
                           </td>
                           <td style={{ padding: "14px 16px" }}>
                             <button
+                              type="button"
                               className="action-btn"
                               onClick={() => setViewOrder(o)}
                               style={{
@@ -3785,7 +3804,7 @@ console.log(data);`;
                                 gap: 5,
                                 fontSize: 12,
                                 fontFamily: "'JetBrains Mono', monospace",
-                                transition: "all 0.15s",
+                                transition: "background 0.15s, color 0.15s, border-color 0.15s",
                               }}
                             >
                               <IconEye />

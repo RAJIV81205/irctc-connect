@@ -466,6 +466,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 14 }}>Order Details</span>
           <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            type="button"
             <IconX />
           </button>
         </div>
@@ -579,6 +580,7 @@ function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: Use
             </p>
           </div>
           <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            type="button"
             <IconX />
           </button>
         </div>
@@ -672,6 +674,7 @@ function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: Use
 
         <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
           <button
+            type="button"
             onClick={onClose}
             style={{
               background: "none", border: "1px solid #2d3548", color: "#94a3b8",
@@ -681,6 +684,7 @@ function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: Use
             Cancel
           </button>
           <button
+            type="button"
             onClick={() => {
               onSave(user._id, {
                 plan: draft.plan,
@@ -762,6 +766,7 @@ function EmailComposerModal({
             </p>
           </div>
           <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            type="button"
             <IconX />
           </button>
         </div>
@@ -802,6 +807,7 @@ function EmailComposerModal({
           </p>
           <div style={{ display: "flex", gap: 10 }}>
             <button
+              type="button"
               onClick={onClose}
               disabled={sending}
               style={{
@@ -812,6 +818,7 @@ function EmailComposerModal({
               Cancel
             </button>
             <button
+              type="button"
               onClick={onSend}
               disabled={sending}
               style={{
@@ -905,6 +912,7 @@ function CreateOrderModal({
             </p>
           </div>
           <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            type="button"
             <IconX />
           </button>
         </div>
@@ -923,6 +931,7 @@ function CreateOrderModal({
           <div style={{ border: "1px solid #1e2330", borderRadius: 8, maxHeight: 180, overflowY: "auto", background: "#0a0d13" }}>
             {filteredUsers.length > 0 ? filteredUsers.map((u) => (
               <button
+                type="button"
                 key={u._id}
                 onClick={() => setSelectedUserEmail(u.email)}
                 style={{
@@ -1008,6 +1017,7 @@ function CreateOrderModal({
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
           <button
+            type="button"
             onClick={onClose}
             disabled={creating}
             style={{
@@ -1018,6 +1028,7 @@ function CreateOrderModal({
             Cancel
           </button>
           <button
+            type="button"
             onClick={submit}
             disabled={creating}
             style={{
@@ -1578,6 +1589,7 @@ export default function AdminPanel() {
             )}
 
             <button
+              type="button"
               onClick={onGoogleLogin}
               style={{
                 width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
@@ -1688,6 +1700,7 @@ export default function AdminPanel() {
                 </div>
               )}
               <button
+                type="button"
                 onClick={() => setShowSensitiveInfo((prev) => !prev)}
                 style={{
                   background: showSensitiveInfo ? "#2a1f0f" : "#0f2a1d",
@@ -1700,6 +1713,7 @@ export default function AdminPanel() {
                 {showSensitiveInfo ? "Hide" : "Show"}
               </button>
               <button
+                type="button"
                 onClick={refreshAll}
                 style={{
                   background: "#1a1f2e", border: "1px solid #2d3548", color: "#94a3b8",
@@ -1738,6 +1752,7 @@ export default function AdminPanel() {
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
             {(["users", "orders", "unpaid", "topups", "plans", "email", "logs", "issues", "playground"] as const).map((tab) => (
               <button
+                type="button"
                 key={tab}
                 className="tab-btn"
                 onClick={() => setActiveTab(tab)}
@@ -1894,7 +1909,7 @@ export default function AdminPanel() {
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
                       {["User", "Plan", "Status", "Usage", "Billing Left", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1944,6 +1959,7 @@ export default function AdminPanel() {
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <button
+                            type="button"
                             className="action-btn"
                             onClick={() => setEditingUser(u)}
                             title="Edit user"
@@ -1952,7 +1968,7 @@ export default function AdminPanel() {
                               color: "#64748b", borderRadius: 6, padding: "6px 10px",
                               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
                               fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-                              transition: "all 0.15s",
+                              transition: "background 0.15s, color 0.15s, border-color 0.15s",
                             }}
                           >
                             <IconEdit />
@@ -1988,6 +2004,7 @@ export default function AdminPanel() {
                   Paid orders created through website and manual entries
                 </span>
                 <button
+                  type="button"
                   onClick={() => {
                     setCreateOrderFeedback(null);
                     setCreateOrderOpen(true);
@@ -2012,7 +2029,7 @@ export default function AdminPanel() {
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
                       {["Order ID", "User", "Amount", "Status", "Credited", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2029,7 +2046,7 @@ export default function AdminPanel() {
                           <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
                             ₹{(o.amount ).toFixed(2)}
                           </span>
-                          <span style={{ color: "#334155", fontSize: 10, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{o.currency}</span>
+                          <span style={{ color: "#334155", fontSize: 11, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{o.currency}</span>
                         </td>
                         <td style={{ padding: "14px 16px" }}><StatusBadge status={o.status} /></td>
                         <td style={{ padding: "14px 16px" }}>
@@ -2042,6 +2059,7 @@ export default function AdminPanel() {
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <button
+                            type="button"
                             className="action-btn"
                             onClick={() => setViewingOrder(o)}
                             style={{
@@ -2049,7 +2067,7 @@ export default function AdminPanel() {
                               color: "#64748b", borderRadius: 6, padding: "6px 10px",
                               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
                               fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-                              transition: "all 0.15s",
+                              transition: "background 0.15s, color 0.15s, border-color 0.15s",
                             }}
                           >
                             <IconEye />
@@ -2084,6 +2102,7 @@ export default function AdminPanel() {
                   All unpaid orders (not paid)
                 </span>
                 <button
+                  type="button"
                   onClick={clearAllUnpaidOrders}
                   disabled={clearingUnpaid || unpaidOrders.length === 0}
                   style={{
@@ -2109,7 +2128,7 @@ export default function AdminPanel() {
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
                       {["Order ID", "User", "Amount", "Status", "Credited", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2126,7 +2145,7 @@ export default function AdminPanel() {
                           <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
                             ₹{(o.amount ).toFixed(2)}
                           </span>
-                          <span style={{ color: "#334155", fontSize: 10, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{o.currency}</span>
+                          <span style={{ color: "#334155", fontSize: 11, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{o.currency}</span>
                         </td>
                         <td style={{ padding: "14px 16px" }}><StatusBadge status={o.status} /></td>
                         <td style={{ padding: "14px 16px" }}>
@@ -2139,6 +2158,7 @@ export default function AdminPanel() {
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <button
+                            type="button"
                             className="action-btn"
                             onClick={() => setViewingOrder(o)}
                             style={{
@@ -2146,7 +2166,7 @@ export default function AdminPanel() {
                               color: "#64748b", borderRadius: 6, padding: "6px 10px",
                               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
                               fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-                              transition: "all 0.15s",
+                              transition: "background 0.15s, color 0.15s, border-color 0.15s",
                             }}
                           >
                             <IconEye />
@@ -2195,7 +2215,7 @@ export default function AdminPanel() {
                             padding: "12px 16px",
                             textAlign: "left",
                             color: "#475569",
-                            fontSize: 10,
+                            fontSize: 11,
                             textTransform: "uppercase",
                             letterSpacing: "0.1em",
                             fontFamily: "'JetBrains Mono', monospace",
@@ -2221,7 +2241,7 @@ export default function AdminPanel() {
                           <span style={{ color: "#6ee7b7", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>
                             ₹{t.amount.toFixed(2)}
                           </span>
-                          <span style={{ color: "#334155", fontSize: 10, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{t.currency}</span>
+                          <span style={{ color: "#334155", fontSize: 11, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{t.currency}</span>
                         </td>
                         <td style={{ padding: "14px 16px", color: "#93c5fd", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
                           {t.extraLimit.toLocaleString("en-IN")}
@@ -2269,6 +2289,7 @@ export default function AdminPanel() {
                   Manage pricing plans and offer settings shown on the pricing page
                 </span>
                 <button
+                  type="button"
                   onClick={savePlansConfig}
                   disabled={savingPlans}
                   style={{
@@ -2318,7 +2339,7 @@ export default function AdminPanel() {
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Name</span>
+                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Name</span>
                         <input
                           value={plan.name}
                           onChange={(e) =>
@@ -2331,7 +2352,7 @@ export default function AdminPanel() {
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Offer Price</span>
+                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Offer Price</span>
                         <input
                           type="number"
                           value={plan.price}
@@ -2345,7 +2366,7 @@ export default function AdminPanel() {
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Original Price</span>
+                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Original Price</span>
                         <input
                           type="number"
                           value={plan.originalPrice ?? ""}
@@ -2366,7 +2387,7 @@ export default function AdminPanel() {
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Button Text</span>
+                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Button Text</span>
                         <input
                           value={plan.buttonText}
                           onChange={(e) =>
@@ -2379,7 +2400,7 @@ export default function AdminPanel() {
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Usage Limit</span>
+                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Usage Limit</span>
                         <input
                           type="number"
                           value={plan.limit ?? 0}
@@ -2393,7 +2414,7 @@ export default function AdminPanel() {
                         />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>User Plan</span>
+                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>User Plan</span>
                         <select
                           value={plan.userPlan || ""}
                           onChange={(e) =>
@@ -2416,7 +2437,7 @@ export default function AdminPanel() {
                     </div>
 
                     <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Description</span>
+                      <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Description</span>
                       <textarea
                         rows={2}
                         value={plan.description}
@@ -2431,7 +2452,7 @@ export default function AdminPanel() {
                     </label>
 
                     <label style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
-                      <span style={{ color: "#64748b", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Features (one per line)</span>
+                      <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Features (one per line)</span>
                       <textarea
                         rows={4}
                         value={(plan.features || []).map((feature) => feature.text).join("\n")}
@@ -2497,6 +2518,7 @@ export default function AdminPanel() {
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => openEmailComposer("all")}
                   disabled={filteredEmailUsers.length === 0}
                   style={{
@@ -2516,7 +2538,7 @@ export default function AdminPanel() {
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
                       {["User", "Plan", "Status", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2552,13 +2574,14 @@ export default function AdminPanel() {
                         </td>
                         <td style={{ padding: "14px 16px" }}>
                           <button
+                            type="button"
                             className="action-btn"
                             onClick={() => openEmailComposer("single", u)}
                             style={{
                               background: "#1a1f2e", border: "1px solid #2d3548",
                               color: "#64748b", borderRadius: 6, padding: "6px 10px",
                               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.15s",
+                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "background 0.15s, color 0.15s, border-color 0.15s",
                             }}
                           >
                             <span>Send Email</span>
@@ -2621,6 +2644,7 @@ export default function AdminPanel() {
                   >
                     {([14, 30] as const).map((days) => (
                       <button
+                        type="button"
                         key={days}
                         onClick={() => setLogsTimelineDays(days)}
                         style={{
@@ -2716,7 +2740,7 @@ export default function AdminPanel() {
                     gap: 8,
                     flexWrap: "wrap",
                     color: "#475569",
-                    fontSize: 10,
+                    fontSize: 11,
                     fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >
@@ -2804,7 +2828,7 @@ export default function AdminPanel() {
                               padding: "12px 16px",
                               textAlign: "left",
                               color: "#475569",
-                              fontSize: 10,
+                              fontSize: 11,
                               textTransform: "uppercase",
                               letterSpacing: "0.1em",
                               fontFamily: "'JetBrains Mono', monospace",
@@ -2944,7 +2968,7 @@ export default function AdminPanel() {
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
                       {["Issue", "State", "Labels", "Updated", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2961,12 +2985,12 @@ export default function AdminPanel() {
                                 @{issue.author}
                               </span>
                               {issue.isNew && (
-                                <span style={{ background: "#0f2a1d", color: "#6ee7b7", border: "1px solid #1a4731", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                                <span style={{ background: "#0f2a1d", color: "#6ee7b7", border: "1px solid #1a4731", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
                                   NEW
                                 </span>
                               )}
                               {issue.isRecentlyUpdated && (
-                                <span style={{ background: "#0f2233", color: "#60a5fa", border: "1px solid #1a3a5c", borderRadius: 999, padding: "2px 8px", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                                <span style={{ background: "#0f2233", color: "#60a5fa", border: "1px solid #1a3a5c", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
                                   UPDATED
                                 </span>
                               )}
@@ -2987,7 +3011,7 @@ export default function AdminPanel() {
                                   color: "#cbd5e1",
                                   borderRadius: 999,
                                   padding: "2px 8px",
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontFamily: "'JetBrains Mono', monospace",
                                 }}
                               >
@@ -3004,7 +3028,7 @@ export default function AdminPanel() {
                             <span style={{ color: "#94a3b8", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
                               {formatCompactDate(issue.updatedAt)}
                             </span>
-                            <span style={{ color: "#475569", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                            <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
                               Created: {formatCompactDate(issue.createdAt)}
                             </span>
                           </div>
@@ -3019,7 +3043,7 @@ export default function AdminPanel() {
                               background: "#1a1f2e", border: "1px solid #2d3548",
                               color: "#64748b", borderRadius: 6, padding: "6px 10px",
                               cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5,
-                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.15s",
+                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "background 0.15s, color 0.15s, border-color 0.15s",
                               textDecoration: "none",
                             }}
                           >
@@ -3078,6 +3102,7 @@ export default function AdminPanel() {
                     { id: "availability", label: "Availability" },
                   ].map((item) => (
                     <button
+                      type="button"
                       key={item.id}
                       onClick={() => {
                         setPlaygroundAction(item.id as typeof playgroundAction);
@@ -3098,7 +3123,7 @@ export default function AdminPanel() {
                         fontWeight: 700,
                         cursor: "pointer",
                         fontFamily: "'JetBrains Mono', monospace",
-                        transition: "all 0.15s",
+                        transition: "background 0.15s, color 0.15s, border-color 0.15s",
                       }}
                     >
                       {item.label}
@@ -3431,6 +3456,7 @@ export default function AdminPanel() {
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
                   <button
+                    type="button"
                     onClick={runPlayground}
                     disabled={playgroundLoading}
                     style={{

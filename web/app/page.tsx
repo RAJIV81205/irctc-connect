@@ -718,7 +718,7 @@ export default async function LandingPage() {
             <div className="irctc-code-block">
               <div className="irctc-code-header">
                 <span className="irctc-code-filename">
-                  <span style={{ color: "#6ee7b7", fontSize: 10 }}>●</span>
+                  <span style={{ color: "#6ee7b7", fontSize: 12 }}>●</span>
                   journey.ts
                 </span>
                 <Copy size={13} color="#4b5563" style={{ cursor: "pointer" }} />

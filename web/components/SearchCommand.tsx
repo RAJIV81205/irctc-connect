@@ -86,6 +86,7 @@ export default function SearchCommand({ onNavigate }: SearchCommandProps) {
     <>
       {/* Search Trigger Button */}
       <button
+        type="button"
         onClick={openSearch}
         className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-slate-400 bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors border border-slate-700"
       >
@@ -104,11 +105,12 @@ export default function SearchCommand({ onNavigate }: SearchCommandProps) {
 
       {/* Mobile Search Icon */}
       <button
+        type="button"
         onClick={openSearch}
         className="sm:hidden p-2 hover:bg-slate-800 rounded-lg transition-colors"
         aria-label="Search"
       >
-        <Search className="w-5 h-5 text-slate-400" />
+        <Search className="size-5 text-slate-400" />
       </button>
 
       {/* Search Modal */}
@@ -127,7 +129,7 @@ export default function SearchCommand({ onNavigate }: SearchCommandProps) {
           >
             {/* Search Input */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700">
-              <Search className="w-5 h-5 text-slate-400" />
+              <Search className="size-5 text-slate-400" aria-hidden="true" />
               <input
                 type="text"
                 value={searchQuery}
@@ -136,7 +138,8 @@ export default function SearchCommand({ onNavigate }: SearchCommandProps) {
                   setSelectedIndex(0);
                 }}
                 placeholder="Search documentation..."
-                className="flex-1 bg-transparent text-slate-100 placeholder:text-slate-500 outline-none text-lg"
+                aria-label="Search documentation"
+                className="flex-1 bg-transparent text-slate-100 placeholder:text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 text-lg"
                 autoFocus
               />
               <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-xs font-mono text-slate-400 bg-slate-950 border border-slate-700 rounded">
@@ -152,6 +155,7 @@ export default function SearchCommand({ onNavigate }: SearchCommandProps) {
                     const IconComponent = section.icon;
                     return (
                       <button
+                        type="button"
                         key={section.id}
                         onClick={() => handleSelect(section.id)}
                         onMouseEnter={() => setSelectedIndex(index)}
@@ -161,7 +165,7 @@ export default function SearchCommand({ onNavigate }: SearchCommandProps) {
                             : "text-slate-300 hover:bg-slate-800"
                         }`}
                       >
-                        <IconComponent className="w-5 h-5 shrink-0" />
+                        <IconComponent className="size-5 shrink-0" />
                         <div className="flex-1">
                           <div className="font-medium">{section.label}</div>
                           <div className="text-xs text-slate-500">

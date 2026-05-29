@@ -231,9 +231,10 @@ function NoticeBar({
       aria-live="polite"
       className={`mb-8 flex max-w-3xl items-start gap-3 rounded-lg border px-4 py-3 ${styles[notice.kind]}`}
     >
-      <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+      <Icon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
       <p className="flex-1 text-sm leading-relaxed">{notice.text}</p>
       <button
+        type="button"
         onClick={onDismiss}
         aria-label="Dismiss notification"
         className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
@@ -398,6 +399,7 @@ function PaymentModal({
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
+            type="button"
             onClick={onCancel}
             disabled={isCreatingOrder}
             className="rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -406,6 +408,7 @@ function PaymentModal({
           </button>
 
           <button
+            type="button"
             ref={confirmBtnRef}
             onClick={onConfirm}
             disabled={isCreatingOrder}
@@ -789,9 +792,9 @@ function PricingPageContent({
                     <div className="mb-6 flex items-start justify-between gap-4">
                       <div className="flex h-11 w-11 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
                         {isPopular ? (
-                          <Zap className="h-5 w-5" aria-hidden="true" />
+                          <Zap className="size-5" aria-hidden="true" />
                         ) : (
-                          <Package className="h-5 w-5" aria-hidden="true" />
+                          <Package className="size-5" aria-hidden="true" />
                         )}
                       </div>
                       {isPopular && (
@@ -845,6 +848,7 @@ function PricingPageContent({
                     </div>
 
                     <button
+                      type="button"
                       onClick={btnState.action}
                       disabled={btnState.disabled}
                       aria-label={`${btnState.label} — ${plan.name} plan`}
@@ -876,7 +880,7 @@ function PricingPageContent({
                         {plan.features.map((feature, i) => (
                           <li key={i} className="flex items-start gap-3">
                             <span
-                              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50"
+                              className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-50"
                               aria-hidden="true"
                             >
                               <Check className="h-3 w-3 text-emerald-700" />
