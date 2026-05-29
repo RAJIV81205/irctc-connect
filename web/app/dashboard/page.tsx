@@ -56,10 +56,7 @@ type VerifyUserResponse = {
   user: DbUser;
   logs?: {
     timelineDays: number;
-    dailyUsage: Array<{
-      date: string;
-      requests: number;
-    }>;
+    dailyUsage: Array<{ date: string; requests: number }>;
     recent: Array<{
       id: string;
       email: string;
@@ -81,12 +78,8 @@ type UserOrdersResponse = {
 
 type ApiCodeLanguage = "javascript" | "python" | "curl";
 type CashfreeCheckoutMode = "sandbox" | "production";
-
 type CashfreeCheckoutClient = {
-  checkout: (options: {
-    paymentSessionId: string;
-    redirectTarget: "_modal";
-  }) => Promise<unknown>;
+  checkout: (options: { paymentSessionId: string; redirectTarget: "_modal" }) => Promise<unknown>;
 };
 
 declare global {
@@ -98,41 +91,25 @@ declare global {
 const fetcher = async <T,>(url: string): Promise<T> => {
   const res = await fetch(url);
   const data = await res.json();
-
-  if (!res.ok || !data?.success) {
-    throw new Error(data?.message || `Fetch failed: ${res.status}`);
-  }
-
+  if (!res.ok || !data?.success) throw new Error(data?.message || `Fetch failed: ${res.status}`);
   return data as T;
 };
 
 let cashfreeLoadPromise: Promise<void> | null = null;
 
 function loadCashfreeSdk(): Promise<void> {
-  if (typeof window === "undefined") {
-    return Promise.reject(new Error("Cashfree checkout is unavailable"));
-  }
-
+  if (typeof window === "undefined") return Promise.reject(new Error("Cashfree checkout is unavailable"));
   if (window.Cashfree) return Promise.resolve();
   if (cashfreeLoadPromise) return cashfreeLoadPromise;
-
   cashfreeLoadPromise = new Promise<void>((resolve, reject) => {
     const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[src="${CASHFREE_SDK_URL}"]`,
-    );
-
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${CASHFREE_SDK_URL}"]`);
     if (existing) {
       if (window.Cashfree) return resolve();
       existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("Failed to load Cashfree SDK")),
-        { once: true },
-      );
+      existing.addEventListener("error", () => reject(new Error("Failed to load Cashfree SDK")), { once: true });
       return;
     }
-
     const script = document.createElement("script");
     script.src = CASHFREE_SDK_URL;
     script.async = true;
@@ -140,11 +117,7 @@ function loadCashfreeSdk(): Promise<void> {
     script.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
     document.head.appendChild(script);
   });
-
-  cashfreeLoadPromise.catch(() => {
-    cashfreeLoadPromise = null;
-  });
-
+  cashfreeLoadPromise.catch(() => { cashfreeLoadPromise = null; });
   return cashfreeLoadPromise;
 }
 
@@ -157,39 +130,11 @@ function getErrorMessage(error: unknown, fallback: string) {
 // ─── Loader ───────────────────────────────────────────────────────────────────
 function Loader({ text = "Loading..." }: { text?: string }) {
   return (
-    <div className="fixed inset-0 bg-[#0a0c10] flex flex-col items-center justify-center z-50">
+    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
       <div className="relative mb-6">
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            border: "2px solid #1e2330",
-            borderTop: "2px solid #6ee7b7",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            inset: 6,
-            borderRadius: "50%",
-            border: "2px solid #1e2330",
-            borderBottom: "2px solid #34d399",
-            animation: "spin 1.2s linear infinite reverse",
-          }}
-        />
+        <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2px solid #e5e7eb", borderTop: "2px solid #000", animation: "spin 0.8s linear infinite" }} />
       </div>
-      <p
-        style={{
-          color: "#94a3b8",
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 13,
-          letterSpacing: "0.08em",
-        }}
-      >
-        {text}
-      </p>
+      <p style={{ color: "#9ca3af", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, letterSpacing: "0.06em" }}>{text}</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -198,195 +143,64 @@ function Loader({ text = "Loading..." }: { text?: string }) {
 function PlaygroundResponseSkeleton() {
   const lineWidths = ["92%", "84%", "88%", "66%", "90%", "72%", "58%"];
   return (
-    <div
-      style={{
-        minHeight: 360,
-        maxHeight: 520,
-        overflow: "hidden",
-        padding: "2px 0",
-      }}
-    >
-      <div
-        style={{
-          width: 96,
-          height: 10,
-          borderRadius: 999,
-          marginBottom: 14,
-          background:
-            "linear-gradient(90deg, rgba(45,53,72,0.65) 25%, rgba(71,85,105,0.38) 50%, rgba(45,53,72,0.65) 75%)",
-          backgroundSize: "200% 100%",
-          animation: "responseShimmer 1.4s ease-in-out infinite",
-        }}
-      />
+    <div style={{ minHeight: 320, overflow: "hidden", padding: "2px 0" }}>
+      <div style={{ width: 96, height: 10, borderRadius: 999, marginBottom: 14, background: "linear-gradient(90deg, #e5e7eb 25%, #e5e7eb 50%, #e5e7eb 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s ease-in-out infinite" }} />
       {lineWidths.map((width, index) => (
-        <div
-          key={`${width}-${index}`}
-          style={{
-            width,
-            height: 10,
-            borderRadius: 999,
-            marginBottom: index === lineWidths.length - 1 ? 0 : 10,
-            background:
-              "linear-gradient(90deg, rgba(30,41,59,0.7) 25%, rgba(71,85,105,0.42) 50%, rgba(30,41,59,0.7) 75%)",
-            backgroundSize: "200% 100%",
-            animation: "responseShimmer 1.4s ease-in-out infinite",
-            animationDelay: `${index * 0.08}s`,
-          }}
-        />
+        <div key={`${width}-${index}`} style={{ width, height: 10, borderRadius: 999, marginBottom: index === lineWidths.length - 1 ? 0 : 10, background: "linear-gradient(90deg, #f9fafb 25%, #e5e7eb 50%, #f9fafb 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s ease-in-out infinite", animationDelay: `${index * 0.08}s` }} />
       ))}
     </div>
   );
 }
 
 function ApiKeySkeleton() {
-  return (
-    <div
-      style={{
-        width: "100%",
-        height: 14,
-        borderRadius: 999,
-        background:
-          "linear-gradient(90deg, rgba(30,41,59,0.7) 25%, rgba(71,85,105,0.42) 50%, rgba(30,41,59,0.7) 75%)",
-        backgroundSize: "200% 100%",
-        animation: "responseShimmer 1.3s ease-in-out infinite",
-      }}
-    />
-  );
+  return <div style={{ width: "100%", height: 14, borderRadius: 999, background: "linear-gradient(90deg, #e5e7eb 25%, #e5e7eb 50%, #e5e7eb 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.3s ease-in-out infinite" }} />;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const IconCopy = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="9" y="9" width="13" height="13" rx="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </svg>
 );
 const IconCheck = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 const IconX = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 const IconKey = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
   </svg>
 );
 const IconLogout = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
 const IconRefresh = () => (
-  <svg
-    width="11"
-    height="11"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="23 4 23 10 17 10" />
-    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
   </svg>
 );
 const IconEye = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
   </svg>
 );
 const IconEyeOff = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.76 21.76 0 0 1 5.06-6.94" />
     <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.78 21.78 0 0 1-3.31 4.53" />
-    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-    <line x1="1" y1="1" x2="23" y2="23" />
+    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
 const IconShield = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
@@ -394,26 +208,14 @@ const IconShield = () => (
 // ─── Plan Badge ───────────────────────────────────────────────────────────────
 const PlanBadge = ({ plan }: { plan: string }) => {
   const styles: Record<string, { bg: string; text: string; border: string }> = {
-    free: { bg: "#1e2330", text: "#94a3b8", border: "#2d3548" },
-    pro: { bg: "#0f2a1d", text: "#6ee7b7", border: "#1a4731" },
-    enterprise: { bg: "#1a1060", text: "#a78bfa", border: "#2d1f8a" },
+    free:       { bg: "#f9fafb", text: "#6b7280", border: "#e5e7eb" },
+    pro:        { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0" },
+    enterprise: { bg: "#faf5ff", text: "#7c3aed", border: "#e9d5ff" },
+    advance:    { bg: "#faf5ff", text: "#7c3aed", border: "#e9d5ff" },
   };
   const s = styles[plan?.toLowerCase()] ?? styles.free;
   return (
-    <span
-      style={{
-        background: s.bg,
-        color: s.text,
-        border: `1px solid ${s.border}`,
-        padding: "2px 8px",
-        borderRadius: 4,
-        fontSize: 11,
-        fontFamily: "'JetBrains Mono', monospace",
-        fontWeight: 600,
-        letterSpacing: "0.05em",
-        textTransform: "uppercase",
-      }}
-    >
+    <span style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}`, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
       {plan}
     </span>
   );
@@ -421,62 +223,17 @@ const PlanBadge = ({ plan }: { plan: string }) => {
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }: { status: string }) => {
-  const styles: Record<
-    string,
-    { bg: string; text: string; border: string; dot: string }
-  > = {
-    paid: { bg: "#0f2a1d", text: "#6ee7b7", border: "#1a4731", dot: "#34d399" },
-    created: {
-      bg: "#1e2330",
-      text: "#94a3b8",
-      border: "#2d3548",
-      dot: "#64748b",
-    },
-    failed: {
-      bg: "#2a0f0f",
-      text: "#f87171",
-      border: "#4a1f1f",
-      dot: "#ef4444",
-    },
-    cancelled: {
-      bg: "#2a1f0f",
-      text: "#fb923c",
-      border: "#4a3a1f",
-      dot: "#f97316",
-    },
-    expired: {
-      bg: "#1e2330",
-      text: "#64748b",
-      border: "#2d3548",
-      dot: "#475569",
-    },
+  const styles: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+    paid:      { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0", dot: "#22c55e" },
+    created:   { bg: "#f9fafb", text: "#6b7280", border: "#e5e7eb", dot: "#9ca3af" },
+    failed:    { bg: "#fef2f2", text: "#dc2626", border: "#fecaca", dot: "#ef4444" },
+    cancelled: { bg: "#fff7ed", text: "#ea580c", border: "#fed7aa", dot: "#f97316" },
+    expired:   { bg: "#f9fafb", text: "#9ca3af", border: "#e5e7eb", dot: "#d1d5db" },
   };
   const s = styles[status] ?? styles.created;
   return (
-    <span
-      style={{
-        background: s.bg,
-        color: s.text,
-        border: `1px solid ${s.border}`,
-        padding: "3px 10px",
-        borderRadius: 4,
-        fontSize: 11,
-        fontFamily: "'JetBrains Mono', monospace",
-        fontWeight: 600,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 5,
-      }}
-    >
-      <span
-        style={{
-          width: 5,
-          height: 5,
-          borderRadius: "50%",
-          background: s.dot,
-          flexShrink: 0,
-        }}
-      />
+    <span style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}`, padding: "3px 10px", borderRadius: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
       {status.toUpperCase()}
     </span>
   );
@@ -489,96 +246,41 @@ function useBillingTimer(user: DbUser | null) {
 
   useEffect(() => {
     const update = () => {
-      if (!user) {
-        setDisplay("Not started");
-        setPct(0);
-        return;
-      }
-      if (user.plan === "free") {
-        setDisplay("Free plan");
-        setPct(100);
-        return;
-      }
-
+      if (!user) { setDisplay("Not started"); setPct(0); return; }
+      if (user.plan === "free") { setDisplay("Free plan"); setPct(100); return; }
       const now = Date.now();
-      const expirationAt = user.expirationDate
-        ? new Date(user.expirationDate).getTime()
-        : NaN;
-
-      // If a manual expiration is still active, it overrides the 30-day cycle.
+      const expirationAt = user.expirationDate ? new Date(user.expirationDate).getTime() : NaN;
       if (Number.isFinite(expirationAt) && expirationAt > now) {
         const remaining = expirationAt - now;
         const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-          (remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-        );
+        const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-
-        setDisplay(
-          days > 0
-            ? `${days}d ${hours}h left `
-            : `${hours}h ${minutes}m left`,
-        );
-
+        setDisplay(days > 0 ? `${days}d ${hours}h left` : `${hours}h ${minutes}m left`);
         if (user.billingDate) {
           const start = new Date(user.billingDate).getTime();
-          const total = Number.isFinite(start) && expirationAt > start
-            ? expirationAt - start
-            : remaining;
+          const total = Number.isFinite(start) && expirationAt > start ? expirationAt - start : remaining;
           setPct(Math.max(0, Math.min(100, (remaining / Math.max(total, 1)) * 100)));
-        } else {
-          setPct(100);
-        }
+        } else { setPct(100); }
         return;
       }
-
-      if (!user.billingDate) {
-        setDisplay("Not started");
-        setPct(0);
-        return;
-      }
-
+      if (!user.billingDate) { setDisplay("Not started"); setPct(0); return; }
       const CYCLE = 30 * 24 * 60 * 60 * 1000;
       const start = new Date(user.billingDate).getTime();
-      if (Number.isNaN(start)) {
-        setDisplay("Invalid date");
-        setPct(0);
-        return;
-      }
-
+      if (Number.isNaN(start)) { setDisplay("Invalid date"); setPct(0); return; }
       const end = start + CYCLE;
       const remaining = end - now;
-      if (remaining <= 0) {
-        setDisplay("Expired");
-        setPct(0);
-        return;
-      }
-
+      if (remaining <= 0) { setDisplay("Expired"); setPct(0); return; }
       setPct((remaining / CYCLE) * 100);
       const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-      );
-      setDisplay(
-        days > 0
-          ? `${days}d ${hours}h left`
-          : `${hours}h ${Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))}m left`,
-      );
+      const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      setDisplay(days > 0 ? `${days}d ${hours}h left` : `${hours}h ${Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))}m left`);
     };
     update();
     const id = setInterval(update, 60_000);
     return () => clearInterval(id);
   }, [user?.plan, user?.billingDate, user?.expirationDate]);
 
-  const color =
-    display === "Expired"
-      ? "#f87171"
-      : pct > 50
-        ? "#34d399"
-        : pct > 20
-          ? "#fbbf24"
-          : "#f87171";
-
+  const color = display === "Expired" ? "#dc2626" : pct > 50 ? "#16a34a" : pct > 20 ? "#d97706" : "#dc2626";
   return { display, pct, color };
 }
 
@@ -589,52 +291,15 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
       role="presentation"
       onClick={onClose}
       onKeyDown={(e) => e.key === "Escape" && onClose()}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.7)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-        backdropFilter: "blur(4px)",
-      }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(8px)" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "#0f1117",
-          border: "1px solid #1e2330",
-          borderRadius: 12,
-          padding: 28,
-          width: "100%",
-          maxWidth: 480,
-          fontFamily: "'JetBrains Mono', monospace",
-        }}
+        style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 24, padding: 32, width: "100%", maxWidth: 480, fontFamily: "'Inter', system-ui, sans-serif", boxShadow: "0 20px 56px rgba(0,0,0,0.12)" }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 20,
-          }}
-        >
-          <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 14 }}>
-            Order Details
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close order details"
-            style={{
-              color: "#64748b",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 4,
-            }}
-          >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <span className="dash-serif" style={{ color: "#000", fontWeight: 700, fontSize: 16 }}>Order Details</span>
+          <button type="button" onClick={onClose} aria-label="Close order details" style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <IconX />
           </button>
         </div>
@@ -643,33 +308,11 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
           ["Amount", `₹${order.amount.toFixed(2)} ${order.currency}`],
           ["Status", order.status],
           ["Credited", order.credited ? "Yes" : "No"],
-          [
-            "Date",
-            order.createdAt
-              ? new Date(order.createdAt).toLocaleString("en-IN")
-              : "—",
-          ],
+          ["Date", order.createdAt ? new Date(order.createdAt).toLocaleString("en-IN") : "—"],
         ].map(([k, v]) => (
-          <div
-            key={k}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "10px 0",
-              borderBottom: "1px solid #1a1f2e",
-            }}
-          >
-            <span
-              style={{
-                color: "#64748b",
-                fontSize: 11,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}
-            >
-              {k}
-            </span>
-            <span style={{ color: "#cbd5e1", fontSize: 12 }}>{v}</span>
+          <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #e5e7eb" }}>
+            <span style={{ color: "#9ca3af", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "'JetBrains Mono', monospace" }}>{k}</span>
+            <span style={{ color: "#374151", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>{v}</span>
           </div>
         ))}
       </div>
@@ -685,30 +328,17 @@ export default function DashboardPage() {
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [keyVisible, setKeyVisible] = useState(false);
   const [limitPurchaseLoading, setLimitPurchaseLoading] = useState(false);
-  const [limitPurchaseMessage, setLimitPurchaseMessage] = useState<string | null>(
-    null,
-  );
-  const [verifiedReturnOrderId, setVerifiedReturnOrderId] = useState<string | null>(
-    null,
-  );
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "apikey" | "apiendpoints" | "playground" | "logs" | "orders"
-  >("overview");
+  const [limitPurchaseMessage, setLimitPurchaseMessage] = useState<string | null>(null);
+  const [verifiedReturnOrderId, setVerifiedReturnOrderId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "apikey" | "apiendpoints" | "playground" | "logs" | "orders">("overview");
   const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
   const [pricingStep, setPricingStep] = useState(0);
-  const [apiCodeLanguage, setApiCodeLanguage] =
-    useState<ApiCodeLanguage>("javascript");
+  const [apiCodeLanguage, setApiCodeLanguage] = useState<ApiCodeLanguage>("javascript");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
-  const [playgroundAction, setPlaygroundAction] = useState<
-    "pnr" | "train" | "track" | "station" | "search" | "seat"
-  >("pnr");
+  const [playgroundAction, setPlaygroundAction] = useState<"pnr" | "train" | "track" | "station" | "search" | "seat">("pnr");
   const [playgroundLoading, setPlaygroundLoading] = useState(false);
-  const [playgroundStatusCode, setPlaygroundStatusCode] = useState<number | null>(
-    null,
-  );
-  const [playgroundResponseTime, setPlaygroundResponseTime] = useState<
-    number | null
-  >(null);
+  const [playgroundStatusCode, setPlaygroundStatusCode] = useState<number | null>(null);
+  const [playgroundResponseTime, setPlaygroundResponseTime] = useState<number | null>(null);
   const [playgroundResultText, setPlaygroundResultText] = useState("");
   const [playgroundError, setPlaygroundError] = useState<string | null>(null);
   const [pnrInput, setPnrInput] = useState("");
@@ -725,28 +355,12 @@ export default function DashboardPage() {
   const [seatDateInput, setSeatDateInput] = useState("");
   const [seatClassInput, setSeatClassInput] = useState("SL");
   const [seatQuotaInput, setSeatQuotaInput] = useState("GN");
-  const {
-    data: userData,
-    error: userError,
-    isLoading: userLoading,
-    isValidating: userValidating,
-    mutate: mutateUser,
-  } = useSWR<VerifyUserResponse>(
-    `/api/user/verify?days=${logsTimelineDays}`,
-    fetcher,
-    {
-      revalidateOnFocus: true,
-    }
-  );
 
-  const {
-    data: ordersData,
-    isLoading: ordersLoading,
-    isValidating: ordersValidating,
-    mutate: mutateOrders,
-  } = useSWR<UserOrdersResponse>("/api/user/orders", fetcher, {
-    revalidateOnFocus: true,
-  });
+  const { data: userData, error: userError, isLoading: userLoading, isValidating: userValidating, mutate: mutateUser } =
+    useSWR<VerifyUserResponse>(`/api/user/verify?days=${logsTimelineDays}`, fetcher, { revalidateOnFocus: true });
+
+  const { data: ordersData, isLoading: ordersLoading, isValidating: ordersValidating, mutate: mutateOrders } =
+    useSWR<UserOrdersResponse>("/api/user/orders", fetcher, { revalidateOnFocus: true });
 
   const dbUser = userData?.user ?? null;
   const auditDailyUsage = userData?.logs?.dailyUsage ?? [];
@@ -754,6 +368,7 @@ export default function DashboardPage() {
   const orders = ordersData?.orders ?? [];
   const loading = userLoading || ordersLoading;
   const refreshing = userValidating || ordersValidating;
+
   const pricingBaseRequests = 20_000;
   const pricingStepRequests = 10_000;
   const pricingStepCost = 100;
@@ -762,113 +377,48 @@ export default function DashboardPage() {
   const pricingRequests = pricingBaseRequests + pricingStep * pricingStepRequests;
   const pricingAmount = pricingBaseCost + pricingStep * pricingStepCost;
   const billing = useBillingTimer(dbUser);
-  const activeExpirationTimestamp = dbUser?.expirationDate
-    ? new Date(dbUser.expirationDate).getTime()
-    : NaN;
-  const hasActiveExpirationOverride =
-    Number.isFinite(activeExpirationTimestamp) &&
-    activeExpirationTimestamp > Date.now();
 
-  useEffect(() => {
-    if (userError) {
-      router.replace("/");
-    }
-  }, [userError, router]);
+  const activeExpirationTimestamp = dbUser?.expirationDate ? new Date(dbUser.expirationDate).getTime() : NaN;
+  const hasActiveExpirationOverride = Number.isFinite(activeExpirationTimestamp) && activeExpirationTimestamp > Date.now();
 
-  const refreshAll = () => {
-    mutateUser();
-    mutateOrders();
-  };
+  useEffect(() => { if (userError) router.replace("/"); }, [userError, router]);
 
-  const verifyLimitTopup = useCallback(
-    async (orderId: string) => {
-      setLimitPurchaseLoading(true);
-      setLimitPurchaseMessage("Verifying payment...");
+  const refreshAll = () => { mutateUser(); mutateOrders(); };
 
-      try {
-        const response = await fetch("/api/user/increase-limit", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId }),
-        });
-        const data = await response.json();
-
-        if (!response.ok || !data?.success) {
-          throw new Error(data?.message || "Unable to verify payment");
-        }
-
-        if (!data?.paid) {
-          setLimitPurchaseMessage("Payment is still pending. Please retry in a moment.");
-          return data;
-        }
-
-        setLimitPurchaseMessage(
-          `Limit increased by ${Number(data.extraLimit || 0).toLocaleString(
-            "en-IN",
-          )} requests.`,
-        );
-        await mutateUser();
-        return data;
-      } catch (error: unknown) {
-        setLimitPurchaseMessage(
-          getErrorMessage(error, "Payment verification failed. Please try again."),
-        );
-        throw error;
-      } finally {
-        setLimitPurchaseLoading(false);
-      }
-    },
-    [mutateUser],
-  );
+  const verifyLimitTopup = useCallback(async (orderId: string) => {
+    setLimitPurchaseLoading(true);
+    setLimitPurchaseMessage("Verifying payment...");
+    try {
+      const response = await fetch("/api/user/increase-limit", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId }) });
+      const data = await response.json();
+      if (!response.ok || !data?.success) throw new Error(data?.message || "Unable to verify payment");
+      if (!data?.paid) { setLimitPurchaseMessage("Payment is still pending. Please retry in a moment."); return data; }
+      setLimitPurchaseMessage(`Limit increased by ${Number(data.extraLimit || 0).toLocaleString("en-IN")} requests.`);
+      await mutateUser();
+      return data;
+    } catch (error: unknown) {
+      setLimitPurchaseMessage(getErrorMessage(error, "Payment verification failed. Please try again."));
+      throw error;
+    } finally { setLimitPurchaseLoading(false); }
+  }, [mutateUser]);
 
   const startLimitTopupPayment = async () => {
     if (limitPurchaseLoading) return;
-
     setLimitPurchaseLoading(true);
     setLimitPurchaseMessage(null);
-
     try {
-      const response = await fetch("/api/user/increase-limit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ extraLimit: pricingRequests }),
-      });
+      const response = await fetch("/api/user/increase-limit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extraLimit: pricingRequests }) });
       const data = await response.json();
-      const order = data?.order as
-        | {
-          orderId?: string;
-          paymentSessionId?: string;
-        }
-        | undefined;
-
-      if (!response.ok || !order?.orderId || !order?.paymentSessionId) {
-        throw new Error(data?.message || "Unable to create payment order");
-      }
-
+      const order = data?.order as { orderId?: string; paymentSessionId?: string } | undefined;
+      if (!response.ok || !order?.orderId || !order?.paymentSessionId) throw new Error(data?.message || "Unable to create payment order");
       await loadCashfreeSdk();
-      if (!window.Cashfree) {
-        throw new Error("Cashfree checkout failed to load. Please refresh and try again.");
-      }
-
+      if (!window.Cashfree) throw new Error("Cashfree checkout failed to load. Please refresh and try again.");
       setLimitPurchaseMessage("Opening secure payment popup...");
-      const cashfree = window.Cashfree({
-        mode: data?.cashfreeMode === "sandbox" ? "sandbox" : "production",
-      });
-
-      try {
-        await cashfree.checkout({
-          paymentSessionId: order.paymentSessionId,
-          redirectTarget: "_modal",
-        });
-      } catch {
-        // Cashfree may reject when the modal is dismissed; the server status is authoritative.
-      }
-
+      const cashfree = window.Cashfree({ mode: data?.cashfreeMode === "sandbox" ? "sandbox" : "production" });
+      try { await cashfree.checkout({ paymentSessionId: order.paymentSessionId, redirectTarget: "_modal" }); } catch { /* modal close */ }
       await verifyLimitTopup(order.orderId);
     } catch (error: unknown) {
-      setLimitPurchaseMessage(
-        getErrorMessage(error, "Unable to process limit add-on. Please try again."),
-      );
+      setLimitPurchaseMessage(getErrorMessage(error, "Unable to process limit add-on. Please try again."));
       setLimitPurchaseLoading(false);
     }
   };
@@ -877,62 +427,32 @@ export default function DashboardPage() {
     const params = new URLSearchParams(window.location.search);
     const paymentReturn = params.get("payment_return");
     const orderId = params.get("order_id");
-    if (
-      paymentReturn !== "limit" ||
-      !orderId ||
-      verifiedReturnOrderId === orderId
-    ) {
-      return;
-    }
-
+    if (paymentReturn !== "limit" || !orderId || verifiedReturnOrderId === orderId) return;
     setVerifiedReturnOrderId(orderId);
-    verifyLimitTopup(orderId).catch(() => {
-      // Message state is already set by verifyLimitTopup.
-    });
+    verifyLimitTopup(orderId).catch(() => {});
   }, [verifiedReturnOrderId, verifyLimitTopup]);
 
   const onLogout = async () => {
-    try {
-      await signOut(auth);
-      await fetch("/api/user/verify", { method: "DELETE" });
-    } catch { }
+    try { await signOut(auth); await fetch("/api/user/verify", { method: "DELETE" }); } catch {}
     router.replace("/");
   };
 
   const copyApiKey = () => {
-    if (dbUser?.apiKey) {
-      navigator.clipboard.writeText(dbUser.apiKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (dbUser?.apiKey) { navigator.clipboard.writeText(dbUser.apiKey); setCopied(true); setTimeout(() => setCopied(false), 2000); }
   };
 
   const regenerateApiKey = async () => {
     if (!dbUser?.apiKey || !dbUser?.email || regeneratingKey) return;
-
-    setRegeneratingKey(true);
-    setRegenerateError(null);
-    setCopied(false);
-
+    setRegeneratingKey(true); setRegenerateError(null); setCopied(false);
     try {
-      const res = await fetch("/api/user/key/regenerate", {
-        method: "GET",
-      });
-
+      const res = await fetch("/api/user/key/regenerate", { method: "GET" });
       const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.message || "Failed to regenerate key");
-      }
-
+      if (!res.ok || !data?.success) throw new Error(data?.message || "Failed to regenerate key");
       setKeyVisible(true);
       await mutateUser();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to regenerate key";
-      setRegenerateError(message);
-    } finally {
-      setRegeneratingKey(false);
-    }
+      setRegenerateError(error instanceof Error ? error.message : "Failed to regenerate key");
+    } finally { setRegeneratingKey(false); }
   };
 
   const toInputDate = (ddmmyyyy: string) => {
@@ -940,123 +460,56 @@ export default function DashboardPage() {
     const [dd, mm, yyyy] = ddmmyyyy.split("-");
     return `${yyyy}-${mm}-${dd}`;
   };
-
   const fromInputDate = (yyyymmdd: string) => {
     if (!yyyymmdd || !yyyymmdd.includes("-")) return "";
     const [yyyy, mm, dd] = yyyymmdd.split("-");
     return `${dd}-${mm}-${yyyy}`;
   };
 
-  const resetPlaygroundMeta = () => {
-    setPlaygroundError(null);
-    setPlaygroundStatusCode(null);
-    setPlaygroundResponseTime(null);
-    setPlaygroundResultText("");
-  };
+  const resetPlaygroundMeta = () => { setPlaygroundError(null); setPlaygroundStatusCode(null); setPlaygroundResponseTime(null); setPlaygroundResultText(""); };
 
   const runPlayground = async () => {
     setPlaygroundLoading(true);
     resetPlaygroundMeta();
-
     const start = performance.now();
     try {
       const apiKey = dbUser?.apiKey;
-      if (!apiKey) {
-        throw new Error("Session expired. Please refresh and sign in again.");
-      }
+      if (!apiKey) throw new Error("Session expired. Please refresh and sign in again.");
       configure(apiKey);
-
       let result: unknown;
       switch (playgroundAction) {
         case "pnr":
-          if (!/^\d{10}$/.test(pnrInput)) {
-            throw new Error("PNR must be exactly 10 digits");
-          }
-          result = await checkPNRStatus(pnrInput);
-          break;
+          if (!/^\d{10}$/.test(pnrInput)) throw new Error("PNR must be exactly 10 digits");
+          result = await checkPNRStatus(pnrInput); break;
         case "train":
-          if (!/^\d{5}$/.test(trainInput)) {
-            throw new Error("Train number must be exactly 5 digits");
-          }
-          result = await getTrainInfo(trainInput);
-          break;
+          if (!/^\d{5}$/.test(trainInput)) throw new Error("Train number must be exactly 5 digits");
+          result = await getTrainInfo(trainInput); break;
         case "track":
-          if (!/^\d{5}$/.test(trackTrainInput)) {
-            throw new Error("Train number must be exactly 5 digits");
-          }
-          if (!/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) {
-            throw new Error("Date must be in DD-MM-YYYY format");
-          }
-          result = await trackTrain(trackTrainInput, trackDateInput);
-          break;
+          if (!/^\d{5}$/.test(trackTrainInput)) throw new Error("Train number must be exactly 5 digits");
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
+          result = await trackTrain(trackTrainInput, trackDateInput); break;
         case "station":
-          if (!stationInput.trim()) {
-            throw new Error("Station code is required");
-          }
-          result = await liveAtStation(stationInput.trim().toUpperCase());
-          break;
+          if (!stationInput.trim()) throw new Error("Station code is required");
+          result = await liveAtStation(stationInput.trim().toUpperCase()); break;
         case "search":
-          if (!fromStationInput.trim() || !toStationInput.trim()) {
-            throw new Error("From and To station codes are required");
-          }
-          if (searchDateInput && !/^\d{2}-\d{2}-\d{4}$/.test(searchDateInput)) {
-            throw new Error("Date must be in DD-MM-YYYY format");
-          }
-          result = await searchTrainBetweenStations(
-            fromStationInput.trim().toUpperCase(),
-            toStationInput.trim().toUpperCase(),
-            searchDateInput || undefined
-          );
-          break;
+          if (!fromStationInput.trim() || !toStationInput.trim()) throw new Error("From and To station codes are required");
+          if (searchDateInput && !/^\d{2}-\d{2}-\d{4}$/.test(searchDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
+          result = await searchTrainBetweenStations(fromStationInput.trim().toUpperCase(), toStationInput.trim().toUpperCase(), searchDateInput || undefined); break;
         case "seat":
-          if (!/^\d{5}$/.test(seatTrainInput)) {
-            throw new Error("Train number must be exactly 5 digits");
-          }
-          if (!seatFromInput.trim() || !seatToInput.trim()) {
-            throw new Error("From and To station codes are required");
-          }
-          if (!/^\d{2}-\d{2}-\d{4}$/.test(seatDateInput)) {
-            throw new Error("Date must be in DD-MM-YYYY format");
-          }
-          result = await getAvailability(
-            seatTrainInput,
-            seatFromInput.trim().toUpperCase(),
-            seatToInput.trim().toUpperCase(),
-            seatDateInput,
-            seatClassInput,
-            seatQuotaInput,
-          );
-          break;
+          if (!/^\d{5}$/.test(seatTrainInput)) throw new Error("Train number must be exactly 5 digits");
+          if (!seatFromInput.trim() || !seatToInput.trim()) throw new Error("From and To station codes are required");
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(seatDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
+          result = await getAvailability(seatTrainInput, seatFromInput.trim().toUpperCase(), seatToInput.trim().toUpperCase(), seatDateInput, seatClassInput, seatQuotaInput); break;
       }
-
-      const codeGuess =
-        typeof result === "object" &&
-          result !== null &&
-          "statusCode" in result &&
-          typeof (result as { statusCode?: unknown }).statusCode === "number"
-          ? ((result as { statusCode: number }).statusCode ?? 200)
-          : 200;
+      const codeGuess = typeof result === "object" && result !== null && "statusCode" in result && typeof (result as { statusCode?: unknown }).statusCode === "number"
+        ? ((result as { statusCode: number }).statusCode ?? 200) : 200;
       setPlaygroundStatusCode(codeGuess);
       setPlaygroundResultText(JSON.stringify(result, null, 2) || "{}");
     } catch (error: unknown) {
-      const err = error as {
-        message?: string;
-        status?: number;
-        response?: { status?: number };
-      };
+      const err = error as { message?: string; status?: number; response?: { status?: number } };
       setPlaygroundError(err?.message || "Something went wrong");
       setPlaygroundStatusCode(err?.status || err?.response?.status || 500);
-      setPlaygroundResultText(
-        JSON.stringify(
-          {
-            success: false,
-            message: err?.message || "Something went wrong",
-            statusCode: err?.status || err?.response?.status || 500,
-          },
-          null,
-          2,
-        ),
-      );
+      setPlaygroundResultText(JSON.stringify({ success: false, message: err?.message || "Something went wrong", statusCode: err?.status || err?.response?.status || 500 }, null, 2));
     } finally {
       setPlaygroundResponseTime(Math.round(performance.now() - start));
       setPlaygroundLoading(false);
@@ -1068,50 +521,19 @@ export default function DashboardPage() {
 
   const usagePct = dbUser.limit > 0 ? (dbUser.usage / dbUser.limit) * 100 : 0;
   const usageLeft = Math.max(0, dbUser.limit - dbUser.usage);
-  const usageColor =
-    usagePct > 80 ? "#f97316" : usagePct > 60 ? "#fbbf24" : "#34d399";
-  const maxDailyRequests = Math.max(
-    1,
-    ...auditDailyUsage.map((entry) => entry.requests),
-  );
-  const chartData = auditDailyUsage.map((entry) => ({
-    ...entry,
-    label: new Date(entry.date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-    }),
-  }));
-  const maskedKey = dbUser.apiKey
-    ? `${dbUser.apiKey.slice(0, 8)}${"•".repeat(24)}${dbUser.apiKey.slice(-6)}`
-    : "";
+  const usageColor = usagePct > 80 ? "#ea580c" : usagePct > 60 ? "#d97706" : "#16a34a";
+  const maxDailyRequests = Math.max(1, ...auditDailyUsage.map((e) => e.requests));
+  const chartData = auditDailyUsage.map((entry) => ({ ...entry, label: new Date(entry.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) }));
+  const maskedKey = dbUser.apiKey ? `${dbUser.apiKey.slice(0, 8)}${"•".repeat(24)}${dbUser.apiKey.slice(-6)}` : "";
   const paidOrders = orders.filter((o) => o.status === "paid");
   const totalSpent = paidOrders.reduce((a, o) => a + o.amount, 0);
-  const usageExampleCode = `import {
-  configure,
-  checkPNRStatus,
-  getTrainInfo,
-  trackTrain,
-} from "irctc-connect";
+  const normalizedPlan = (dbUser.plan || "").toLowerCase();
+  const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
+  const canBuyLimitTopup = normalizedPlan === "pro" || normalizedPlan === "enterprise" || normalizedPlan === "advance" || normalizedPlan === "advanced";
 
-// Step 1: configure once with your API key
-configure(process.env.IRCTC_API_KEY);
+  const directApiBaseUrl = process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL || "https://irctc-connect-api.rajivdubey.tech";
 
-// Check PNR status
-const pnrResult = await checkPNRStatus("1234567890");
-
-// Get train information
-const trainResult = await getTrainInfo("12345");
-
-// Track Live Train
-const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
-  const directApiBaseUrl =
-    process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL ||
-    "https://irctc-connect-api.rajivdubey.tech";
-
-  const apiLanguageMeta: Record<
-    ApiCodeLanguage,
-    { label: string; syntax: "javascript" | "python" | "bash" }
-  > = {
+  const apiLanguageMeta: Record<ApiCodeLanguage, { label: string; syntax: "javascript" | "python" | "bash" }> = {
     javascript: { label: "JavaScript", syntax: "javascript" },
     python: { label: "Python", syntax: "python" },
     curl: { label: "cURL", syntax: "bash" },
@@ -1119,113 +541,123 @@ const liveTrainResult = await trackTrain("12345", "28-03-2026");`;
 
   const buildApiSnippet = (examplePath: string, language: ApiCodeLanguage) => {
     const url = `${directApiBaseUrl}${examplePath}`;
-    if (language === "python") {
-      return `import requests
-
-url = "${url}"
-headers = {
-    "x-api-key": "YOUR_API_KEY",
-    "accept": "application/json",
-}
-
-response = requests.get(url, headers=headers)
-data = response.json()
-print(data)`;
-    }
-    if (language === "curl") {
-      return `curl -X GET "${url}" \\
-  -H "x-api-key: YOUR_API_KEY" \\
-  -H "accept: application/json"`;
-    }
-    return `const API_KEY = process.env.IRCTC_API_KEY;
-
-const response = await fetch("${url}", {
-  method: "GET",
-  headers: {
-    "x-api-key": API_KEY,
-    "accept": "application/json",
-  },
-});
-
-const data = await response.json();
-console.log(data);`;
+    if (language === "python") return `import requests\n\nurl = "${url}"\nheaders = {\n    "x-api-key": "YOUR_API_KEY",\n    "accept": "application/json",\n}\n\nresponse = requests.get(url, headers=headers)\ndata = response.json()\nprint(data)`;
+    if (language === "curl") return `curl -X GET "${url}" \\\n  -H "x-api-key: YOUR_API_KEY" \\\n  -H "accept: application/json"`;
+    return `const API_KEY = process.env.IRCTC_API_KEY;\n\nconst response = await fetch("${url}", {\n  method: "GET",\n  headers: {\n    "x-api-key": API_KEY,\n    "accept": "application/json",\n  },\n});\n\nconst data = await response.json();\nconsole.log(data);`;
   };
 
-  const directApiQuickExample = buildApiSnippet(
-    "/api/checkPNRStatus/1234567890",
-    apiCodeLanguage,
-  );
+  const usageExampleCode = `import {\n  configure,\n  checkPNRStatus,\n  getTrainInfo,\n  trackTrain,\n} from "irctc-connect";\n\n// Step 1: configure once with your API key\nconfigure(process.env.IRCTC_API_KEY);\n\n// Check PNR status\nconst pnrResult = await checkPNRStatus("1234567890");\n\n// Get train information\nconst trainResult = await getTrainInfo("12345");\n\n// Track Live Train\nconst liveTrainResult = await trackTrain("12345", "28-03-2026");`;
 
   const endpointDocs = [
-    {
-      name: "Check PNR Status",
-      method: "GET",
-      path: "/api/checkPNRStatus/:pnr",
-      examplePath: "/api/checkPNRStatus/1234567890",
-      notes: "PNR must be 10 digits.",
-    },
-    {
-      name: "Get Train Info",
-      method: "GET",
-      path: "/api/getTrainInfo/:trainNumber",
-      examplePath: "/api/getTrainInfo/12345",
-      notes: "Train number must be 5 digits.",
-    },
-    {
-      name: "Track Train",
-      method: "GET",
-      path: "/api/trackTrain/:trainNumber/:date",
-      examplePath: "/api/trackTrain/12345/28-03-2026",
-      notes: "Date format: DD-MM-YYYY. You can also pass `today` as date.",
-    },
-    {
-      name: "Live At Station",
-      method: "GET",
-      path: "/api/liveAtStation/:stnCode",
-      examplePath: "/api/liveAtStation/NDLS",
-      notes: "Use station code in uppercase.",
-    },
-    {
-      name: "Search Trains Between Stations",
-      method: "GET",
-      path: "/api/searchTrainBetweenStations/:fromStnCode/:toStnCode?date=DD-MM-YYYY",
-      examplePath: "/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026",
-      notes: "Date query param is optional.",
-    },
-    {
-      name: "Get Seat Availability",
-      method: "GET",
-      path: "/api/getAvailability/:trainNo/:fromStnCode/:toStnCode/:date/:coach/:quota",
-      examplePath: "/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN",
-      notes: "Date format: DD-MM-YYYY.",
-    },
+    { name: "Check PNR Status", method: "GET", path: "/api/checkPNRStatus/:pnr", examplePath: "/api/checkPNRStatus/1234567890", notes: "PNR must be 10 digits." },
+    { name: "Get Train Info", method: "GET", path: "/api/getTrainInfo/:trainNumber", examplePath: "/api/getTrainInfo/12345", notes: "Train number must be 5 digits." },
+    { name: "Track Train", method: "GET", path: "/api/trackTrain/:trainNumber/:date", examplePath: "/api/trackTrain/12345/28-03-2026", notes: "Date format: DD-MM-YYYY. You can also pass `today` as date." },
+    { name: "Live At Station", method: "GET", path: "/api/liveAtStation/:stnCode", examplePath: "/api/liveAtStation/NDLS", notes: "Use station code in uppercase." },
+    { name: "Search Trains Between Stations", method: "GET", path: "/api/searchTrainBetweenStations/:fromStnCode/:toStnCode?date=DD-MM-YYYY", examplePath: "/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026", notes: "Date query param is optional." },
+    { name: "Get Seat Availability", method: "GET", path: "/api/getAvailability/:trainNo/:fromStnCode/:toStnCode/:date/:coach/:quota", examplePath: "/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN", notes: "Date format: DD-MM-YYYY." },
   ] as const;
-  const normalizedPlan = (dbUser.plan || "").toLowerCase();
-  const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
-  const canBuyLimitTopup =
-    normalizedPlan === "pro" || normalizedPlan === "enterprise" || normalizedPlan === "advanced";
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #070910; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f1117; }
-        ::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 3px; }
-        .row-hover:hover { background: rgba(255,255,255,0.02) !important; }
-        .action-btn:hover { background: #2d3548 !important; color: #e2e8f0 !important; }
+        body { background: #ffffff; }
+
+        .dash-root {
+          min-height: 100vh;
+          background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 55%, #ffffff 100%);
+          color: #0b0b0b;
+          font-family: 'Inter', system-ui, sans-serif;
+          position: relative;
+        }
+        .dash-root, .dash-root * {
+          font-family: 'Inter', system-ui, sans-serif !important;
+        }
+        .dash-serif, .dash-serif * {
+          font-family: 'Instrument Serif', Georgia, serif !important;
+        }
+        .dash-code, .dash-code * {
+          font-family: 'JetBrains Mono', monospace !important;
+        }
+        .dash-ambient {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          background:
+            radial-gradient(ellipse 70% 40% at 20% 0%, rgba(0,0,0,0.04) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 40% at 80% 10%, rgba(0,0,0,0.035) 0%, transparent 70%);
+          z-index: 0;
+        }
+        .dash-layer { position: relative; z-index: 1; }
+
+        .dash-header {
+          border-bottom: 1px solid rgba(0,0,0,0.08);
+          background: rgba(255,255,255,0.88);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          position: sticky;
+          top: 0;
+          z-index: 50;
+        }
+
+        .dash-card {
+          background: #ffffff;
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 20px;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.06);
+        }
+        .dash-card-soft {
+          background: #f7f7f7;
+          border: 1px solid rgba(0,0,0,0.06);
+          border-radius: 14px;
+        }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #f2f2f2; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
+
+        .row-hover:hover { background: #f5f5f5 !important; }
+        .action-btn:hover { background: #ededed !important; color: #000 !important; border-color: rgba(0,0,0,0.2) !important; }
+
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes ping { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes responseShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .stat-card { animation: fadeUp 0.4s ease both; }
-        .stat-card:nth-child(1){ animation-delay: 0.05s; }
-        .stat-card:nth-child(2){ animation-delay: 0.1s; }
-        .stat-card:nth-child(3){ animation-delay: 0.15s; }
-        .stat-card:nth-child(4){ animation-delay: 0.2s; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .stat-card { animation: fadeUp 0.4s ease both; transition: box-shadow 0.2s, transform 0.2s; }
+        .stat-card:nth-child(1){ animation-delay: 0.04s; }
+        .stat-card:nth-child(2){ animation-delay: 0.09s; }
+        .stat-card:nth-child(3){ animation-delay: 0.14s; }
+        .stat-card:nth-child(4){ animation-delay: 0.19s; }
+        .stat-card:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.10); transform: translateY(-2px); }
+
+        .dash-input {
+          background: #ffffff;
+          border: 1px solid rgba(0,0,0,0.15);
+          border-radius: 12px;
+          padding: 11px 12px;
+          color: #111827;
+          font-size: 13px;
+          font-family: 'JetBrains Mono', monospace;
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .dash-input:focus {
+          border-color: #000;
+          box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+        }
+        .dash-select {
+          background: #ffffff;
+          border: 1px solid rgba(0,0,0,0.15);
+          border-radius: 12px;
+          padding: 11px 12px;
+          color: #111827;
+          font-size: 13px;
+          font-family: 'JetBrains Mono', monospace;
+          outline: none;
+        }
         .mobile-quick-links { display: none; }
+
         @media (max-width: 900px) {
           .dash-header-inner { padding: 0 14px !important; }
           .dash-shell { padding: 20px 14px !important; }
@@ -1242,1480 +674,289 @@ console.log(data);`;
           .dash-header-btn { padding: 6px 8px !important; }
           .mobile-hide { display: none; }
           .mobile-quick-links { display: flex; gap: 8px; margin-bottom: 14px; }
-          .dash-api-grid { gap: 12px !important; }
-          .dash-api-card { padding: 16px !important; min-width: 0 !important; max-width: 100% !important; overflow: hidden !important; }
-          .dash-api-banner { font-size: 11px !important; line-height: 1.6 !important; padding: 10px 12px !important; }
-          .dash-api-title { font-size: 14px !important; }
-          .dash-api-text { font-size: 11px !important; line-height: 1.6 !important; }
-          .dash-api-code-wrap { padding: 10px !important; overflow-x: auto !important; max-width: 100% !important; }
-          .dash-api-endpoint-head { gap: 8px !important; }
-          .dash-api-endpoint-name { font-size: 13px !important; }
-          .dash-api-path { font-size: 11px !important; }
-          .dash-api-example-url { font-size: 10px !important; }
-          .dash-api-note { font-size: 10px !important; }
-          .dash-api-code-wrap pre { max-width: 100% !important; }
         }
         @media (max-width: 640px) {
           .dash-stats-grid { grid-template-columns: 1fr !important; }
-          .dash-api-card { padding: 14px !important; border-radius: 10px !important; }
-          .dash-api-endpoint-head { flex-direction: column; align-items: flex-start !important; }
-          .dash-api-method-pill { font-size: 10px !important; }
         }
         @media (max-width: 480px) {
           .dash-header-inner { padding: 0 10px !important; height: 54px !important; }
           .dash-shell { padding: 12px 10px 16px !important; }
-          .mobile-quick-links { gap: 6px !important; margin-bottom: 10px !important; }
-          .mobile-quick-links button { padding: 7px 10px !important; font-size: 11px !important; }
           .dash-tab-wrap { margin-bottom: 12px !important; padding: 3px !important; gap: 3px !important; }
           .dash-tab-wrap button { padding: 6px 12px !important; font-size: 11px !important; }
-          .dash-api-grid { gap: 10px !important; }
-          .dash-api-banner { font-size: 10px !important; line-height: 1.5 !important; padding: 8px 10px !important; }
-          .dash-api-card { padding: 12px !important; border-radius: 10px !important; }
-          .dash-api-title { font-size: 13px !important; margin-bottom: 8px !important; }
-          .dash-api-text { font-size: 10px !important; line-height: 1.55 !important; margin-bottom: 10px !important; }
-          .dash-api-endpoint-name { font-size: 12px !important; }
-          .dash-api-path { font-size: 10px !important; margin-bottom: 4px !important; }
-          .dash-api-example-url { font-size: 9px !important; line-height: 1.5 !important; }
-          .dash-api-note { font-size: 9px !important; line-height: 1.5 !important; margin-bottom: 10px !important; }
-          .dash-api-method-pill { font-size: 9px !important; padding: 2px 7px !important; }
-          .dash-api-code-wrap { padding: 8px !important; border-radius: 7px !important; }
-          .dash-api-code-wrap pre { font-size: 10px !important; line-height: 1.55 !important; }
         }
       `}</style>
 
-      {viewOrder && (
-        <OrderModal order={viewOrder} onClose={() => setViewOrder(null)} />
-      )}
+      {viewOrder && <OrderModal order={viewOrder} onClose={() => setViewOrder(null)} />}
 
-      <main
-        style={{
-          minHeight: "100vh",
-          background: "#070910",
-          fontFamily: "'Syne', sans-serif",
-          color: "#e2e8f0",
-        }}
-      >
-        {/* ── Ambient glow ─────────────────────────────────────────────────── */}
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            pointerEvents: "none",
-            overflow: "hidden",
-            zIndex: 0,
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              top: "10%",
-              left: "20%",
-              width: 500,
-              height: 300,
-              background:
-                "radial-gradient(ellipse, rgba(52,211,153,0.04) 0%, transparent 70%)",
-              borderRadius: "50%",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              bottom: "20%",
-              right: "15%",
-              width: 400,
-              height: 250,
-              background:
-                "radial-gradient(ellipse, rgba(96,165,250,0.04) 0%, transparent 70%)",
-              borderRadius: "50%",
-            }}
-          />
-        </div>
+      <main className="dash-root">
+        <div className="dash-ambient" aria-hidden />
+        <div className="dash-layer">
 
-        {/* ── Header ───────────────────────────────────────────────────────── */}
-        <header
-          style={{
-            borderBottom: "1px solid #1e2330",
-            background: "rgba(7,9,16,0.95)",
-            backdropFilter: "blur(12px)",
-            position: "sticky",
-            top: 0,
-            zIndex: 50,
-          }}
-        >
-          <div
-            className="dash-header-inner"
-            style={{
-              maxWidth: 1100,
-              margin: "0 auto",
-              padding: "0 28px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              height: 60,
-            }}
-          >
-            {/* Logo area */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: "linear-gradient(135deg, #059669, #047857)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 0 12px rgba(5,150,105,0.3)",
-                }}
-              >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
-                </svg>
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <header className="dash-header">
+          <div className="dash-header-inner" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 58 }}>
+            {/* Logo + user context */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 26, height: 26, borderRadius: 8, background: "#000", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
+                  </svg>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#000", letterSpacing: "-0.01em" }}>Dashboard</span>
               </div>
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 800,
-                  letterSpacing: "-0.02em",
-                  color: "#f1f5f9",
-                }}
-              >
-                Dashboard
-              </span>
+              {/* User pill — desktop only */}
+              <div className="mobile-hide" style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 10px 4px 6px", background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 100 }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: `hsl(${avatarHue}, 55%, 92%)`, border: `1px solid hsl(${avatarHue}, 55%, 80%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: `hsl(${avatarHue}, 60%, 35%)`, flexShrink: 0 }}>
+                  {(dbUser.name || dbUser.email)[0].toUpperCase()}
+                </div>
+                <span style={{ fontSize: 12, color: "#6f6f6f", fontFamily: "'JetBrains Mono', monospace", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dbUser.email}</span>
+                <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: normalizedPlan === "advance" || normalizedPlan === "enterprise" ? "#faf5ff" : normalizedPlan === "pro" ? "#f0fdf4" : "#f9fafb", color: normalizedPlan === "advance" || normalizedPlan === "enterprise" ? "#7c3aed" : normalizedPlan === "pro" ? "#16a34a" : "#9ca3af", border: `1px solid ${normalizedPlan === "advance" || normalizedPlan === "enterprise" ? "#e9d5ff" : normalizedPlan === "pro" ? "#bbf7d0" : "#e5e7eb"}`, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {dbUser.plan}
+                </span>
+              </div>
             </div>
-
-            {/* Right: refresh + avatar + logout */}
-            <div className="dash-header-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Right actions */}
+            <div className="dash-header-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {refreshing && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: "#34d399",
-                      animation: "ping 1s infinite",
-                    }}
-                  />
-                  <span
-                    className="mobile-hide"
-                    style={{
-                      color: "#64748b",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    Syncing
-                  </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#16a34a", animation: "spin 1s linear infinite" }} />
+                  <span className="mobile-hide" style={{ color: "#6f6f6f", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>Syncing</span>
                 </div>
               )}
-              <button
-                type="button"
-                className="dash-header-btn"
-                onClick={refreshAll}
-                style={{
-                  background: "#1a1f2e",
-                  border: "1px solid #2d3548",
-                  color: "#94a3b8",
-                  borderRadius: 6,
-                  padding: "5px 12px",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <IconRefresh />
-                <span className="mobile-hide">Refresh</span>
+              <button type="button" className="dash-header-btn" onClick={refreshAll} style={{ background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.12)", color: "#6f6f6f", borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 6, transition: "background 0.15s, color 0.15s" }}>
+                <IconRefresh /><span className="mobile-hide">Refresh</span>
               </button>
-
-              <button
-                type="button"
-                className="dash-header-btn"
-                onClick={onLogout}
-                style={{
-                  background: "#1a1f2e",
-                  border: "1px solid #2d3548",
-                  color: "#94a3b8",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <IconLogout />
-                <span className="mobile-hide">Sign out</span>
+              <button type="button" className="dash-header-btn" onClick={onLogout} style={{ background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.12)", color: "#6f6f6f", borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 6, transition: "background 0.15s, color 0.15s" }}>
+                <IconLogout /><span className="mobile-hide">Sign out</span>
               </button>
             </div>
           </div>
         </header>
 
         {/* ── Body ─────────────────────────────────────────────────────────── */}
-        <div
-          className="dash-shell"
-          style={{
-            maxWidth: 1100,
-            margin: "0 auto",
-            padding: "28px 28px",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <div className="dash-shell" style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 28px" }}>
+
           <div className="mobile-quick-links">
-            <button
-              type="button"
-              onClick={() => router.push("/docs")}
-              style={{
-                flex: 1,
-                background: "#1a1f2e",
-                border: "1px solid #2d3548",
-                color: "#94a3b8",
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontSize: 12,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Docs
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/pricing")}
-              style={{
-                flex: 1,
-                background: "#1a1f2e",
-                border: "1px solid #2d3548",
-                color: "#94a3b8",
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontSize: 12,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Pricing
-            </button>
+            {[{ label: "Docs", path: "/docs" }, { label: "Pricing", path: "/pricing" }].map((l) => (
+              <button key={l.path} type="button" onClick={() => router.push(l.path)} style={{ flex: 1, background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.08)", color: "#6f6f6f", borderRadius: 8, padding: "8px 12px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, cursor: "pointer" }}>{l.label}</button>
+            ))}
           </div>
 
-          {/* Page title
-          <div style={{ marginBottom: 24 }}>
-            <h1
-              style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: "#f1f5f9",
-                letterSpacing: "-0.03em",
-              }}
-            >
-              Dashboard
-            </h1>
-            <p
-              style={{
-                color: "#475569",
-                fontSize: 12,
-                fontFamily: "'JetBrains Mono', monospace",
-                marginTop: 4,
-              }}
-            >
-              {dbUser.email} ·{" "}
-              <span style={{ color: dbUser.active ? "#34d399" : "#64748b" }}>
-                {dbUser.active ? "● Active" : "○ Inactive"}
-              </span>
-            </p>
-          </div> */}
-
-          {/* ── Stats row ────────────────────────────────────────────────── */}
-          <div
-            className="dash-stats-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 16,
-              marginBottom: 28,
-            }}
-          >
+          {/* ── Stats row ──────────────────────────────────────────────── */}
+          <div className="dash-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 28 }}>
             {[
-              {
-                label: "Current Plan",
-                value: dbUser.plan.toUpperCase(),
-                sub: dbUser.active ? "Account active" : "Inactive",
-                color:
-                  dbUser.plan === "enterprise"
-                    ? "#a78bfa"
-                    : dbUser.plan === "pro"
-                      ? "#6ee7b7"
-                      : "#94a3b8",
-              },
-              {
-                label: "Requests Used",
-                value: dbUser.usage.toLocaleString("en-IN"),
-                sub: `of ${dbUser.limit.toLocaleString("en-IN")} total`,
-                color: usageColor,
-              },
-              {
-                label: "Requests Left",
-                value: usageLeft.toLocaleString("en-IN"),
-                sub: `${(100 - usagePct).toFixed(0)}% remaining`,
-                color: "#60a5fa",
-              },
-              {
-                label: "Billing Cycle",
-                value: billing.display,
-                sub: hasActiveExpirationOverride
-                  ? `until ${new Date(activeExpirationTimestamp).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
-                  : dbUser.billingDate
-                    ? `since ${new Date(dbUser.billingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
-                    : "Not started",
-                color: billing.color,
-              },
+              { label: "Current Plan", value: dbUser.plan.toUpperCase(), sub: dbUser.active ? "Account active" : "Inactive", color: normalizedPlan === "advance" || normalizedPlan === "enterprise" ? "#7c3aed" : normalizedPlan === "pro" ? "#16a34a" : "#6b7280" },
+              { label: "Requests Used", value: dbUser.usage.toLocaleString("en-IN"), sub: `of ${dbUser.limit.toLocaleString("en-IN")} total`, color: usageColor },
+              { label: "Requests Left", value: usageLeft.toLocaleString("en-IN"), sub: `${(100 - usagePct).toFixed(0)}% remaining`, color: "#2563eb" },
+              { label: "Billing Cycle", value: billing.display, sub: hasActiveExpirationOverride ? `until ${new Date(activeExpirationTimestamp).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : dbUser.billingDate ? `since ${new Date(dbUser.billingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : "Not started", color: billing.color },
             ].map((s) => (
-              <div
-                key={s.label}
-                className="stat-card"
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 10,
-                  padding: "18px 20px",
-                }}
-              >
-                <p
-                  style={{
-                    color: "#475569",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginBottom: 8,
-                  }}
-                >
-                  {s.label}
-                </p>
-                <p
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: s.color,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  {s.value}
-                </p>
-                <p
-                  style={{
-                    color: "#475569",
-                    fontSize: 11,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginTop: 6,
-                  }}
-                >
-                  {s.sub}
-                </p>
+              <div key={s.label} className="stat-card" style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderTop: `3px solid ${s.color}`, borderRadius: 16, padding: "18px 20px", boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 10 }}>{s.label}</p>
+                <p style={{ fontSize: 20, fontWeight: 700, color: s.color, letterSpacing: "-0.02em", lineHeight: 1, fontFamily: "'JetBrains Mono', monospace" }}>{s.value}</p>
+                <p style={{ color: "#d1d5db", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 7 }}>{s.sub}</p>
               </div>
             ))}
           </div>
 
-          {/* ── Tabs ─────────────────────────────────────────────────────── */}
-          <div
-            className="dash-tab-wrap"
-            style={{
-              display: "flex",
-              gap: 4,
-              marginBottom: 20,
-              background: "#0f1117",
-              border: "1px solid #1e2330",
-              borderRadius: 8,
-              padding: 4,
-              width: "fit-content",
-            }}
-          >
-            {(
-              [
-                { id: "overview", label: "Overview" },
-                { id: "apikey", label: "API Key" },
-                { id: "apiendpoints", label: "API Endpoints" },
-                { id: "playground", label: "Playground" },
-                {
-                  id: "logs",
-                  label: `Logs${recentLogs.length
-                      ? ` (${recentLogs.length > 99 ? "99+" : recentLogs.length})`
-                      : ""
-                    }`,
-                },
-                { id: "orders", label: `Orders (${orders.length})` },
-              ] as const
-            ).map((tab) => (
-              <button
-                type="button"
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  background: activeTab === tab.id ? "#1e2a3a" : "none",
-                  border:
-                    activeTab === tab.id
-                      ? "1px solid #2d4060"
-                      : "1px solid transparent",
-                  color: activeTab === tab.id ? "#60a5fa" : "#64748b",
-                  borderRadius: 6,
-                  padding: "6px 18px",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  letterSpacing: "0.02em",
-                  transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                }}
-              >
+          {/* ── Tabs ───────────────────────────────────────────────────── */}
+          <div className="dash-tab-wrap" style={{ display: "flex", gap: 2, marginBottom: 24, background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, padding: 4, width: "fit-content" }}>
+            {([
+              { id: "overview", label: "Overview" },
+              { id: "apikey", label: "API Key" },
+              { id: "apiendpoints", label: "API Endpoints" },
+              { id: "playground", label: "Playground" },
+              { id: "logs", label: `Logs${recentLogs.length ? ` (${recentLogs.length > 99 ? "99+" : recentLogs.length})` : ""}` },
+              { id: "orders", label: `Orders (${orders.length})` },
+            ] as const).map((tab) => (
+              <button type="button" key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ background: activeTab === tab.id ? "#ffffff" : "transparent", border: activeTab === tab.id ? "1px solid rgba(0,0,0,0.14)" : "1px solid transparent", color: activeTab === tab.id ? "#000" : "#6f6f6f", borderRadius: 8, padding: "7px 16px", fontSize: 12, cursor: "pointer", fontWeight: activeTab === tab.id ? 600 : 400, fontFamily: "'Inter', system-ui, sans-serif", letterSpacing: "0.01em", transition: "background 0.15s, color 0.15s", whiteSpace: "nowrap", boxShadow: activeTab === tab.id ? "0 10px 24px rgba(0,0,0,0.08)" : "none" }}>
                 {tab.label}
               </button>
             ))}
           </div>
 
-          {/* ── Tab: Overview ────────────────────────────────────────────── */}
+          {/* ── Tab: Overview ──────────────────────────────────────────── */}
           {activeTab === "overview" && (
             <div style={{ display: "grid", gap: 16 }}>
-              <div
-                className="dash-overview-grid"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 16,
-                }}
-              >
+              <div className="dash-overview-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 {/* Profile card */}
-                <div
-                  style={{
-                    background: "#0f1117",
-                    border: "1px solid #1e2330",
-                    borderRadius: 12,
-                    padding: 24,
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#475569",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 16,
-                    }}
-                  >
-                    Profile
-                  </p>
-
-                  {/* Avatar row */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 14,
-                      marginBottom: 24,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        background: `hsl(${avatarHue}, 60%, 18%)`,
-                        border: `1px solid hsl(${avatarHue}, 60%, 28%)`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 20,
-                        fontWeight: 800,
-                        color: `hsl(${avatarHue}, 70%, 65%)`,
-                      }}
-                    >
+                <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 28, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                  <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 20 }}>Profile</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: `hsl(${avatarHue}, 55%, 92%)`, border: `1px solid hsl(${avatarHue}, 55%, 80%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, color: `hsl(${avatarHue}, 60%, 35%)` }}>
                       {(dbUser.name || dbUser.email)[0].toUpperCase()}
                     </div>
                     <div>
-                      <p
-                        style={{
-                          color: "#e2e8f0",
-                          fontSize: 15,
-                          fontWeight: 700,
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        {dbUser.name || "—"}
-                      </p>
-                      <p
-                        style={{
-                          color: "#475569",
-                          fontSize: 11,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          marginTop: 3,
-                        }}
-                      >
-                        {dbUser.email}
-                      </p>
+                      <p style={{ color: "#000", fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>{dbUser.name || "—"}</p>
+                      <p style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 3 }}>{dbUser.email}</p>
                     </div>
                   </div>
-
-                  {/* Details */}
                   {[
                     { k: "Plan", v: <PlanBadge plan={dbUser.plan} /> },
-                    {
-                      k: "Status",
-                      v: (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            fontSize: 11,
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              background: dbUser.active ? "#34d399" : "#64748b",
-                            }}
-                          />
-                          <span
-                            style={{
-                              color: dbUser.active ? "#6ee7b7" : "#64748b",
-                            }}
-                          >
-                            {dbUser.active ? "Active" : "Inactive"}
-                          </span>
-                        </span>
-                      ),
-                    },
-                    {
-                      k: "Total Spent",
-                      v: (
-                        <span
-                          style={{
-                            color: "#6ee7b7",
-                            fontFamily: "'JetBrains Mono', monospace",
-                            fontSize: 13,
-                            fontWeight: 600,
-                          }}
-                        >
-                          ₹{totalSpent.toFixed(2)}
-                        </span>
-                      ),
-                    },
+                    { k: "Status", v: <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: dbUser.active ? "#22c55e" : "#d1d5db" }} /><span style={{ color: dbUser.active ? "#16a34a" : "#9ca3af" }}>{dbUser.active ? "Active" : "Inactive"}</span></span> },
+                    { k: "Total Spent", v: <span style={{ color: "#16a34a", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>₹{totalSpent.toFixed(2)}</span> },
                   ].map(({ k, v }) => (
-                    <div
-                      key={k}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "10px 0",
-                        borderTop: "1px solid #141820",
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "#475569",
-                          fontSize: 11,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.06em",
-                        }}
-                      >
-                        {k}
-                      </span>
+                    <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: "1px solid #e5e7eb" }}>
+                      <span style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>{k}</span>
                       {v}
                     </div>
                   ))}
-
                 </div>
 
                 {/* Usage + Billing card */}
-                <div
-                  style={{
-                    background: "#0f1117",
-                    border: "1px solid #1e2330",
-                    borderRadius: 12,
-                    padding: 24,
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#475569",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 20,
-                    }}
-                  >
-                    Usage & Billing
-                  </p>
-
+                <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 28, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                  <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 22 }}>Usage & Billing</p>
                   {/* Usage bar */}
                   <div style={{ marginBottom: 24 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "#94a3b8",
-                          fontSize: 12,
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        API Requests
-                      </span>
-                      <span
-                        style={{
-                          color: usageColor,
-                          fontSize: 12,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {usagePct.toFixed(1)}%
-                      </span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ color: "#374151", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>API Requests</span>
+                      <span style={{ color: usageColor, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{usagePct.toFixed(1)}%</span>
                     </div>
-                    <div
-                      style={{
-                        height: 6,
-                        background: "#1e2330",
-                        borderRadius: 3,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          borderRadius: 3,
-                          background: usageColor,
-                          width: `${Math.min(100, usagePct)}%`,
-                          transition: "width 0.6s ease",
-                          boxShadow: `0 0 8px ${usageColor}50`,
-                        }}
-                      />
+                    <div style={{ height: 6, background: "#e5e7eb", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 3, background: usageColor, width: `${Math.min(100, usagePct)}%`, transition: "width 0.6s ease" }} />
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginTop: 6,
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "#334155",
-                          fontSize: 10,
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        {dbUser.usage.toLocaleString("en-IN")} used
-                      </span>
-                      <span
-                        style={{
-                          color: "#334155",
-                          fontSize: 10,
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        {dbUser.limit.toLocaleString("en-IN")} total
-                      </span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                      <span style={{ color: "#d1d5db", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>{dbUser.usage.toLocaleString("en-IN")} used</span>
+                      <span style={{ color: "#d1d5db", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>{dbUser.limit.toLocaleString("en-IN")} total</span>
                     </div>
                   </div>
-
                   {/* Billing cycle bar */}
-                  {dbUser.plan !== "free" &&
-                    (dbUser.billingDate || hasActiveExpirationOverride) && (
-                      <div style={{ marginBottom: 20 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: 8,
-                          }}
-                        >
-                          <span
-                            style={{
-                              color: "#94a3b8",
-                              fontSize: 12,
-                              fontFamily: "'JetBrains Mono', monospace",
-                            }}
-                          >
-                            Billing Cycle
-                          </span>
-                          <span
-                            style={{
-                              color: billing.color,
-                              fontSize: 12,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {billing.display}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            height: 6,
-                            background: "#1e2330",
-                            borderRadius: 3,
-                            overflow: "hidden",
-                          }}
-                        >
-                          <div
-                            style={{
-                              height: "100%",
-                              borderRadius: 3,
-                              background: billing.color,
-                              width: `${billing.pct}%`,
-                              transition: "width 0.6s ease",
-                              boxShadow: `0 0 8px ${billing.color}50`,
-                            }}
-                          />
-                        </div>
+                  {dbUser.plan !== "free" && (dbUser.billingDate || hasActiveExpirationOverride) && (
+                    <div style={{ marginBottom: 22 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                        <span style={{ color: "#374151", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>Billing Cycle</span>
+                        <span style={{ color: billing.color, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{billing.display}</span>
                       </div>
-                    )}
-
+                      <div style={{ height: 6, background: "#e5e7eb", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 3, background: billing.color, width: `${billing.pct}%`, transition: "width 0.6s ease" }} />
+                      </div>
+                    </div>
+                  )}
                   {/* Quick stats */}
-                  <div
-                    className="dash-usage-stats"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 10,
-                      marginTop: 8,
-                    }}
-                  >
+                  <div className="dash-usage-stats" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                     {[
-                      {
-                        label: "Paid Orders",
-                        value: paidOrders.length,
-                        color: "#6ee7b7",
-                      },
-                      {
-                        label: "Total Spent",
-                        value: `₹${totalSpent.toFixed(0)}`,
-                        color: "#fbbf24",
-                      },
+                      { label: "Paid Orders", value: paidOrders.length, color: "#16a34a" },
+                      { label: "Total Spent", value: `₹${totalSpent.toFixed(0)}`, color: "#d97706" },
                     ].map((s) => (
-                      <div
-                        key={s.label}
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #1e2330",
-                          borderRadius: 8,
-                          padding: "12px 14px",
-                        }}
-                      >
-                        <p
-                          style={{
-                            color: "#475569",
-                            fontSize: 10,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.08em",
-                            fontFamily: "'JetBrains Mono', monospace",
-                            marginBottom: 6,
-                          }}
-                        >
-                          {s.label}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: 18,
-                            fontWeight: 800,
-                            color: s.color,
-                            fontFamily: "'JetBrains Mono', monospace",
-                            letterSpacing: "-0.02em",
-                          }}
-                        >
-                          {s.value}
-                        </p>
+                      <div key={s.label} style={{ background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 16px" }}>
+                        <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>{s.label}</p>
+                        <p style={{ fontSize: 18, fontWeight: 800, color: s.color, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.02em" }}>{s.value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
+              {/* Pricing calculator */}
               {canBuyLimitTopup && (
-                <div
-                  style={{
-                    background: "#0f1117",
-                    border: "1px solid #1e2330",
-                    borderRadius: 12,
-                    padding: 24,
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#475569",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 18,
-                    }}
-                  >
-                    Pricing Calculator
-                  </p>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 10,
-                      flexWrap: "wrap",
-                      marginBottom: 14,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#cbd5e1",
-                        fontSize: 13,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      Requests:{" "}
-                      <b style={{ color: "#93c5fd" }}>
-                        {pricingRequests.toLocaleString("en-IN")}
-                      </b>
-                    </span>
-                    <span
-                      style={{
-                        color: "#6ee7b7",
-                        fontSize: 13,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Add-on: ₹{pricingAmount.toLocaleString("en-IN")}
-                    </span>
+                <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 28, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                  <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 18 }}>Pricing Calculator</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+                    <span style={{ color: "#374151", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>Requests: <b style={{ color: "#2563eb" }}>{pricingRequests.toLocaleString("en-IN")}</b></span>
+                    <span style={{ color: "#16a34a", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>Add-on: ₹{pricingAmount.toLocaleString("en-IN")}</span>
                   </div>
-
-                  <input
-                    type="range"
-                    min={0}
-                    max={pricingMaxSteps}
-                    step={1}
-                    value={pricingStep}
-                    onChange={(e) => setPricingStep(Number(e.target.value))}
-                    style={{
-                      width: "100%",
-                      accentColor: "#34d399",
-                      cursor: limitPurchaseLoading ? "wait" : "pointer",
-                    }}
-                    disabled={limitPurchaseLoading}
-                  />
-
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      color: "#475569",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    <span>20,000 reqs</span>
-                    <span>10k = +₹100</span>
+                  <input type="range" min={0} max={pricingMaxSteps} step={1} value={pricingStep} onChange={(e) => setPricingStep(Number(e.target.value))} style={{ width: "100%", accentColor: "#000", cursor: limitPurchaseLoading ? "wait" : "pointer" }} disabled={limitPurchaseLoading} />
+                  <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span>20,000 reqs</span><span>10k = +₹100</span>
                   </div>
-
-                  <p
-                    style={{
-                      marginTop: 10,
-                      color: "#64748b",
-                      fontSize: 11,
-                      lineHeight: 1.6,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    Note: Limit top-ups add requests only and do not extend your
-                    plan expiry.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={startLimitTopupPayment}
-                    disabled={limitPurchaseLoading}
-                    style={{
-                      width: "100%",
-                      marginTop: 18,
-                      border: "1px solid #047857",
-                      background: limitPurchaseLoading ? "#12312e" : "#059669",
-                      color: "#ffffff",
-                      borderRadius: 8,
-                      padding: "12px 14px",
-                      cursor: limitPurchaseLoading ? "wait" : "pointer",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
+                  <p style={{ marginTop: 10, color: "#9ca3af", fontSize: 11, lineHeight: 1.6, fontFamily: "'JetBrains Mono', monospace" }}>Note: Limit top-ups add requests only and do not extend your plan expiry.</p>
+                  <button type="button" onClick={startLimitTopupPayment} disabled={limitPurchaseLoading} style={{ width: "100%", marginTop: 18, border: "none", background: limitPurchaseLoading ? "#e5e7eb" : "#000", color: limitPurchaseLoading ? "#9ca3af" : "#fff", borderRadius: 12, padding: "13px 14px", cursor: limitPurchaseLoading ? "wait" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: "'Inter', system-ui, sans-serif", transition: "background 0.15s" }}>
                     {limitPurchaseLoading ? "Processing..." : "Increase Limit"}
                   </button>
-
                   {limitPurchaseMessage && (
-                    <p
-                      style={{
-                        marginTop: 12,
-                        color: limitPurchaseMessage.toLowerCase().includes("failed")
-                          ? "#fca5a5"
-                          : "#94a3b8",
-                        fontSize: 11,
-                        lineHeight: 1.6,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {limitPurchaseMessage}
-                    </p>
+                    <p style={{ marginTop: 12, color: limitPurchaseMessage.toLowerCase().includes("failed") ? "#dc2626" : "#6b7280", fontSize: 11, lineHeight: 1.6, fontFamily: "'JetBrains Mono', monospace" }}>{limitPurchaseMessage}</p>
                   )}
                 </div>
               )}
             </div>
           )}
 
-          {/* ── Tab: API Key ──────────────────────────────────────────────── */}
+          {/* ── Tab: API Key ────────────────────────────────────────────── */}
           {activeTab === "apikey" && (
-            <div
-              style={{
-                background: "#0f1117",
-                border: "1px solid #1e2330",
-                borderRadius: 12,
-                padding: 28,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  marginBottom: 8,
-                }}
-              >
-                <div
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 8,
-                    background: "#1a1f2e",
-                    border: "1px solid #2d3548",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#a78bfa",
-                  }}
-                >
+            <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 32, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#374151" }}>
                   <IconKey />
                 </div>
-                <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 700 }}>
-                  Secret API Key
-                </p>
+                <p className="dash-serif" style={{ color: "#000", fontSize: 16, fontWeight: 700 }}>Secret API Key</p>
               </div>
-              <p
-                style={{
-                  color: "#475569",
-                  fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  marginBottom: 24,
-                  lineHeight: 1.7,
-                  maxWidth: 800,
-                }}
-              >
+              <p style={{ color: "#9ca3af", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", marginBottom: 24, lineHeight: 1.7, maxWidth: 800 }}>
                 Install package{" "}
-                <span
-                  style={{
-                    color: "#6ee7b7",
-                    background: "#0f2a1d",
-                    padding: "1px 6px",
-                    borderRadius: 3,
-                  }}
-                >
-                  npm install irctc-connect
-                </span>{" "}
-                → Configure API key → Call the function
+                <span style={{ color: "#16a34a", background: "#f0fdf4", padding: "1px 6px", borderRadius: 4, border: "1px solid #bbf7d0" }}>npm install irctc-connect</span>
+                {" "}→ Configure API key → Call the function
               </p>
-
               {/* Security alert */}
-              <div
-                style={{
-                  background: "#1a1060",
-                  border: "1px solid #2d1f8a",
-                  borderRadius: 8,
-                  padding: "10px 14px",
-                  marginBottom: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <span style={{ color: "#a78bfa" }}>
-                  <IconShield />
-                </span>
-                <span
-                  style={{
-                    color: "#a78bfa",
-                    fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  Your key grants full package access. Rotate it immediately if you
-                  believe it has been compromised.
-                </span>
+              <div style={{ background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "10px 14px", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: "#6b7280" }}><IconShield /></span>
+                <span style={{ color: "#6b7280", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>Your key grants full package access. Rotate it immediately if you believe it has been compromised.</span>
               </div>
-
               {/* Key display */}
               <div className="dash-key-row" style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    background: "#0a0d13",
-                    border: "1px solid #2d3548",
-                    borderRadius: 8,
-                    padding: "12px 12px 12px 16px",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 13,
-                    color: "#94a3b8",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
-                  }}
-                >
-                  <span
-                    style={{ overflowX: "auto", whiteSpace: "nowrap", flex: 1, display: "block" }}
-                  >
-                    {regeneratingKey ? (
-                      <ApiKeySkeleton />
-                    ) : keyVisible ? (
-                      dbUser.apiKey
-                    ) : (
-                      maskedKey
-                    )}
+                <div style={{ flex: 1, minWidth: 0, background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "12px 12px 12px 16px", fontSize: 13, color: "#374151", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                  <span className="dash-code" style={{ overflowX: "auto", whiteSpace: "nowrap", flex: 1, display: "block" }}>
+                    {regeneratingKey ? <ApiKeySkeleton /> : keyVisible ? dbUser.apiKey : maskedKey}
                   </span>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setKeyVisible(!keyVisible)}
-                      title={keyVisible ? "Hide key" : "Reveal key"}
-                      aria-label={keyVisible ? "Hide API key" : "Reveal API key"}
-                      disabled={regeneratingKey}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: regeneratingKey ? "#334155" : "#64748b",
-                        cursor: regeneratingKey ? "not-allowed" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: 4,
-                      }}
-                    >
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    <button type="button" onClick={() => setKeyVisible(!keyVisible)} title={keyVisible ? "Hide key" : "Reveal key"} aria-label={keyVisible ? "Hide API key" : "Reveal API key"} disabled={regeneratingKey} style={{ background: "none", border: "none", color: regeneratingKey ? "#d1d5db" : "#9ca3af", cursor: regeneratingKey ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}>
                       {keyVisible ? <IconEyeOff /> : <IconEye />}
                     </button>
-                    <button
-                      type="button"
-                      onClick={copyApiKey}
-                      title={copied ? "Copied" : "Copy key"}
-                      aria-label={copied ? "API key copied" : "Copy API key"}
-                      disabled={regeneratingKey}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: copied ? "#22c55e" : regeneratingKey ? "#334155" : "#64748b",
-                        cursor: regeneratingKey ? "not-allowed" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: 4,
-                        transition: "color 0.2s ease",
-                      }}
-                    >
+                    <button type="button" onClick={copyApiKey} title={copied ? "Copied" : "Copy key"} aria-label={copied ? "API key copied" : "Copy API key"} disabled={regeneratingKey} style={{ background: "none", border: "none", color: copied ? "#16a34a" : regeneratingKey ? "#d1d5db" : "#9ca3af", cursor: regeneratingKey ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, transition: "color 0.2s ease" }}>
                       {copied ? <IconCheck /> : <IconCopy />}
                     </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={regenerateApiKey}
-                  disabled={regeneratingKey}
-                  style={{
-                    background: "#059669",
-                    border: "1px solid #047857",
-                    color: "#fff",
-                    borderRadius: 8,
-                    padding: "0 20px",
-                    cursor: regeneratingKey ? "not-allowed" : "pointer",
-                    opacity: regeneratingKey ? 0.6 : 1,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    transition: "background 0.2s, color 0.2s, box-shadow 0.2s",
-                    boxShadow: "0 0 16px rgba(5,150,105,0.3)",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      animation: regeneratingKey
-                        ? "spin 0.9s linear infinite"
-                        : "none",
-                    }}
-                  >
-                    <IconRefresh />
-                  </span>
+                <button type="button" onClick={regenerateApiKey} disabled={regeneratingKey} style={{ background: regeneratingKey ? "#e5e7eb" : "#000", border: "none", color: regeneratingKey ? "#9ca3af" : "#fff", borderRadius: 10, padding: "0 20px", cursor: regeneratingKey ? "not-allowed" : "pointer", fontFamily: "'Inter', system-ui, sans-serif", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, transition: "background 0.2s" }}>
+                  <span style={{ display: "inline-flex", animation: regeneratingKey ? "spin 0.9s linear infinite" : "none" }}><IconRefresh /></span>
                   {regeneratingKey ? "Regenerating..." : "Regenerate Key"}
                 </button>
               </div>
-              {regenerateError && (
-                <p
-                  style={{
-                    marginTop: 10,
-                    color: "#fda4af",
-                    fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  {regenerateError}
-                </p>
-              )}
-
+              {regenerateError && <p style={{ marginTop: 10, color: "#dc2626", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>{regenerateError}</p>}
               {/* Usage instructions */}
-              <div
-                style={{
-                  marginTop: 28,
-                  background: "#0d1117",
-                  border: "1px solid #1f2937",
-                  borderRadius: 10,
-                  padding: "18px 20px",
-                }}
-              >
-                <p
-                  style={{
-                    color: "#6b7280",
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginBottom: 14,
-                  }}
-                >
-                  Example Usage
-                </p>
-
-                <SyntaxHighlighter
-                  language="typescript"
-                  style={nightOwl}
-                  customStyle={{
-                    margin: 0,
-                    background: "transparent",
-                    fontSize: 12,
-                    lineHeight: 1.8,
-                    padding: 0,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
+              <div className="dash-code" style={{ marginTop: 28, background: "#0d1117", border: "1px solid #21262d", borderRadius: 14, padding: "18px 20px" }}>
+                <p style={{ color: "#6b7280", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 14 }}>Example Usage</p>
+                <SyntaxHighlighter language="typescript" style={nightOwl} customStyle={{ margin: 0, background: "transparent", fontSize: 12, lineHeight: 1.8, padding: 0, fontFamily: "'JetBrains Mono', monospace" }}>
                   {usageExampleCode}
                 </SyntaxHighlighter>
               </div>
             </div>
           )}
 
-          {/* ── Tab: API Endpoints ───────────────────────────────────────── */}
+          {/* ── Tab: API Endpoints ──────────────────────────────────────── */}
           {activeTab === "apiendpoints" && (
-            <div
-              className="dash-api-grid"
-              style={{
-                display: "grid",
-                gap: 16,
-                minWidth: 0,
-                maxWidth: "100%",
-              }}
-            >
-              <div
-                className="dash-api-banner"
-                style={{
-                  background: "#2a1f0f",
-                  border: "1px solid #4a3a1f",
-                  borderRadius: 10,
-                  padding: "12px 14px",
-                  color: "#fdba74",
-                  fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  lineHeight: 1.7,
-                }}
-              >
-                Direct API access is enabled only on the <b>Advance</b> plan.
-                Free/Pro users must use the official SDK flow.
+            <div style={{ display: "grid", gap: 16 }}>
+              <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 12, padding: "12px 16px", color: "#9a3412", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.7 }}>
+                Direct API access is enabled only on the <b>Advance</b> plan. Free/Pro users must use the official SDK flow.
               </div>
-
-              <div
-                className="dash-api-card"
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  padding: 22,
-                  minWidth: 0,
-                  maxWidth: "100%",
-                  overflow: "hidden",
-                }}
-              >
-                <p
-                  className="dash-api-title"
-                  style={{
-                    color: "#e2e8f0",
-                    fontSize: 15,
-                    fontWeight: 700,
-                    marginBottom: 10,
-                  }}
-                >
-                  How to call endpoints
-                </p>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginBottom: 10,
-                  }}
-                >
-                  <select
-                    value={apiCodeLanguage}
-                    onChange={(e) =>
-                      setApiCodeLanguage(e.target.value as ApiCodeLanguage)
-                    }
-                    style={{
-                      background: "#0a0d13",
-                      border: "1px solid #2d3548",
-                      borderRadius: 8,
-                      padding: "8px 10px",
-                      color: "#cbd5e1",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      outline: "none",
-                    }}
-                  >
-                    {(Object.keys(apiLanguageMeta) as ApiCodeLanguage[]).map(
-                      (lang) => (
-                        <option key={lang} value={lang}>
-                          {apiLanguageMeta[lang].label}
-                        </option>
-                      ),
-                    )}
+              <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 24, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                <p className="dash-serif" style={{ color: "#000", fontSize: 15, fontWeight: 700, marginBottom: 10 }}>How to call endpoints</p>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+                  <select value={apiCodeLanguage} onChange={(e) => setApiCodeLanguage(e.target.value as ApiCodeLanguage)} className="dash-select">
+                    {(Object.keys(apiLanguageMeta) as ApiCodeLanguage[]).map((lang) => (
+                      <option key={lang} value={lang}>{apiLanguageMeta[lang].label}</option>
+                    ))}
                   </select>
                 </div>
-                <p
-                  className="dash-api-text"
-                  style={{
-                    color: "#64748b",
-                    fontSize: 12,
-                    lineHeight: 1.7,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginBottom: 14,
-                  }}
-                >
-                  Base URL:{" "}
-                  <span style={{ color: "#93c5fd" }}>{directApiBaseUrl}</span>
-                  <br />
-                  Required header on every request:{" "}
-                  <span style={{ color: "#6ee7b7" }}>x-api-key: YOUR_API_KEY</span>
+                <p style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.7, fontFamily: "'JetBrains Mono', monospace", marginBottom: 14 }}>
+                  Base URL: <span style={{ color: "#2563eb" }}>{directApiBaseUrl}</span><br />
+                  Required header: <span style={{ color: "#16a34a" }}>x-api-key: YOUR_API_KEY</span>
                 </p>
-
-                <div
-                  className="dash-api-code-wrap"
-                  style={{
-                    background: "#0a0d13",
-                    border: "1px solid #1f2937",
-                    borderRadius: 8,
-                    padding: 14,
-                    marginBottom: 12,
-                    minWidth: 0,
-                    maxWidth: "100%",
-                    overflowX: "auto",
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#64748b",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 10,
-                    }}
-                  >
-                    {apiLanguageMeta[apiCodeLanguage].label} Example
-                  </p>
-                  <SyntaxHighlighter
-                    language={apiLanguageMeta[apiCodeLanguage].syntax}
-                    style={nightOwl}
-                    customStyle={{
-                      margin: 0,
-                      background: "transparent",
-                      fontSize: 12,
-                      lineHeight: 1.7,
-                      padding: 0,
-                      width: "100%",
-                      maxWidth: "100%",
-                      overflowX: "auto",
-                      overflowY: "hidden",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {directApiQuickExample}
+                <div className="dash-code" style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: 16, overflowX: "auto" }}>
+                  <SyntaxHighlighter language={apiLanguageMeta[apiCodeLanguage].syntax} style={nightOwl} customStyle={{ margin: 0, background: "transparent", fontSize: 12, lineHeight: 1.7, padding: 0, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {buildApiSnippet("/api/checkPNRStatus/1234567890", apiCodeLanguage)}
                   </SyntaxHighlighter>
                 </div>
               </div>
-
               {endpointDocs.map((endpoint) => (
-                <div
-                  className="dash-api-card"
-                  key={endpoint.path}
-                  style={{
-                    background: "#0f1117",
-                    border: "1px solid #1e2330",
-                    borderRadius: 12,
-                    padding: 22,
-                    minWidth: 0,
-                    maxWidth: "100%",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    className="dash-api-endpoint-head"
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      alignItems: "center",
-                      marginBottom: 10,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span
-                      className="dash-api-method-pill"
-                      style={{
-                        color: "#6ee7b7",
-                        background: "#0f2a1d",
-                        border: "1px solid #1a4731",
-                        borderRadius: 6,
-                        padding: "2px 8px",
-                        fontSize: 11,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {endpoint.method}
-                    </span>
-                    <p
-                      className="dash-api-endpoint-name"
-                      style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 700 }}
-                    >
-                      {endpoint.name}
-                    </p>
+                <div key={endpoint.path} style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 24, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+                    <span style={{ color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{endpoint.method}</span>
+                    <p style={{ color: "#000", fontSize: 14, fontWeight: 700 }}>{endpoint.name}</p>
                   </div>
-
-                  <p
-                    className="dash-api-path"
-                    style={{
-                      color: "#94a3b8",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 6,
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {endpoint.path}
-                  </p>
-                  <p
-                    className="dash-api-example-url"
-                    style={{
-                      color: "#475569",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 12,
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    Example URL: {directApiBaseUrl}
-                    {endpoint.examplePath}
-                  </p>
-                  <p
-                    className="dash-api-note"
-                    style={{
-                      color: "#64748b",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      marginBottom: 12,
-                    }}
-                  >
-                    {endpoint.notes}
-                  </p>
-
-                  <div
-                    className="dash-api-code-wrap"
-                    style={{
-                      background: "#0a0d13",
-                      border: "1px solid #1f2937",
-                      borderRadius: 8,
-                      padding: 14,
-                      minWidth: 0,
-                      maxWidth: "100%",
-                      overflowX: "auto",
-                    }}
-                  >
-                    <SyntaxHighlighter
-                      language={apiLanguageMeta[apiCodeLanguage].syntax}
-                      style={nightOwl}
-                      customStyle={{
-                        margin: 0,
-                        background: "transparent",
-                        fontSize: 12,
-                        lineHeight: 1.7,
-                        padding: 0,
-                        width: "100%",
-                        maxWidth: "100%",
-                        overflowX: "auto",
-                        overflowY: "hidden",
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
+                  <p style={{ color: "#374151", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", marginBottom: 6, wordBreak: "break-all" }}>{endpoint.path}</p>
+                  <p style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginBottom: 10, wordBreak: "break-all" }}>Example: {directApiBaseUrl}{endpoint.examplePath}</p>
+                  <p style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginBottom: 14 }}>{endpoint.notes}</p>
+                  <div className="dash-code" style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: 14, overflowX: "auto" }}>
+                    <SyntaxHighlighter language={apiLanguageMeta[apiCodeLanguage].syntax} style={nightOwl} customStyle={{ margin: 0, background: "transparent", fontSize: 12, lineHeight: 1.7, padding: 0, fontFamily: "'JetBrains Mono', monospace" }}>
                       {buildApiSnippet(endpoint.examplePath, apiCodeLanguage)}
                     </SyntaxHighlighter>
                   </div>
@@ -2724,529 +965,72 @@ console.log(data);`;
             </div>
           )}
 
-          {/* ── Tab: Playground ───────────────────────────────────────────── */}
+          {/* ── Tab: Playground ────────────────────────────────────────── */}
           {activeTab === "playground" && (
-            <div
-              className="dash-playground-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.05fr 0.95fr",
-                gap: 16,
-              }}
-            >
-              <div
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  padding: 22,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    marginBottom: 14,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#e2e8f0",
-                      fontSize: 15,
-                      fontWeight: 700,
-                    }}
-                  >
-                    API Playground
-                  </p>
-                  <span
-                    style={{
-                      color: "#6ee7b7",
-                      background: "#0f2a1d",
-                      border: "1px solid #1a4731",
-                      borderRadius: 6,
-                      padding: "3px 8px",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    Using your API key
-                  </span>
+            <div className="dash-playground-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
+              <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 24, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+                  <p className="dash-serif" style={{ color: "#000", fontSize: 16, fontWeight: 700 }}>API Playground</p>
+                  <span style={{ color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>Using your API key</span>
                 </div>
-
-                <p
-                  style={{
-                    color: "#64748b",
-                    fontSize: 12,
-                    lineHeight: 1.7,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginBottom: 18,
-                  }}
-                >
-                  Run quick real requests without leaving your workspace.
-                  Results appear on the right panel with status and latency.
-                </p>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 6,
-                    marginBottom: 16,
-                  }}
-                >
-                  {[
-                    { id: "pnr", label: "PNR" },
-                    { id: "train", label: "Train" },
-                    { id: "track", label: "Track" },
-                    { id: "station", label: "Station" },
-                    { id: "search", label: "Search" },
-                    { id: "seat", label: "Seat" },
-                  ].map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      onClick={() => {
-                        setPlaygroundAction(item.id as typeof playgroundAction);
-                        resetPlaygroundMeta();
-                      }}
-                      style={{
-                        background:
-                          playgroundAction === item.id ? "#1e2a3a" : "#131722",
-                        border:
-                          playgroundAction === item.id
-                            ? "1px solid #2d4060"
-                            : "1px solid #1f2432",
-                        color:
-                          playgroundAction === item.id ? "#60a5fa" : "#64748b",
-                        borderRadius: 6,
-                        padding: "7px 12px",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                      }}
-                    >
+                <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.7, fontFamily: "'JetBrains Mono', monospace", marginBottom: 18 }}>Run quick real requests without leaving your workspace. Results appear on the right panel with status and latency.</p>
+                {/* Action selector */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+                  {[{ id: "pnr", label: "PNR" }, { id: "train", label: "Train" }, { id: "track", label: "Track" }, { id: "station", label: "Station" }, { id: "search", label: "Search" }, { id: "seat", label: "Seat" }].map((item) => (
+                    <button type="button" key={item.id} onClick={() => { setPlaygroundAction(item.id as typeof playgroundAction); resetPlaygroundMeta(); }} style={{ background: playgroundAction === item.id ? "#000" : "#f7f7f7", border: `1px solid ${playgroundAction === item.id ? "#000" : "rgba(0,0,0,0.12)"}`, color: playgroundAction === item.id ? "#fff" : "#6f6f6f", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", transition: "background 0.15s, color 0.15s, border-color 0.15s" }}>
                       {item.label}
                     </button>
                   ))}
                 </div>
-
-                <div
-                  className="dash-playground-actions"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 10,
-                  }}
-                >
-                  {playgroundAction === "pnr" && (
-                    <input
-                      value={pnrInput}
-                      onChange={(e) => setPnrInput(e.target.value.replace(/\D/g, ""))}
-                      maxLength={10}
-                      placeholder="PNR number (10 digits)"
-                      style={{
-                        gridColumn: "1 / -1",
-                        background: "#0a0d13",
-                        border: "1px solid #2d3548",
-                        borderRadius: 8,
-                        padding: "11px 12px",
-                        color: "#cbd5e1",
-                        fontSize: 13,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        outline: "none",
-                      }}
-                    />
-                  )}
-
-                  {playgroundAction === "train" && (
-                    <input
-                      value={trainInput}
-                      onChange={(e) =>
-                        setTrainInput(e.target.value.replace(/\D/g, ""))
-                      }
-                      maxLength={5}
-                      placeholder="Train number (5 digits)"
-                      style={{
-                        gridColumn: "1 / -1",
-                        background: "#0a0d13",
-                        border: "1px solid #2d3548",
-                        borderRadius: 8,
-                        padding: "11px 12px",
-                        color: "#cbd5e1",
-                        fontSize: 13,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        outline: "none",
-                      }}
-                    />
-                  )}
-
-                  {playgroundAction === "track" && (
-                    <>
-                      <input
-                        value={trackTrainInput}
-                        onChange={(e) =>
-                          setTrackTrainInput(e.target.value.replace(/\D/g, ""))
-                        }
-                        maxLength={5}
-                        placeholder="Train number"
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        type="date"
-                        value={toInputDate(trackDateInput)}
-                        onChange={(e) =>
-                          setTrackDateInput(fromInputDate(e.target.value))
-                        }
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                    </>
-                  )}
-
-                  {playgroundAction === "station" && (
-                    <input
-                      value={stationInput}
-                      onChange={(e) => setStationInput(e.target.value.toUpperCase())}
-                      placeholder="Station code (e.g. NDLS)"
-                      style={{
-                        gridColumn: "1 / -1",
-                        background: "#0a0d13",
-                        border: "1px solid #2d3548",
-                        borderRadius: 8,
-                        padding: "11px 12px",
-                        color: "#cbd5e1",
-                        fontSize: 13,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        outline: "none",
-                      }}
-                    />
-                  )}
-
-                  {playgroundAction === "search" && (
-                    <>
-                      <input
-                        value={fromStationInput}
-                        onChange={(e) =>
-                          setFromStationInput(e.target.value.toUpperCase())
-                        }
-                        placeholder="From station code"
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        value={toStationInput}
-                        onChange={(e) =>
-                          setToStationInput(e.target.value.toUpperCase())
-                        }
-                        placeholder="To station code"
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        type="date"
-                        value={toInputDate(searchDateInput)}
-                        onChange={(e) =>
-                          setSearchDateInput(fromInputDate(e.target.value))
-                        }
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                    </>
-                  )}
-
-                  {playgroundAction === "seat" && (
-                    <>
-                      <input
-                        value={seatTrainInput}
-                        onChange={(e) =>
-                          setSeatTrainInput(e.target.value.replace(/\D/g, ""))
-                        }
-                        maxLength={5}
-                        placeholder="Train number"
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        type="date"
-                        value={toInputDate(seatDateInput)}
-                        onChange={(e) => setSeatDateInput(fromInputDate(e.target.value))}
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        value={seatFromInput}
-                        onChange={(e) => setSeatFromInput(e.target.value.toUpperCase())}
-                        placeholder="From station"
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        value={seatToInput}
-                        onChange={(e) => setSeatToInput(e.target.value.toUpperCase())}
-                        placeholder="To station"
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      />
-                      <select
-                        value={seatClassInput}
-                        onChange={(e) => setSeatClassInput(e.target.value)}
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      >
-                        {["SL", "3A", "2A", "1A", "CC", "EC", "2S"].map((coach) => (
-                          <option key={coach} value={coach}>
-                            {coach}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={seatQuotaInput}
-                        onChange={(e) => setSeatQuotaInput(e.target.value)}
-                        style={{
-                          background: "#0a0d13",
-                          border: "1px solid #2d3548",
-                          borderRadius: 8,
-                          padding: "11px 12px",
-                          color: "#cbd5e1",
-                          fontSize: 13,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          outline: "none",
-                        }}
-                      >
-                        {["GN", "TQ", "LD", "PT", "SS"].map((quota) => (
-                          <option key={quota} value={quota}>
-                            {quota}
-                          </option>
-                        ))}
-                      </select>
-                    </>
-                  )}
+                {/* Inputs */}
+                <div className="dash-playground-actions" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {playgroundAction === "pnr" && <input value={pnrInput} onChange={(e) => setPnrInput(e.target.value.replace(/\D/g, ""))} maxLength={10} placeholder="PNR number (10 digits)" className="dash-input" style={{ gridColumn: "1 / -1" }} />}
+                  {playgroundAction === "train" && <input value={trainInput} onChange={(e) => setTrainInput(e.target.value.replace(/\D/g, ""))} maxLength={5} placeholder="Train number (5 digits)" className="dash-input" style={{ gridColumn: "1 / -1" }} />}
+                  {playgroundAction === "track" && (<>
+                    <input value={trackTrainInput} onChange={(e) => setTrackTrainInput(e.target.value.replace(/\D/g, ""))} maxLength={5} placeholder="Train number" className="dash-input" />
+                    <input type="date" value={toInputDate(trackDateInput)} onChange={(e) => setTrackDateInput(fromInputDate(e.target.value))} className="dash-input" />
+                  </>)}
+                  {playgroundAction === "station" && <input value={stationInput} onChange={(e) => setStationInput(e.target.value.toUpperCase())} placeholder="Station code (e.g. NDLS)" className="dash-input" style={{ gridColumn: "1 / -1" }} />}
+                  {playgroundAction === "search" && (<>
+                    <input value={fromStationInput} onChange={(e) => setFromStationInput(e.target.value.toUpperCase())} placeholder="From station code" className="dash-input" />
+                    <input value={toStationInput} onChange={(e) => setToStationInput(e.target.value.toUpperCase())} placeholder="To station code" className="dash-input" />
+                    <input type="date" value={toInputDate(searchDateInput)} onChange={(e) => setSearchDateInput(fromInputDate(e.target.value))} className="dash-input" />
+                  </>)}
+                  {playgroundAction === "seat" && (<>
+                    <input value={seatTrainInput} onChange={(e) => setSeatTrainInput(e.target.value.replace(/\D/g, ""))} maxLength={5} placeholder="Train number" className="dash-input" />
+                    <input type="date" value={toInputDate(seatDateInput)} onChange={(e) => setSeatDateInput(fromInputDate(e.target.value))} className="dash-input" />
+                    <input value={seatFromInput} onChange={(e) => setSeatFromInput(e.target.value.toUpperCase())} placeholder="From station" className="dash-input" />
+                    <input value={seatToInput} onChange={(e) => setSeatToInput(e.target.value.toUpperCase())} placeholder="To station" className="dash-input" />
+                    <select value={seatClassInput} onChange={(e) => setSeatClassInput(e.target.value)} className="dash-select">
+                      {["SL", "3A", "2A", "1A", "CC", "EC", "2S"].map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <select value={seatQuotaInput} onChange={(e) => setSeatQuotaInput(e.target.value)} className="dash-select">
+                      {["GN", "TQ", "LD", "PT", "SS"].map((q) => <option key={q} value={q}>{q}</option>)}
+                    </select>
+                  </>)}
                 </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    marginTop: 16,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={runPlayground}
-                    disabled={playgroundLoading}
-                    style={{
-                      background: playgroundLoading
-                        ? "#1a1f2e"
-                        : "linear-gradient(135deg, #059669, #047857)",
-                      border: playgroundLoading
-                        ? "1px solid #2d3548"
-                        : "1px solid #047857",
-                      color: playgroundLoading ? "#64748b" : "#ffffff",
-                      borderRadius: 8,
-                      padding: "10px 16px",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      cursor: playgroundLoading ? "not-allowed" : "pointer",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
+                  <button type="button" onClick={runPlayground} disabled={playgroundLoading} style={{ background: playgroundLoading ? "#e5e7eb" : "#000", border: "none", color: playgroundLoading ? "#9ca3af" : "#fff", borderRadius: 10, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: playgroundLoading ? "not-allowed" : "pointer", fontFamily: "'Inter', system-ui, sans-serif", transition: "background 0.15s" }}>
                     {playgroundLoading ? "Running..." : "Run Request"}
                   </button>
                   {playgroundStatusCode !== null && (
-                    <span
-                      style={{
-                        color: playgroundStatusCode < 400 ? "#6ee7b7" : "#fca5a5",
-                        background: playgroundStatusCode < 400 ? "#0f2a1d" : "#2a0f0f",
-                        border: `1px solid ${playgroundStatusCode < 400 ? "#1a4731" : "#4a1f1f"}`,
-                        borderRadius: 6,
-                        padding: "3px 8px",
-                        fontSize: 11,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      HTTP {playgroundStatusCode}
-                    </span>
+                    <span style={{ color: playgroundStatusCode < 400 ? "#16a34a" : "#dc2626", background: playgroundStatusCode < 400 ? "#f0fdf4" : "#fef2f2", border: `1px solid ${playgroundStatusCode < 400 ? "#bbf7d0" : "#fecaca"}`, borderRadius: 6, padding: "3px 8px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>HTTP {playgroundStatusCode}</span>
                   )}
                   {playgroundResponseTime !== null && (
-                    <span
-                      style={{
-                        color: "#93c5fd",
-                        background: "#0b1a2c",
-                        border: "1px solid #1e3a5f",
-                        borderRadius: 6,
-                        padding: "3px 8px",
-                        fontSize: 11,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {playgroundResponseTime}ms
-                    </span>
+                    <span style={{ color: "#2563eb", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>{playgroundResponseTime}ms</span>
                   )}
                 </div>
-
-                {playgroundError && (
-                  <p
-                    style={{
-                      marginTop: 10,
-                      color: "#fda4af",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {playgroundError}
-                  </p>
-                )}
+                {playgroundError && <p style={{ marginTop: 10, color: "#dc2626", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>{playgroundError}</p>}
               </div>
-
-              <div
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  minHeight: 420,
-                }}
-              >
-                <div
-                  style={{
-                    background: "#0a0d13",
-                    borderBottom: "1px solid #1e2330",
-                    padding: "12px 14px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
-                  <span
-                    style={{
-                      color: "#94a3b8",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Response
-                  </span>
-                  <span
-                    style={{
-                      color: "#475569",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    JSON
-                  </span>
+              {/* Response panel */}
+              <div style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: 20, overflow: "hidden", minHeight: 420 }}>
+                <div style={{ background: "#161b22", borderBottom: "1px solid #21262d", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#8b949e", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", textTransform: "uppercase" }}>Response</span>
+                  <span style={{ color: "#6b7280", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>JSON</span>
                 </div>
-                <div style={{ padding: 14, height: "100%" }}>
-                  {playgroundLoading ? (
-                    <PlaygroundResponseSkeleton />
-                  ) : (
-                    <SyntaxHighlighter
-                      language="json"
-                      style={nightOwl}
-                      customStyle={{
-                        margin: 0,
-                        background: "transparent",
-                        fontSize: 12,
-                        lineHeight: 1.7,
-                        minHeight: 360,
-                        maxHeight: 520,
-                        borderRadius: 8,
-                        overflow: "auto",
-                        padding: 0,
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
+                <div className="dash-code" style={{ padding: 16, height: "100%" }}>
+                  {playgroundLoading ? <PlaygroundResponseSkeleton /> : (
+                    <SyntaxHighlighter language="json" style={nightOwl} customStyle={{ margin: 0, background: "transparent", fontSize: 12, lineHeight: 1.7, minHeight: 360, maxHeight: 520, borderRadius: 8, overflow: "auto", padding: 0, fontFamily: "'JetBrains Mono', monospace" }}>
                       {playgroundResultText || `{\n  "message": "Run a request to preview the live response"\n}`}
                     </SyntaxHighlighter>
                   )}
@@ -3255,333 +1039,71 @@ console.log(data);`;
             </div>
           )}
 
-          {/* ── Tab: Logs ─────────────────────────────────────────────────── */}
+          {/* ── Tab: Logs ──────────────────────────────────────────────── */}
           {activeTab === "logs" && (
             <div style={{ display: "grid", gap: 16 }}>
-              <div
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  padding: 20,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 10,
-                    marginBottom: 14,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 700 }}>
-                    API Requests Per Day
-                  </p>
-                  <span
-                    style={{
-                      color: "#64748b",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    Last {logsTimelineDays} days
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      border: "1px solid #243042",
-                      borderRadius: 8,
-                      overflow: "hidden",
-                    }}
-                  >
+              <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 24, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+                  <p className="dash-serif" style={{ color: "#000", fontSize: 16, fontWeight: 700 }}>API Requests Per Day</p>
+                  <div style={{ display: "flex", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 8, overflow: "hidden" }}>
                     {([14, 30] as const).map((days) => (
-                      <button
-                        type="button"
-                        key={days}
-                        onClick={() => setLogsTimelineDays(days)}
-                        style={{
-                          background: logsTimelineDays === days ? "#1f3048" : "#0a0d13",
-                          color: logsTimelineDays === days ? "#93c5fd" : "#64748b",
-                          border: "none",
-                          borderRight: days === 14 ? "1px solid #243042" : "none",
-                          padding: "6px 12px",
-                          fontSize: 11,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          cursor: "pointer",
-                        }}
-                      >
+                      <button type="button" key={days} onClick={() => setLogsTimelineDays(days)} style={{ background: logsTimelineDays === days ? "#000" : "#fff", color: logsTimelineDays === days ? "#fff" : "#6f6f6f", border: "none", borderRight: days === 14 ? "1px solid rgba(0,0,0,0.12)" : "none", padding: "6px 14px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", transition: "background 0.15s, color 0.15s" }}>
                         {days}D
                       </button>
                     ))}
                   </div>
                 </div>
-
-                <div
-                  style={{
-                    background: "#0a0d13",
-                    border: "1px solid #1f2937",
-                    borderRadius: 10,
-                    padding: 10,
-                    height: 260,
-                  }}
-                >
+                <div style={{ background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 12, height: 260 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={chartData}
-                      margin={{ top: 12, right: 16, left: 0, bottom: 0 }}
-                    >
+                    <AreaChart data={chartData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="auditAreaFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.32} />
-                          <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.02} />
+                          <stop offset="0%" stopColor="#000" stopOpacity={0.08} />
+                          <stop offset="100%" stopColor="#000" stopOpacity={0.01} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fill: "#64748b", fontSize: 11 }}
-                        axisLine={{ stroke: "#1f2937" }}
-                        tickLine={{ stroke: "#1f2937" }}
-                        minTickGap={18}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        tick={{ fill: "#64748b", fontSize: 11 }}
-                        axisLine={{ stroke: "#1f2937" }}
-                        tickLine={{ stroke: "#1f2937" }}
-                      />
-                      <Tooltip
-                        cursor={{ stroke: "#334155", strokeWidth: 1 }}
-                        contentStyle={{
-                          background: "#0b1220",
-                          border: "1px solid #1e293b",
-                          borderRadius: 8,
-                          color: "#cbd5e1",
-                          fontSize: 12,
-                        }}
-                        formatter={(value) => {
-                          const numericValue =
-                            typeof value === "number" ? value : Number(value ?? 0);
-                          return [`${numericValue} requests`, "Usage"];
-                        }}
-                        labelFormatter={(label) => `Date: ${label}`}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="requests"
-                        stroke="none"
-                        fill="url(#auditAreaFill)"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="requests"
-                        stroke="#38bdf8"
-                        strokeWidth={3}
-                        dot={{ r: 3, stroke: "#0a0d13", strokeWidth: 1, fill: "#7dd3fc" }}
-                        activeDot={{ r: 5, fill: "#e0f2fe", stroke: "#38bdf8", strokeWidth: 2 }}
-                      />
+                      <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+                      <XAxis dataKey="label" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={{ stroke: "#e5e7eb" }} tickLine={{ stroke: "#e5e7eb" }} minTickGap={18} />
+                      <YAxis allowDecimals={false} tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={{ stroke: "#e5e7eb" }} tickLine={{ stroke: "#e5e7eb" }} />
+                      <Tooltip cursor={{ stroke: "rgba(0,0,0,0.12)", strokeWidth: 1 }} contentStyle={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, color: "#374151", fontSize: 12, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }} formatter={(value) => { const n = typeof value === "number" ? value : Number(value ?? 0); return [`${n} requests`, "Usage"]; }} labelFormatter={(label) => `Date: ${label}`} />
+                      <Area type="monotone" dataKey="requests" stroke="none" fill="url(#auditAreaFill)" />
+                      <Line type="monotone" dataKey="requests" stroke="#000" strokeWidth={2} dot={{ r: 3, stroke: "#fff", strokeWidth: 1.5, fill: "#000" }} activeDot={{ r: 5, fill: "#000", stroke: "#fff", strokeWidth: 2 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
-
-                <div
-                  style={{
-                    marginTop: 10,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    flexWrap: "wrap",
-                    color: "#475569",
-                    fontSize: 10,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  <span>
-                    Start:{" "}
-                    {auditDailyUsage[0]
-                      ? new Date(auditDailyUsage[0].date).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                      })
-                      : "-"}
-                  </span>
+                <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", color: "#9ca3af", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                  <span>Start: {auditDailyUsage[0] ? new Date(auditDailyUsage[0].date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "-"}</span>
                   <span>Peak: {maxDailyRequests} req/day</span>
-                  <span>
-                    End:{" "}
-                    {auditDailyUsage[auditDailyUsage.length - 1]
-                      ? new Date(
-                        auditDailyUsage[auditDailyUsage.length - 1].date
-                      ).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                      })
-                      : "-"}
-                  </span>
+                  <span>End: {auditDailyUsage[auditDailyUsage.length - 1] ? new Date(auditDailyUsage[auditDailyUsage.length - 1].date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "-"}</span>
                 </div>
               </div>
 
-              <div
-                style={{
-                  background: "#0f1117",
-                  border: "1px solid #1e2330",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "14px 18px",
-                    borderBottom: "1px solid #1e2330",
-                    background: "#0a0d13",
-                  }}
-                >
-                  <span
-                    style={{
-                      color: "#94a3b8",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    Recent API Logs
-                  </span>
-                  <span
-                    style={{
-                      color: "#475569",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {recentLogs.length} entries
-                  </span>
+              <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, overflow: "hidden", boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#f7f7f7" }}>
+                  <span style={{ color: "#374151", fontSize: 13, fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 600 }}>Recent API Logs</span>
+                  <span style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>{recentLogs.length} entries</span>
                 </div>
-
                 <div style={{ overflowX: "auto" }}>
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      fontSize: 13,
-                    }}
-                  >
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
-                      <tr
-                        style={{
-                          background: "#0a0d13",
-                          borderBottom: "1px solid #1e2330",
-                        }}
-                      >
+                      <tr style={{ background: "#f7f7f7", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
                         {["Time", "Path", "Status", "Duration", "IP"].map((h) => (
-                          <th
-                            key={h}
-                            style={{
-                              padding: "12px 16px",
-                              textAlign: "left",
-                              color: "#475569",
-                              fontSize: 10,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.1em",
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontWeight: 600,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {h}
-                          </th>
+                          <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {recentLogs.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            style={{
-                              padding: 48,
-                              textAlign: "center",
-                              color: "#334155",
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontSize: 12,
-                            }}
-                          >
-                            No logs yet for this account.
-                          </td>
+                        <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: "#d1d5db", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No logs yet for this account.</td></tr>
+                      ) : recentLogs.map((log) => (
+                        <tr key={log.id} className="row-hover" style={{ borderBottom: "1px solid #e5e7eb", transition: "background 0.1s" }}>
+                          <td style={{ padding: "12px 16px", color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap" }}>{new Date(log.createdAt).toLocaleString("en-IN")}</td>
+                          <td style={{ padding: "12px 16px", color: "#374151", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", maxWidth: 420, wordBreak: "break-all" }}>{log.path}</td>
+                          <td style={{ padding: "12px 16px" }}><span style={{ color: log.statusCode >= 200 && log.statusCode < 400 ? "#16a34a" : "#dc2626", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>{log.statusCode}</span></td>
+                          <td style={{ padding: "12px 16px", color: "#2563eb", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>{Number(log.duration).toFixed(2)} ms</td>
+                          <td style={{ padding: "12px 16px", color: "#9ca3af", fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{log.ip}</td>
                         </tr>
-                      ) : (
-                        recentLogs.map((log) => (
-                          <tr
-                            key={log.id}
-                            style={{
-                              borderBottom: "1px solid #141820",
-                            }}
-                          >
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                color: "#94a3b8",
-                                fontSize: 11,
-                                fontFamily: "'JetBrains Mono', monospace",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {new Date(log.createdAt).toLocaleString("en-IN")}
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                color: "#cbd5e1",
-                                fontSize: 12,
-                                fontFamily: "'JetBrains Mono', monospace",
-                                maxWidth: 420,
-                                wordBreak: "break-all",
-                              }}
-                            >
-                              {log.path}
-                            </td>
-                            <td style={{ padding: "12px 16px" }}>
-                              <span
-                                style={{
-                                  color:
-                                    log.statusCode >= 200 && log.statusCode < 400
-                                      ? "#6ee7b7"
-                                      : "#fda4af",
-                                  fontFamily: "'JetBrains Mono', monospace",
-                                  fontSize: 12,
-                                }}
-                              >
-                                {log.statusCode}
-                              </span>
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                color: "#93c5fd",
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 12,
-                              }}
-                            >
-                              {Number(log.duration).toFixed(2)} ms
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                color: "#64748b",
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 11,
-                              }}
-                            >
-                              {log.ip}
-                            </td>
-                          </tr>
-                        ))
-                      )}
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -3589,236 +1111,57 @@ console.log(data);`;
             </div>
           )}
 
-          {/* ── Tab: Orders ───────────────────────────────────────────────── */}
+          {/* ── Tab: Orders ────────────────────────────────────────────── */}
           {activeTab === "orders" && (
-            <div
-              style={{
-                background: "#0f1117",
-                border: "1px solid #1e2330",
-                borderRadius: 12,
-                overflow: "hidden",
-              }}
-            >
-              {/* Table header bar */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "14px 18px",
-                  borderBottom: "1px solid #1e2330",
-                  background: "#0a0d13",
-                }}
-              >
-                <span
-                  style={{
-                    color: "#94a3b8",
-                    fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  All orders ·{" "}
-                  <span style={{ color: "#6ee7b7" }}>
-                    {paidOrders.length} paid
-                  </span>
+            <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, overflow: "hidden", boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#f7f7f7" }}>
+                <span style={{ color: "#374151", fontSize: 13, fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 600 }}>
+                  All orders · <span style={{ color: "#16a34a" }}>{paidOrders.length} paid</span>
                 </span>
-                <span
-                  style={{
-                    color: "#475569",
-                    fontSize: 11,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  Total:{" "}
-                  <span style={{ color: "#fbbf24" }}>
-                    ₹{totalSpent.toFixed(2)}
-                  </span>
+                <span style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Total: <span style={{ color: "#d97706" }}>₹{totalSpent.toFixed(2)}</span>
                 </span>
               </div>
-
               <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: 13,
-                  }}
-                >
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
-                    <tr
-                      style={{
-                        background: "#0a0d13",
-                        borderBottom: "1px solid #1e2330",
-                      }}
-                    >
-                      {[
-                        "Order ID",
-                        "Amount",
-                        "Status",
-                        "Credited",
-                        "Date",
-                        "Actions",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          style={{
-                            padding: "12px 16px",
-                            textAlign: "left",
-                            color: "#475569",
-                            fontSize: 10,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.1em",
-                            fontFamily: "'JetBrains Mono', monospace",
-                            fontWeight: 600,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {h}
-                        </th>
+                    <tr style={{ background: "#f7f7f7", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+                      {["Order ID", "Amount", "Status", "Credited", "Date", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {orders.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          style={{
-                            padding: 48,
-                            textAlign: "center",
-                            color: "#334155",
-                            fontFamily: "'JetBrains Mono', monospace",
-                            fontSize: 12,
-                          }}
-                        >
-                          No orders found. Subscribe to a plan to get started.
+                      <tr><td colSpan={6} style={{ padding: 48, textAlign: "center", color: "#d1d5db", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No orders found. Subscribe to a plan to get started.</td></tr>
+                    ) : orders.map((o) => (
+                      <tr key={o._id} className="row-hover" style={{ borderBottom: "1px solid #e5e7eb", transition: "background 0.1s" }}>
+                        <td style={{ padding: "14px 16px" }}><span style={{ fontFamily: "'JetBrains Mono', monospace", color: "#9ca3af", fontSize: 11 }}>{o.orderId}</span></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ color: "#16a34a", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 13 }}>₹{o.amount.toFixed(2)}</span>
+                          <span style={{ color: "#d1d5db", fontSize: 10, marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{o.currency}</span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}><StatusBadge status={o.status} /></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {o.credited ? (<><span style={{ color: "#16a34a" }}><IconCheck /></span><span style={{ color: "#16a34a" }}>Yes</span></>) : (<><span style={{ color: "#d1d5db" }}><IconX /></span><span style={{ color: "#9ca3af" }}>No</span></>)}
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 16px" }}><span style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>{o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}</span></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <button type="button" className="action-btn" onClick={() => setViewOrder(o)} style={{ background: "#f7f7f7", border: "1px solid rgba(0,0,0,0.12)", color: "#6f6f6f", borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "background 0.15s, color 0.15s, border-color 0.15s" }}>
+                            <IconEye /><span>View</span>
+                          </button>
                         </td>
                       </tr>
-                    ) : (
-                      orders.map((o) => (
-                        <tr
-                          key={o._id}
-                          className="row-hover"
-                          style={{
-                            borderBottom: "1px solid #141820",
-                            transition: "background 0.15s",
-                          }}
-                        >
-                          <td style={{ padding: "14px 16px" }}>
-                            <span
-                              style={{
-                                fontFamily: "'JetBrains Mono', monospace",
-                                color: "#94a3b8",
-                                fontSize: 11,
-                              }}
-                            >
-                              {o.orderId}
-                            </span>
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <span
-                              style={{
-                                color: "#6ee7b7",
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontWeight: 600,
-                                fontSize: 13,
-                              }}
-                            >
-                              ₹{o.amount.toFixed(2)}
-                            </span>
-                            <span
-                              style={{
-                                color: "#334155",
-                                fontSize: 10,
-                                marginLeft: 4,
-                                fontFamily: "'JetBrains Mono', monospace",
-                              }}
-                            >
-                              {o.currency}
-                            </span>
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <StatusBadge status={o.status} />
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 5,
-                                fontSize: 11,
-                                fontFamily: "'JetBrains Mono', monospace",
-                              }}
-                            >
-                              {o.credited ? (
-                                <>
-                                  <span style={{ color: "#34d399" }}>
-                                    <IconCheck />
-                                  </span>
-                                  <span style={{ color: "#6ee7b7" }}>Yes</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span style={{ color: "#64748b" }}>
-                                    <IconX />
-                                  </span>
-                                  <span style={{ color: "#64748b" }}>No</span>
-                                </>
-                              )}
-                            </span>
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <span
-                              style={{
-                                color: "#64748b",
-                                fontSize: 11,
-                                fontFamily: "'JetBrains Mono', monospace",
-                              }}
-                            >
-                              {o.createdAt
-                                ? new Date(o.createdAt).toLocaleDateString(
-                                  "en-IN",
-                                  {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  },
-                                )
-                                : "—"}
-                            </span>
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <button
-                              type="button"
-                              className="action-btn"
-                              onClick={() => setViewOrder(o)}
-                              style={{
-                                background: "#1a1f2e",
-                                border: "1px solid #2d3548",
-                                color: "#64748b",
-                                borderRadius: 6,
-                                padding: "6px 10px",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 5,
-                                fontSize: 12,
-                                fontFamily: "'JetBrains Mono', monospace",
-                                transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                              }}
-                            >
-                              <IconEye />
-                              <span>View</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
+
+        </div>
         </div>
       </main>
     </>
