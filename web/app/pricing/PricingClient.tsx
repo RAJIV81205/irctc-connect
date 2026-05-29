@@ -88,8 +88,9 @@ function getNumericPrice(value: string): number {
 function getDiscountPercent(originalPrice: string, discountedPrice: string): number | null {
   const original = getNumericPrice(originalPrice);
   const discounted = getNumericPrice(discountedPrice);
-  if (!original || discounted >= original) return null;
-  return Math.round(((original - discounted) / original) * 100);
+  if (!original || !Number.isFinite(discounted)) return null;
+  const percent = Math.round(((original - discounted) / original) * 100);
+  return Math.max(0, percent);
 }
 
 function normalizePlan(raw: string): "free" | PaidPlanType | null {
@@ -771,13 +772,10 @@ function PricingPageContent({
               {initialPlans.map((plan) => {
                 const btnState = getButtonState(plan);
                 const isPopular = plan.planType === "advance";
-                const isOfferActive = Boolean(plan.originalPrice) && !timeLeft.expired;
-                const discountPercent =
-                  isOfferActive && plan.originalPrice
-                    ? getDiscountPercent(plan.originalPrice, plan.price)
-                    : null;
-                const displayedPrice =
-                  isOfferActive && plan.originalPrice ? plan.price : plan.originalPrice ?? plan.price;
+                const originalDisplay = plan.originalPrice ?? plan.price;
+                const discountPercent = plan.originalPrice
+                  ? getDiscountPercent(plan.originalPrice, plan.price)
+                  : null;
 
                 return (
                   <article
@@ -812,23 +810,36 @@ function PricingPageContent({
                     <p className="mt-3 min-h-[52px] text-sm leading-6 text-slate-600">{plan.description}</p>
 
                     <div className="mt-7">
-                      {isOfferActive && plan.originalPrice && discountPercent && (
+                      {plan.originalPrice && (
                         <div className="mb-3 flex items-center gap-3">
-                          <span className="text-base text-slate-400 line-through" aria-label={`Original price ${plan.originalPrice}`}>
-                            {plan.originalPrice}
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400" aria-hidden="true">
+                            
                           </span>
-                          <span
-                            className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
-                            aria-label={`${discountPercent}% discount`}
-                          >
-                            {discountPercent}% off
+                          <span className="text-base font-semibold text-slate-500 line-through" aria-label={`Original price ${originalDisplay}`}>
+                            {originalDisplay}
+                          </span>
+                          {discountPercent && (
+                            <span
+                              className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
+                              aria-label={`${discountPercent}% discount`}
+                            >
+                              {discountPercent}% off
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {!plan.originalPrice && (
+                        <div className="mb-3">
+                          <span className="text-base text-slate-400 line-through" aria-label={`Original price ${originalDisplay}`}>
+                            {originalDisplay}
                           </span>
                         </div>
                       )}
 
                       <div className="flex items-end gap-2">
-                        <span className="text-4xl font-semibold text-slate-950" aria-label={`Price: ${displayedPrice}`}>
-                          {displayedPrice}
+                        <span className="text-4xl font-semibold text-slate-950" aria-label={`Price: ${plan.price}`}>
+                          {plan.price}
                         </span>
                         <span className="mb-1 text-sm text-slate-500">{plan.period}</span>
                       </div>
