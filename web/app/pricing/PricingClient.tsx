@@ -10,52 +10,30 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
-  Star,
-  ShieldCheck,
   X,
   AlertCircle,
   CheckCircle2,
   Info,
   Loader2,
   Mail,
-  Package,
-  Zap,
+  ShieldCheck,
 } from "lucide-react";
 
 import type { PricingPlan, PaidPlanType } from "../../lib/constants";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type NoticeKind = "success" | "error" | "info";
-
-type Notice = {
-  id: number;
-  kind: NoticeKind;
-  text: string;
-} | null;
-
+type Notice = { id: number; kind: NoticeKind; text: string } | null;
 type AuthState =
   | { status: "loading" }
   | { status: "unauthenticated" }
   | { status: "authenticated"; plan: "free" | PaidPlanType };
-
-type TimeLeft = {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  expired: boolean;
-};
-
+type TimeLeft = { days: number; hours: number; minutes: number; seconds: number; expired: boolean };
 type CashfreeCheckoutMode = "sandbox" | "production";
-
 type CashfreeCheckoutClient = {
-  checkout: (options: {
-    paymentSessionId: string;
-    redirectTarget: "_modal";
-  }) => Promise<unknown>;
+  checkout: (options: { paymentSessionId: string; redirectTarget: "_modal" }) => Promise<unknown>;
 };
-
 type CreatedPaymentOrder = {
   orderId?: string;
   paymentSessionId?: string;
@@ -69,7 +47,7 @@ declare global {
   }
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
@@ -102,35 +80,25 @@ function normalizePlan(raw: string): "free" | PaidPlanType | null {
   return null;
 }
 
-// ─── SDK loader (singleton promise) ──────────────────────────────────────────
+// ─── SDK loader ───────────────────────────────────────────────────────────────
 
 let cashfreeLoadPromise: Promise<void> | null = null;
 
 function loadCashfreeSdk(): Promise<void> {
   if (typeof window === "undefined")
     return Promise.reject(new Error("Cashfree checkout is unavailable on server"));
-
   if (window.Cashfree) return Promise.resolve();
-
   if (cashfreeLoadPromise) return cashfreeLoadPromise;
 
   cashfreeLoadPromise = new Promise<void>((resolve, reject) => {
     const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[src="${CASHFREE_SDK_URL}"]`,
-    );
-
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${CASHFREE_SDK_URL}"]`);
     if (existing) {
       if (window.Cashfree) return resolve();
       existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("Failed to load Cashfree SDK")),
-        { once: true },
-      );
+      existing.addEventListener("error", () => reject(new Error("Failed to load Cashfree SDK")), { once: true });
       return;
     }
-
     const script = document.createElement("script");
     script.src = CASHFREE_SDK_URL;
     script.async = true;
@@ -139,14 +107,11 @@ function loadCashfreeSdk(): Promise<void> {
     document.head.appendChild(script);
   });
 
-  cashfreeLoadPromise.catch(() => {
-    cashfreeLoadPromise = null; // allow retry on failure
-  });
-
+  cashfreeLoadPromise.catch(() => { cashfreeLoadPromise = null; });
   return cashfreeLoadPromise;
 }
 
-// ─── Root export ─────────────────────────────────────────────────────────────
+// ─── Root export ──────────────────────────────────────────────────────────────
 
 export default function PricingClient({
   initialPlans,
@@ -172,38 +137,25 @@ export default function PricingClient({
 
 function PricingPageSkeleton() {
   return (
-    <div className="min-h-screen bg-[#f6f7f9] px-5 pt-28 pb-14 text-slate-950 sm:px-6 lg:pt-32">
-      <div>
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-10 max-w-3xl">
-            <div className="h-8 w-56 animate-pulse rounded-md bg-slate-200" />
-            <div className="mt-6 h-16 max-w-2xl animate-pulse rounded-lg bg-slate-200" />
-            <div className="mt-4 h-6 max-w-xl animate-pulse rounded-md bg-slate-200" />
-          </div>
-          <div className="grid gap-5 lg:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-[520px] animate-pulse rounded-lg border border-slate-200 bg-white"
-                style={{ animationDelay: `${i * 100}ms` }}
-              />
-            ))}
-          </div>
+    <div className="min-h-screen bg-white px-6 pt-40 pb-20">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-4 h-4 w-40 animate-pulse rounded-full bg-gray-100 mx-auto" />
+        <div className="mb-6 h-16 max-w-2xl animate-pulse rounded-xl bg-gray-100 mx-auto" />
+        <div className="mb-16 h-5 max-w-lg animate-pulse rounded-lg bg-gray-100 mx-auto" />
+        <div className="grid gap-5 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-[560px] animate-pulse rounded-3xl bg-gray-50 border border-gray-100"
+              style={{ animationDelay: `${i * 80}ms` }} />
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Notice component ─────────────────────────────────────────────────────────
+// ─── Notice bar ───────────────────────────────────────────────────────────────
 
-function NoticeBar({
-  notice,
-  onDismiss,
-}: {
-  notice: Notice;
-  onDismiss: () => void;
-}) {
+function NoticeBar({ notice, onDismiss }: { notice: Notice; onDismiss: () => void }) {
   useEffect(() => {
     if (!notice) return;
     if (notice.kind === "success" || notice.kind === "info") {
@@ -215,43 +167,30 @@ function NoticeBar({
   if (!notice) return null;
 
   const styles: Record<NoticeKind, string> = {
-    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    error: "border-red-200 bg-red-50 text-red-700",
-    info: "border-sky-200 bg-sky-50 text-sky-800",
+    success: "border-emerald-100 bg-emerald-50 text-emerald-800",
+    error: "border-red-100 bg-red-50 text-red-700",
+    info: "border-sky-100 bg-sky-50 text-sky-800",
   };
-
-  const Icon = {
-    success: CheckCircle2,
-    error: AlertCircle,
-    info: Info,
-  }[notice.kind];
+  const Icon = { success: CheckCircle2, error: AlertCircle, info: Info }[notice.kind];
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={`mb-8 flex max-w-3xl items-start gap-3 rounded-lg border px-4 py-3 ${styles[notice.kind]}`}
-    >
-      <Icon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+    <div role="status" aria-live="polite"
+      className={`mb-10 flex max-w-2xl mx-auto items-start gap-3 rounded-2xl border px-5 py-4 ${styles[notice.kind]}`}>
+      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
       <p className="flex-1 text-sm leading-relaxed">{notice.text}</p>
-      <button
-        type="button"
-        onClick={onDismiss}
-        aria-label="Dismiss notification"
-        className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
-      >
+      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="shrink-0 opacity-50 hover:opacity-100 transition-opacity">
         <X className="h-4 w-4" />
       </button>
     </div>
   );
 }
 
-// ─── Timer ────────────────────────────────────────────────────────────────────
+// ─── Countdown hook ───────────────────────────────────────────────────────────
 
 function useCountdown(offerEndsAt: string | null): TimeLeft {
   const EXPIRED: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
 
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => {
+  const calc = (): TimeLeft => {
     if (!offerEndsAt) return EXPIRED;
     const deadline = new Date(offerEndsAt).getTime();
     if (!Number.isFinite(deadline)) return EXPIRED;
@@ -264,19 +203,17 @@ function useCountdown(offerEndsAt: string | null): TimeLeft {
       seconds: Math.floor((diff / 1e3) % 60),
       expired: false,
     };
-  });
+  };
+
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(calc);
 
   useEffect(() => {
     if (!offerEndsAt) return;
     const deadline = new Date(offerEndsAt).getTime();
     if (!Number.isFinite(deadline)) return;
-
     const tick = () => {
       const diff = deadline - Date.now();
-      if (diff <= 0) {
-        setTimeLeft(EXPIRED);
-        return;
-      }
+      if (diff <= 0) { setTimeLeft(EXPIRED); return; }
       setTimeLeft({
         days: Math.floor(diff / 864e5),
         hours: Math.floor((diff / 36e5) % 24),
@@ -285,7 +222,6 @@ function useCountdown(offerEndsAt: string | null): TimeLeft {
         expired: false,
       });
     };
-
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -298,10 +234,7 @@ function useCountdown(offerEndsAt: string | null): TimeLeft {
 // ─── Payment modal ────────────────────────────────────────────────────────────
 
 function PaymentModal({
-  selectedPlan,
-  isCreatingOrder,
-  onConfirm,
-  onCancel,
+  selectedPlan, isCreatingOrder, onConfirm, onCancel,
 }: {
   selectedPlan: PaidPlanType;
   isCreatingOrder: boolean;
@@ -311,115 +244,71 @@ function PaymentModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Focus trap + ESC close
   useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const prev = document.activeElement as HTMLElement | null;
     confirmBtnRef.current?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isCreatingOrder) {
-        onCancel();
-        return;
-      }
+      if (e.key === "Escape" && !isCreatingOrder) { onCancel(); return; }
       if (e.key !== "Tab") return;
-
       const modal = modalRef.current;
       if (!modal) return;
-
       const focusable = modal.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        'button:not([disabled]),[href],input,select,textarea,[tabindex]:not([tabindex="-1"])',
       );
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
+      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+      else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
     };
 
     document.addEventListener("keydown", onKeyDown);
     document.body.style.overflow = "hidden";
-
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
-      previouslyFocused?.focus();
+      prev?.focus();
     };
   }, [isCreatingOrder, onCancel]);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-6 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isCreatingOrder) onCancel();
-      }}
-    >
-      <div
-        ref={modalRef}
-        className="w-full max-w-lg overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 text-slate-950 shadow-2xl sm:p-8"
+    <div role="dialog" aria-modal="true" aria-labelledby="modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget && !isCreatingOrder) onCancel(); }}>
+      <div ref={modalRef}
+        className="w-full max-w-md overflow-y-auto rounded-3xl border border-black/8 bg-white p-8 shadow-2xl"
         style={{ maxHeight: "90dvh" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50">
-          <ShieldCheck className="h-6 w-6 text-emerald-700" aria-hidden="true" />
+        onClick={(e) => e.stopPropagation()}>
+        <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-2xl bg-black">
+          <ShieldCheck className="h-5 w-5 text-white" aria-hidden />
         </div>
-
-        <h3 id="modal-title" className="text-2xl font-semibold">
+        <h3 id="modal-title" className="text-xl font-semibold text-black" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
           Secure Checkout
         </h3>
-
-        <p className="mt-3 leading-7 text-slate-600">
+        <p className="mt-3 text-sm leading-7 text-[#6F6F6F]">
           A secure Cashfree popup will open to complete payment for the{" "}
-          <span className="font-semibold uppercase text-emerald-700">{selectedPlan}</span> plan.
-          You can safely dismiss this at any time.
+          <span className="font-semibold text-black uppercase">{selectedPlan}</span> plan.
         </p>
-
-        <ul className="mt-6 space-y-2 text-sm text-slate-600">
-          {[
-            "256-bit SSL encrypted transaction",
-            "Payment processed by Cashfree — card data never stored here",
-            "Instant plan activation on success",
-          ].map((item) => (
-            <li key={item} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+        <ul className="mt-6 space-y-2.5">
+          {["256-bit SSL encrypted transaction", "Payment processed by Cashfree — card data never stored here", "Instant plan activation on success"].map((item) => (
+            <li key={item} className="flex items-center gap-2.5 text-sm text-[#6F6F6F]">
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-black">
+                <Check className="h-2.5 w-2.5 text-white" aria-hidden />
+              </span>
               {item}
             </li>
           ))}
         </ul>
-
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isCreatingOrder}
-            className="rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            ref={confirmBtnRef}
-            onClick={onConfirm}
-            disabled={isCreatingOrder}
-            aria-busy={isCreatingOrder}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isCreatingOrder && (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            )}
+        <div className="mt-8 flex flex-col gap-3">
+          <button type="button" ref={confirmBtnRef} onClick={onConfirm} disabled={isCreatingOrder}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60">
+            {isCreatingOrder && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
             {isCreatingOrder ? "Opening Checkout…" : "Proceed to Payment"}
+          </button>
+          <button type="button" onClick={onCancel} disabled={isCreatingOrder}
+            className="rounded-full border border-black/10 px-6 py-3.5 text-sm text-[#6F6F6F] transition hover:bg-gray-50 disabled:opacity-50">
+            Cancel
           </button>
         </div>
       </div>
@@ -430,9 +319,7 @@ function PaymentModal({
 // ─── Main page content ────────────────────────────────────────────────────────
 
 function PricingPageContent({
-  initialPlans,
-  initialOfferEndsAt,
-  initialContactEmail,
+  initialPlans, initialOfferEndsAt, initialContactEmail,
 }: {
   initialPlans: PricingPlan[];
   initialOfferEndsAt: string | null;
@@ -443,464 +330,293 @@ function PricingPageContent({
 
   const [authState, setAuthState] = useState<AuthState>({ status: "loading" });
   const [notice, setNotice] = useState<Notice>(null);
-
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanType | null>(null);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const timeLeft = useCountdown(initialOfferEndsAt);
-
-  const contactUrl = `mailto:${initialContactEmail}?subject=${encodeURIComponent(
-    "IRCTC Connect Payment Help",
-  )}`;
-
+  const contactUrl = `mailto:${initialContactEmail}?subject=${encodeURIComponent("IRCTC Connect Payment Help")}`;
   const orderIdFromQuery = searchParams.get("order_id");
   const isPaymentReturn = searchParams.get("payment_return") === "1";
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  const showNotice = useCallback(
-    (kind: NoticeKind, text: string) => {
-      setNotice({ id: Date.now(), kind, text });
-    },
-    [],
-  );
-
+  const showNotice = useCallback((kind: NoticeKind, text: string) => {
+    setNotice({ id: Date.now(), kind, text });
+  }, []);
   const dismissNotice = useCallback(() => setNotice(null), []);
 
-  // ── Payment verify ────────────────────────────────────────────────────────
+  const verifyPayment = useCallback(async (orderId: string, paidPlanType?: PaidPlanType) => {
+    showNotice("info", "Verifying payment status…");
+    const response = await fetch(`/api/user/get-order?orderId=${encodeURIComponent(orderId)}&sync=true`, { method: "GET", cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.message || "Unable to verify payment status");
+    if (data?.order?.credited) {
+      showNotice("success", "Payment successful! Your plan is now active.");
+      if (paidPlanType) setAuthState({ status: "authenticated", plan: paidPlanType });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("order_id");
+      url.searchParams.delete("payment_return");
+      router.replace(url.pathname + url.search, { scroll: false });
+      return;
+    }
+    if (data?.order?.paymentStatus === "FAILED") { showNotice("error", "Payment failed. Please try again or contact support."); return; }
+    if (data?.order?.paymentStatus === "USER_DROPPED") { showNotice("info", "Payment was cancelled. You can try again anytime."); return; }
+    showNotice("info", "Payment is still processing — please check back shortly.");
+  }, [showNotice, router]);
 
-  const verifyPayment = useCallback(
-    async (orderId: string, paidPlanType?: PaidPlanType) => {
-      showNotice("info", "Verifying payment status…");
-
-      const response = await fetch(
-        `/api/user/get-order?orderId=${encodeURIComponent(orderId)}&sync=true`,
-        { method: "GET", cache: "no-store" },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Unable to verify payment status");
-      }
-
-      if (data?.order?.credited) {
-        showNotice("success", "Payment successful! Your plan is now active.");
-        if (paidPlanType) {
-          setAuthState({ status: "authenticated", plan: paidPlanType });
-        }
-        // Clean up payment query params without full reload
-        const url = new URL(window.location.href);
-        url.searchParams.delete("order_id");
-        url.searchParams.delete("payment_return");
-        router.replace(url.pathname + url.search, { scroll: false });
-        return;
-      }
-
-      if (data?.order?.paymentStatus === "FAILED") {
-        showNotice("error", "Payment failed. Please try again or contact support.");
-        return;
-      }
-
-      if (data?.order?.paymentStatus === "USER_DROPPED") {
-        showNotice("info", "Payment was cancelled. You can try again anytime.");
-        return;
-      }
-
-      showNotice("info", "Payment is still processing — please check back shortly.");
-    },
-    [showNotice, router],
-  );
-
-  // ── Auth check ────────────────────────────────────────────────────────────
-
+  // Auth check
   useEffect(() => {
     let cancelled = false;
-
     const verifyAuth = async () => {
       try {
-        const response = await fetch("/api/user/verify", {
-          method: "GET",
-          cache: "no-store",
-        });
-
+        const res = await fetch("/api/user/verify", { method: "GET", cache: "no-store" });
         if (cancelled) return;
-
-        if (!response.ok) {
-          setAuthState({ status: "unauthenticated" });
-          return;
-        }
-
-        const data = await response.json();
-
-        if (!data?.success) {
-          setAuthState({ status: "unauthenticated" });
-          return;
-        }
-
+        if (!res.ok) { setAuthState({ status: "unauthenticated" }); return; }
+        const data = await res.json();
+        if (!data?.success) { setAuthState({ status: "unauthenticated" }); return; }
         const plan = normalizePlan(String(data?.user?.plan || ""));
-        setAuthState({
-          status: "authenticated",
-          plan: plan ?? "free",
-        });
-      } catch {
-        if (!cancelled) setAuthState({ status: "unauthenticated" });
-      }
+        setAuthState({ status: "authenticated", plan: plan ?? "free" });
+      } catch { if (!cancelled) setAuthState({ status: "unauthenticated" }); }
     };
-
     verifyAuth();
     return () => { cancelled = true; };
   }, []);
 
-  // ── Payment return handling ───────────────────────────────────────────────
-
+  // Payment return
   useEffect(() => {
     if (!isPaymentReturn || !orderIdFromQuery) return;
-    if (authState.status === "loading") return;          // wait for auth
-    if (authState.status === "unauthenticated") return;  // can't verify anon
-
+    if (authState.status === "loading" || authState.status === "unauthenticated") return;
     let cancelled = false;
-
     const handleReturn = async () => {
-      try {
-        if (!cancelled) await verifyPayment(orderIdFromQuery);
-      } catch (error: unknown) {
-        if (!cancelled) showNotice("error", getErrorMessage(error, "Unable to verify payment."));
-      }
+      try { if (!cancelled) await verifyPayment(orderIdFromQuery); }
+      catch (error: unknown) { if (!cancelled) showNotice("error", getErrorMessage(error, "Unable to verify payment.")); }
     };
-
     handleReturn();
     return () => { cancelled = true; };
   }, [isPaymentReturn, orderIdFromQuery, authState.status, verifyPayment, showNotice]);
 
-  // ── Open payment modal ────────────────────────────────────────────────────
-
   const openPaymentModal = (planType: PaidPlanType | "free") => {
     if (planType === "free") return;
-
-    if (authState.status === "loading") {
-      showNotice("info", "Please wait while we check your login status.");
-      return;
-    }
-
-    if (authState.status === "unauthenticated") {
-      router.push("/auth?redirect=/pricing");
-      return;
-    }
-
+    if (authState.status === "loading") { showNotice("info", "Please wait while we check your login status."); return; }
+    if (authState.status === "unauthenticated") { router.push("/auth?redirect=/pricing"); return; }
     setSelectedPlan(planType);
     setShowPaymentModal(true);
   };
 
-  // ── Start payment ─────────────────────────────────────────────────────────
-
   const startPayment = async () => {
     if (!selectedPlan) return;
-
     setIsCreatingOrder(true);
     dismissNotice();
-
     try {
-      const response = await fetch("/api/user/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planType: selectedPlan }),
-      });
-
+      const response = await fetch("/api/user/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ planType: selectedPlan }) });
       const data = await response.json();
       const order = data?.order as CreatedPaymentOrder | undefined;
-
-      if (!response.ok || !order?.orderId || !order?.paymentSessionId) {
-        throw new Error(data?.message || "Unable to create order. Please try again.");
-      }
-
+      if (!response.ok || !order?.orderId || !order?.paymentSessionId) throw new Error(data?.message || "Unable to create order. Please try again.");
       await loadCashfreeSdk();
-
-      if (!window.Cashfree) {
-        throw new Error("Cashfree checkout failed to load. Please refresh and try again.");
-      }
-
+      if (!window.Cashfree) throw new Error("Cashfree checkout failed to load. Please refresh and try again.");
       setShowPaymentModal(false);
       showNotice("info", "Opening secure payment popup…");
-
-      const cashfree = window.Cashfree({
-        mode: data?.cashfreeMode === "sandbox" ? "sandbox" : "production",
-      });
-
-      try {
-        await cashfree.checkout({
-          paymentSessionId: order.paymentSessionId,
-          redirectTarget: "_modal",
-        });
-      } catch {
-        // Modal close throws — always verify backend status regardless
-      }
-
+      const cashfree = window.Cashfree({ mode: data?.cashfreeMode === "sandbox" ? "sandbox" : "production" });
+      try { await cashfree.checkout({ paymentSessionId: order.paymentSessionId, redirectTarget: "_modal" }); } catch { /* modal close */ }
       await verifyPayment(order.orderId, order.planType);
     } catch (error: unknown) {
       setShowPaymentModal(false);
       showNotice("error", getErrorMessage(error, "Something went wrong. Please try again."));
-    } finally {
-      setIsCreatingOrder(false);
-    }
+    } finally { setIsCreatingOrder(false); }
   };
-
-  // ── Button state logic ────────────────────────────────────────────────────
 
   const getButtonState = (plan: PricingPlan): { label: string; disabled: boolean; action: () => void } => {
     const isLoading = authState.status === "loading";
     const isAuthed = authState.status === "authenticated";
     const currentPlan = isAuthed ? (authState as { plan: "free" | PaidPlanType }).plan : null;
-
-    // Advance plan holder: everything downgrade/same is locked
     if (isAuthed && currentPlan === "advance") {
       if (plan.planType === "advance") return { label: "Current Plan", disabled: true, action: () => {} };
       if (plan.planType === "pro") return { label: "Downgrade Unavailable", disabled: true, action: () => {} };
       return { label: "Included", disabled: true, action: () => {} };
     }
-
-    if (plan.planType === "free") {
-      return {
-        label: plan.buttonText,
-        disabled: false,
-        action: () => router.push("/auth?redirect=/pricing"),
-      };
-    }
-
+    if (plan.planType === "free") return { label: plan.buttonText, disabled: false, action: () => router.push("/auth?redirect=/pricing") };
     if (isLoading) return { label: "Checking Login…", disabled: true, action: () => {} };
-
-    if (!isAuthed) {
-      return {
-        label: "Login to Continue",
-        disabled: false, // clickable — redirects to login
-        action: () => router.push("/auth?redirect=/pricing"),
-      };
-    }
-
-    if (currentPlan === plan.planType) {
-      return { label: "Current Plan", disabled: true, action: () => {} };
-    }
-
-    return {
-      label: currentPlan && currentPlan !== "free" ? "Change Plan" : "Upgrade Now",
-      disabled: false,
-      action: () => openPaymentModal(plan.planType),
-    };
+    if (!isAuthed) return { label: "Login to Continue", disabled: false, action: () => router.push("/auth?redirect=/pricing") };
+    if (currentPlan === plan.planType) return { label: "Current Plan", disabled: true, action: () => {} };
+    return { label: currentPlan && currentPlan !== "free" ? "Change Plan" : "Upgrade Now", disabled: false, action: () => openPaymentModal(plan.planType) };
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#f6f7f9] text-slate-950">
+    <div className="min-h-screen bg-white text-black" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       <style>{`
-        @keyframes pricing-fade-up {
-          from { opacity: 0; transform: translateY(18px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-        .pricing-reveal {
-          animation: pricing-fade-up 0.65s ease both;
-        }
-
-        .pricing-card {
-          transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-        }
-
-        .pricing-card:hover {
-          transform: translateY(-4px);
-          border-color: #a7f3d0;
-          box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-        }
-
-        .pricing-action {
-          transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
-        }
-
-        .pricing-action:hover {
-          transform: translateY(-2px);
-        }
-
+        /* Animations */
+        @keyframes pr-rise { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .pr-a1 { animation: pr-rise 0.7s ease both; }
+        .pr-a2 { animation: pr-rise 0.7s ease 0.1s both; }
+        .pr-a3 { animation: pr-rise 0.7s ease 0.2s both; }
+        .pr-a4 { animation: pr-rise 0.7s ease 0.3s both; }
+        .pr-a5 { animation: pr-rise 0.7s ease 0.4s both; }
+        .pr-a6 { animation: pr-rise 0.7s ease 0.5s both; }
         @media (prefers-reduced-motion: reduce) {
-          .pricing-reveal {
-            animation: none;
-          }
-
-          .pricing-card,
-          .pricing-action,
-          .pricing-card:hover,
-          .pricing-action:hover {
-            transform: none;
-            transition: none;
-          }
+          .pr-a1,.pr-a2,.pr-a3,.pr-a4,.pr-a5,.pr-a6 { animation: none; }
         }
+
+        /* Card hover */
+        .pr-card { transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; }
+        .pr-card:hover { transform: translateY(-4px); box-shadow: 0 20px 56px rgba(0,0,0,0.08); }
+        .pr-card-popular:hover { border-color: rgba(0,0,0,0.2); }
+
+        /* Pack card hover */
+        .pr-pack { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+        .pr-pack:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); }
+
+        /* Button */
+        .pr-btn { transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease; }
+        .pr-btn:hover:not(:disabled) { transform: scale(1.02); }
+        .pr-btn:disabled { opacity: 0.45; cursor: not-allowed; }
       `}</style>
 
-      <main className="px-5 pt-28 pb-14 sm:px-6 lg:pt-32">
+      <main className="px-6 pt-36 pb-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <header className="pricing-reveal mb-10 max-w-3xl">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800">
-              <Package className="h-4 w-4" aria-hidden="true" />
-              Pricing for railway API access
-            </div>
 
-            <h1 className="text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Choose the right request limit for your app.
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              Start free, then upgrade when your product needs higher usage,
-              paid access, and support for production railway integrations.
+          {/* ── Hero ── */}
+          <div className="mb-20 text-center">
+            <p className="pr-a1 mb-6 text-xs tracking-[0.22em] uppercase text-[#9ca3af]">
+              IRCTC Connect Pricing
             </p>
-          </header>
+            <h1 className="pr-a2 mx-auto max-w-4xl leading-[0.95] tracking-[-0.04em] text-black"
+              style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px, 7vw, 80px)", fontWeight: 400 }}>
+              Infrastructure pricing,{" "}
+              <em style={{ fontStyle: "italic", color: "#6F6F6F" }}>built for</em>
+              <br />
+              <em style={{ fontStyle: "italic", color: "#6F6F6F" }}>scale.</em>
+            </h1>
+            <p className="pr-a3 mx-auto mt-7 max-w-xl text-base leading-relaxed text-[#6F6F6F]" style={{ fontWeight: 300 }}>
+              Start free for development, then scale request capacity as your railway application grows.
+              Transparent pricing, clean limits, production-ready infrastructure.
+            </p>
 
+            {/* Status bar
+            <div className="pr-a4 mt-10 inline-flex flex-wrap items-center justify-center gap-6 rounded-full border border-black/5 bg-white/70 px-8 py-4 shadow-[0_8px_40px_rgba(0,0,0,0.06)]"
+              style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+              {[
+                { val: "99.9%", lbl: "Uptime" },
+                { val: "Instant", lbl: "Activation" },
+                { val: "Secure", lbl: "Payments" },
+                { val: "Live", lbl: "Railway API" },
+              ].map((s, i) => (
+                <div key={s.lbl} className="flex items-center gap-6">
+                  {i > 0 && <span className="h-4 w-px bg-black/8" aria-hidden />}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-600 text-black" style={{ fontWeight: 600 }}>{s.val}</span>
+                    <span className="text-xs text-[#9ca3af]">{s.lbl}</span>
+                  </div>
+                </div>
+              ))}
+            </div> */}
+          </div>
+
+          {/* ── Notices ── */}
           <NoticeBar notice={notice} onDismiss={dismissNotice} />
 
           {authState.status === "loading" && (
-            <div
-              role="status"
-              aria-label="Checking login status"
-              className="mb-8 flex max-w-sm items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Checking login status...
+            <div className="mb-10 flex max-w-xs mx-auto items-center gap-2 rounded-2xl border border-black/6 bg-white px-4 py-3 text-sm text-[#6F6F6F]">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Checking login status…
             </div>
           )}
 
-          <section aria-label="Pricing plans" className="pricing-reveal" style={{ animationDelay: "120ms" }}>
+          {/* ── Pricing cards ── */}
+          <section aria-label="Pricing plans" className="pr-a5">
             <div className="grid gap-5 lg:grid-cols-3">
               {initialPlans.map((plan) => {
                 const btnState = getButtonState(plan);
                 const isPopular = plan.planType === "advance";
                 const originalDisplay = plan.originalPrice ?? plan.price;
-                const discountPercent = plan.originalPrice
-                  ? getDiscountPercent(plan.originalPrice, plan.price)
-                  : null;
+                const discountPercent = plan.originalPrice ? getDiscountPercent(plan.originalPrice, plan.price) : null;
 
                 return (
-                  <article
-                    key={plan.id}
-                    aria-label={`${plan.name} plan`}
-                    className={`pricing-card relative flex min-h-[540px] flex-col rounded-lg border bg-white p-6 shadow-sm ${
+                  <article key={plan.id} aria-label={`${plan.name} plan`}
+                    className={`pr-card relative flex flex-col rounded-[28px] border p-7 ${
                       isPopular
-                        ? "border-emerald-300 ring-1 ring-emerald-200"
-                        : "border-slate-200"
-                    }`}
-                  >
-                    <div className="mb-6 flex items-start justify-between gap-4">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
-                        {isPopular ? (
-                          <Zap className="size-5" aria-hidden="true" />
-                        ) : (
-                          <Package className="size-5" aria-hidden="true" />
-                        )}
+                        ? "pr-card-popular border-black/12 bg-[#0a0a0a] text-white shadow-[0_12px_48px_rgba(0,0,0,0.18)]"
+                        : "border-black/6 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)]"
+                    }`}>
+
+                    {/* Popular badge */}
+                    {isPopular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1 text-xs font-medium text-black shadow-sm border border-black/8">
+                          <span className="h-1.5 w-1.5 rounded-full bg-black" aria-hidden />
+                          Most Popular
+                        </span>
                       </div>
-                      {isPopular && (
-                        <div
-                          className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800"
-                          aria-label="Most popular plan"
-                        >
-                          <Star className="h-3 w-3 fill-emerald-700" aria-hidden="true" />
-                          Popular
-                        </div>
-                      )}
+                    )}
+
+                    {/* Plan name */}
+                    <div className="mb-5 mt-2">
+                      <h2 className="text-lg font-medium" style={{ color: isPopular ? "#fff" : "#000" }}>
+                        {plan.name}
+                      </h2>
+                      <p className="mt-2 text-sm leading-6" style={{ color: isPopular ? "rgba(255,255,255,0.55)" : "#6F6F6F", fontWeight: 300 }}>
+                        {plan.description}
+                      </p>
                     </div>
 
-                    <h2 className="text-2xl font-semibold text-slate-950">{plan.name}</h2>
-                    <p className="mt-3 min-h-[52px] text-sm leading-6 text-slate-600">{plan.description}</p>
-
-                    <div className="mt-7">
+                    {/* Price */}
+                    <div className="mb-6">
                       {plan.originalPrice && (
-                        <div className="mb-3 flex items-center gap-3">
-                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400" aria-hidden="true">
-                            
-                          </span>
-                          <span className="text-base font-semibold text-slate-500 line-through" aria-label={`Original price ${originalDisplay}`}>
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-sm line-through" style={{ color: isPopular ? "rgba(255,255,255,0.35)" : "#9ca3af" }}>
                             {originalDisplay}
                           </span>
                           {discountPercent && (
-                            <span
-                              className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
-                              aria-label={`${discountPercent}% discount`}
-                            >
+                            <span className="rounded-full px-2 py-0.5 text-xs font-medium"
+                              style={{ background: isPopular ? "rgba(255,255,255,0.1)" : "#f5f5f5", color: isPopular ? "rgba(255,255,255,0.7)" : "#374151" }}>
                               {discountPercent}% off
                             </span>
                           )}
                         </div>
                       )}
-
-                      {!plan.originalPrice && (
-                        <div className="mb-3">
-                          <span className="text-base text-slate-400 line-through" aria-label={`Original price ${originalDisplay}`}>
-                            {originalDisplay}
-                          </span>
-                        </div>
-                      )}
-
                       <div className="flex items-end gap-2">
-                        <span className="text-4xl font-semibold text-slate-950" aria-label={`Price: ${plan.price}`}>
+                        <span style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px,5vw,56px)", fontWeight: 400, lineHeight: 1, color: isPopular ? "#fff" : "#000", letterSpacing: "-0.03em" }}>
                           {plan.price}
                         </span>
-                        <span className="mb-1 text-sm text-slate-500">{plan.period}</span>
+                        <span className="mb-1.5 text-sm" style={{ color: isPopular ? "rgba(255,255,255,0.45)" : "#9ca3af" }}>
+                          {plan.period}
+                        </span>
                       </div>
 
                       {!timeLeft.expired && plan.originalPrice && (
-                        <div
-                          className="mt-4 inline-flex rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
-                          aria-live="polite"
-                          aria-label={`Offer ends in ${timeLeft.days} days ${timeLeft.hours} hours ${timeLeft.minutes} minutes ${timeLeft.seconds} seconds`}
-                        >
-                          Offer ends in&nbsp;
-                          <span aria-hidden="true">
-                            {timeLeft.days}d {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
-                          </span>
+                        <div className="mt-3 inline-flex rounded-full px-3 py-1.5 text-xs font-medium"
+                          style={{ background: isPopular ? "rgba(255,255,255,0.08)" : "#fafafa", border: "1px solid", borderColor: isPopular ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)", color: isPopular ? "rgba(255,255,255,0.6)" : "#6b7280" }}
+                          aria-live="polite">
+                          Offer ends in {timeLeft.days}d {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
                         </div>
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={btnState.action}
-                      disabled={btnState.disabled}
+                    {/* CTA */}
+                    <button type="button" onClick={btnState.action} disabled={btnState.disabled}
                       aria-label={`${btnState.label} — ${plan.name} plan`}
-                      className={`pricing-action mt-7 w-full rounded-md px-4 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
-                        btnState.disabled
-                          ? "cursor-not-allowed bg-slate-100 text-slate-400"
-                          : isPopular
-                            ? "bg-slate-950 text-white shadow-sm hover:bg-slate-800 hover:shadow-lg"
-                            : "border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 hover:shadow-md"
-                      }`}
-                    >
+                      className="pr-btn w-full rounded-full py-3.5 text-sm font-medium"
+                      style={{
+                        background: btnState.disabled ? (isPopular ? "rgba(255,255,255,0.08)" : "#f5f5f5") : isPopular ? "#ffffff" : "#000000",
+                        color: btnState.disabled ? (isPopular ? "rgba(255,255,255,0.3)" : "#9ca3af") : isPopular ? "#000" : "#fff",
+                      }}>
                       {authState.status === "loading" && plan.planType !== "free" ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                          Checking...
+                        <span className="inline-flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          Checking…
                         </span>
-                      ) : (
-                        btnState.label
-                      )}
+                      ) : btnState.label}
                     </button>
 
-                    <div className="mt-7 border-t border-slate-200 pt-6">
-                      <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
-                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                        Includes
-                      </div>
-
+                    {/* Features */}
+                    <div className="mt-7 border-t pt-6" style={{ borderColor: isPopular ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }}>
                       <ul className="space-y-3" role="list">
                         {plan.features.map((feature, i) => (
                           <li key={i} className="flex items-start gap-3">
-                            <span
-                              className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-50"
-                              aria-hidden="true"
-                            >
-                              <Check className="h-3 w-3 text-emerald-700" />
-                            </span>
-                            <span
-                              className={`text-sm leading-6 ${
-                                feature.highlight ? "font-semibold text-slate-950" : "text-slate-600"
-                              }`}
-                            >
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: isPopular ? "rgba(255,255,255,0.4)" : "#000", marginTop: "8px" }} aria-hidden />
+                            <span className="text-sm leading-6" style={{ color: feature.highlight ? (isPopular ? "#fff" : "#000") : (isPopular ? "rgba(255,255,255,0.55)" : "#6F6F6F"), fontWeight: feature.highlight ? 500 : 300 }}>
                               {feature.text}
                             </span>
                           </li>
@@ -913,54 +629,102 @@ function PricingPageContent({
             </div>
           </section>
 
-          <section
-            aria-label="Enterprise pricing"
-            className="pricing-reveal mt-10 rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
-            style={{ animationDelay: "220ms" }}
-          >
-            <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-              <div>
-                <p className="text-sm font-semibold uppercase text-emerald-700">
-                  Need a custom plan?
+          {/* ── Request packs ── */}
+          <section aria-label="Additional request packs" className="pr-a6 mt-16">
+            <div className="mb-8">
+              <p className="mb-2 text-xs tracking-[0.12em] uppercase text-[#9ca3af]">Flexible usage</p>
+              <h2 className="text-2xl text-black" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.02em" }}>
+                Need more requests?
+              </h2>
+              <p className="mt-2 max-w-lg text-sm leading-7 text-[#6F6F6F]" style={{ fontWeight: 300 }}>
+                Scale usage anytime with additional request packs — no forced plan changes, no hidden limits.
+                Top up only when you need it.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { requests: "+5K Requests", price: "₹50", note: "Great for testing" },
+                { requests: "+20K Requests", price: "₹180", note: "Most flexible" },
+                { requests: "+50K Requests", price: "₹399", note: "Best value" },
+              ].map((pack) => (
+                <div key={pack.requests}
+                  className="pr-pack flex items-center justify-between rounded-2xl border border-black/6 bg-white px-5 py-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                  <div>
+                    <div className="text-sm font-medium text-black">{pack.requests}</div>
+                    <div className="mt-0.5 text-xs text-[#9ca3af]">{pack.note}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-base font-semibold text-black" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+                      {pack.price}
+                    </div>
+                    <div className="mt-0.5 text-xs text-[#9ca3af]">one-time</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-xs text-[#9ca3af]">
+              Request packs are coming soon. Contact us to arrange early access.
+            </p>
+          </section>
+
+          {/* ── Enterprise ── */}
+          <section aria-label="Enterprise pricing"
+            className="mt-12 overflow-hidden rounded-[28px] p-8 sm:p-10"
+            style={{ background: "#0a0a0a", position: "relative" }}>
+            {/* Atmospheric glow */}
+            <div aria-hidden style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.04), transparent 70%)", pointerEvents: "none" }} />
+            <div aria-hidden style={{ position: "absolute", bottom: -60, left: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.03), transparent 70%)", pointerEvents: "none" }} />
+
+            <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+              <div className="max-w-xl">
+                <p className="mb-3 text-xs tracking-[0.14em] uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  Enterprise
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-950">Enterprise and team pricing</h2>
-                <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-                  Need higher request limits, dedicated support, or custom infrastructure?
-                  Contact us and we&apos;ll create a custom plan for your business.
+                <h2 className="text-2xl text-white sm:text-3xl" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+                  Custom railway infrastructure
+                  <br />
+                  <em style={{ fontStyle: "italic", color: "rgba(255,255,255,0.5)" }}>for teams.</em>
+                </h2>
+                <p className="mt-4 text-sm leading-7" style={{ color: "rgba(255,255,255,0.45)", fontWeight: 300 }}>
+                  Higher request limits, dedicated support, private infrastructure, and custom SLAs.
+                  We&apos;ll build a plan around your production requirements.
                 </p>
+                <ul className="mt-5 space-y-2">
+                  {["Custom request limits", "Dedicated support channel", "Private infrastructure options", "Custom SLA agreements"].map((item) => (
+                    <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      <span className="h-1 w-1 rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.25)" }} aria-hidden />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <a
-                href={contactUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="pricing-action inline-flex shrink-0 items-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-              >
-                <Mail className="h-4 w-4" aria-hidden="true" />
-                Contact Support
+              <a href={contactUrl} target="_blank" rel="noreferrer noopener"
+                className="pr-btn inline-flex shrink-0 items-center gap-2 rounded-full border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-medium text-white"
+                style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", textDecoration: "none" }}>
+                <Mail className="h-4 w-4" aria-hidden />
+                Contact Enterprise
               </a>
             </div>
           </section>
 
-          <p className="mt-8 max-w-2xl leading-7 text-slate-500">
-            By purchasing a premium plan, you are directly helping support and sustain this
-            open-source project. Thank you.
+          {/* ── Footer note ── */}
+          <p className="mt-10 text-center text-xs leading-6 text-[#9ca3af]">
+            By purchasing a premium plan, you are directly supporting this open-source project. Thank you.
           </p>
+
         </div>
       </main>
 
-      {/* ── Payment modal ─────────────────────────────────────────────────── */}
+      {/* Payment modal */}
       {showPaymentModal && selectedPlan && (
         <PaymentModal
           selectedPlan={selectedPlan}
           isCreatingOrder={isCreatingOrder}
           onConfirm={startPayment}
-          onCancel={() => {
-            if (!isCreatingOrder) {
-              setShowPaymentModal(false);
-              setSelectedPlan(null);
-            }
-          }}
+          onCancel={() => { if (!isCreatingOrder) { setShowPaymentModal(false); setSelectedPlan(null); } }}
         />
       )}
     </div>
