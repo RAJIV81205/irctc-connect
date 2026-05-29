@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { auth, googleProvider } from "@/lib/firebase";
@@ -13,7 +13,17 @@ type LoginApiResponse = {
 };
 
 export default function AuthPage() {
+  return (
+    <Suspense fallback={null}>
+      <AuthPageInner />
+    </Suspense>
+  );
+}
+
+function AuthPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +47,7 @@ export default function AuthPage() {
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Login failed");
       }
-      router.push("/dashboard");
+      router.push(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google login failed");
     } finally {

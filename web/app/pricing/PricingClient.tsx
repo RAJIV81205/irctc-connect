@@ -644,9 +644,9 @@ function PricingPageContent({
 
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                { requests: "+5K Requests", price: "₹50", note: "Great for testing" },
-                { requests: "+20K Requests", price: "₹180", note: "Most flexible" },
-                { requests: "+50K Requests", price: "₹399", note: "Best value" },
+                { requests: "+10K Requests", price: "₹100", note: "Great for testing" },
+                { requests: "+25K Requests", price: "₹225", note: "Most flexible" },
+                { requests: "+50K Requests", price: "₹400", note: "Best value" },
               ].map((pack) => (
                 <div key={pack.requests}
                   className="pr-pack flex items-center justify-between rounded-2xl border border-black/6 bg-white px-5 py-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
