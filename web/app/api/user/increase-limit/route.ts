@@ -8,13 +8,10 @@ import {
 } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db/db";
 import { cashfree, getCashfreeCheckoutMode } from "@/lib/payments/cashfree";
+import { TOPUP_OPTIONS } from "@/lib/constants";
 
-const BASE_REQUESTS = 20_000;
-const STEP_REQUESTS = 10_000;
-const BASE_AMOUNT = 200;
-const STEP_AMOUNT = 100;
-const MAX_STEPS = 48;
-const MAX_REQUESTS = BASE_REQUESTS + MAX_STEPS * STEP_REQUESTS;
+// use a general numeric key type so calling code can pass `number` safely
+const TOPUP_REQUESTS: Map<number, number> = new Map(TOPUP_OPTIONS.map((option) => [option.requests, option.price]));
 
 type PaymentEntityLike = {
   payment_status?: string;
@@ -64,25 +61,26 @@ function getAddonQuote(extraLimit: number) {
     return null;
   }
 
-  if (extraLimit < BASE_REQUESTS || extraLimit > MAX_REQUESTS) {
+  const amount = TOPUP_REQUESTS.get(extraLimit);
+  if (!amount) {
     return null;
   }
 
-  const extraAfterBase = extraLimit - BASE_REQUESTS;
-  if (extraAfterBase % STEP_REQUESTS !== 0) {
-    return null;
-  }
-
-  const steps = extraAfterBase / STEP_REQUESTS;
   return {
     extraLimit,
-    amount: BASE_AMOUNT + steps * STEP_AMOUNT,
+    amount,
   };
 }
 
 function isPaidPlan(plan?: string | null) {
   const normalized = (plan || "").toLowerCase();
-  return normalized === "pro" || normalized === "enterprise" || normalized === "advanced";
+  return (
+    normalized === "pro" ||
+    normalized === "enterprise" ||
+    // historically some places use `advance` and others `advanced` — accept both
+    normalized === "advance" ||
+    normalized === "advanced"
+  );
 }
 
 async function getAuthenticatedUser() {
@@ -117,7 +115,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: `extraLimit must be between ${BASE_REQUESTS} and ${MAX_REQUESTS} in ${STEP_REQUESTS} request steps`,
+          message: `extraLimit must be one of: ${TOPUP_OPTIONS.map((option) => option.requests).join(", ")}`,
         },
         { status: 400 }
       );

@@ -26,6 +26,7 @@ import {
   trackTrain,
 } from "irctc-connect";
 import { auth } from "../../lib/firebase";
+import { TOPUP_OPTIONS } from "../../lib/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DbUser = {
@@ -332,7 +333,7 @@ export default function DashboardPage() {
   const [verifiedReturnOrderId, setVerifiedReturnOrderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "apikey" | "apiendpoints" | "playground" | "logs" | "orders">("overview");
   const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
-  const [pricingStep, setPricingStep] = useState(0);
+  const [topupSelection, setTopupSelection] = useState(0);
   const [apiCodeLanguage, setApiCodeLanguage] = useState<ApiCodeLanguage>("javascript");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [playgroundAction, setPlaygroundAction] = useState<"pnr" | "train" | "track" | "station" | "search" | "seat">("pnr");
@@ -369,13 +370,7 @@ export default function DashboardPage() {
   const loading = userLoading || ordersLoading;
   const refreshing = userValidating || ordersValidating;
 
-  const pricingBaseRequests = 20_000;
-  const pricingStepRequests = 10_000;
-  const pricingStepCost = 100;
-  const pricingBaseCost = 200;
-  const pricingMaxSteps = 48;
-  const pricingRequests = pricingBaseRequests + pricingStep * pricingStepRequests;
-  const pricingAmount = pricingBaseCost + pricingStep * pricingStepCost;
+  const selectedTopup = TOPUP_OPTIONS[topupSelection] || TOPUP_OPTIONS[0];
   const billing = useBillingTimer(dbUser);
 
   const activeExpirationTimestamp = dbUser?.expirationDate ? new Date(dbUser.expirationDate).getTime() : NaN;
@@ -407,7 +402,7 @@ export default function DashboardPage() {
     setLimitPurchaseLoading(true);
     setLimitPurchaseMessage(null);
     try {
-      const response = await fetch("/api/user/increase-limit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extraLimit: pricingRequests }) });
+      const response = await fetch("/api/user/increase-limit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extraLimit: selectedTopup.requests }) });
       const data = await response.json();
       const order = data?.order as { orderId?: string; paymentSessionId?: string } | undefined;
       if (!response.ok || !order?.orderId || !order?.paymentSessionId) throw new Error(data?.message || "Unable to create payment order");
@@ -850,18 +845,53 @@ export default function DashboardPage() {
               {/* Pricing calculator */}
               {canBuyLimitTopup && (
                 <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 28, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
-                  <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 18 }}>Pricing Calculator</p>
+                  <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 18 }}>Limit Top-Ups</p>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
-                    <span style={{ color: "#374151", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>Requests: <b style={{ color: "#2563eb" }}>{pricingRequests.toLocaleString("en-IN")}</b></span>
-                    <span style={{ color: "#16a34a", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>Add-on: ₹{pricingAmount.toLocaleString("en-IN")}</span>
+                    <span style={{ color: "#374151", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>
+                      Selected: <b style={{ color: "#2563eb" }}>{selectedTopup.requests.toLocaleString("en-IN")} requests</b>
+                    </span>
+                    <span style={{ color: "#16a34a", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                      Price: ₹{selectedTopup.price.toLocaleString("en-IN")}
+                    </span>
                   </div>
-                  <input type="range" min={0} max={pricingMaxSteps} step={1} value={pricingStep} onChange={(e) => setPricingStep(Number(e.target.value))} style={{ width: "100%", accentColor: "#000", cursor: limitPurchaseLoading ? "wait" : "pointer" }} disabled={limitPurchaseLoading} />
-                  <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", color: "#9ca3af", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
-                    <span>20,000 reqs</span><span>10k = +₹100</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+                    {TOPUP_OPTIONS.map((option, index) => {
+                      const active = index === topupSelection;
+                      return (
+                        <button
+                          key={option.requests}
+                          type="button"
+                          onClick={() => setTopupSelection(index)}
+                          disabled={limitPurchaseLoading}
+                          style={{
+                            textAlign: "left",
+                            padding: "12px 14px",
+                            borderRadius: 12,
+                            border: active ? "1px solid #000" : "1px solid rgba(0,0,0,0.12)",
+                            background: active ? "#000" : "#f7f7f7",
+                            color: active ? "#fff" : "#111827",
+                            cursor: limitPurchaseLoading ? "wait" : "pointer",
+                            transition: "background 0.15s, border-color 0.15s, color 0.15s",
+                          }}
+                        >
+                          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.02em" }}>
+                            {option.requests.toLocaleString("en-IN")} requests
+                          </div>
+                          <div style={{ marginTop: 6, fontSize: 12, opacity: active ? 0.8 : 0.7 }}>
+                            ₹{option.price.toLocaleString("en-IN")} · ₹{option.perReq.toFixed(3)}/req
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <p style={{ marginTop: 10, color: "#9ca3af", fontSize: 11, lineHeight: 1.6, fontFamily: "'JetBrains Mono', monospace" }}>Note: Limit top-ups add requests only and do not extend your plan expiry.</p>
+                  <p style={{ marginTop: 12, color: "#6b7280", fontSize: 11, lineHeight: 1.6, fontFamily: "'JetBrains Mono', monospace" }}>
+                    Payments are processed securely by Cashfree. We never store your card or UPI details.
+                  </p>
+                  <p style={{ marginTop: 6, color: "#9ca3af", fontSize: 11, lineHeight: 1.6, fontFamily: "'JetBrains Mono', monospace" }}>
+                    Top-ups add requests only and do not extend your plan expiry.
+                  </p>
                   <button type="button" onClick={startLimitTopupPayment} disabled={limitPurchaseLoading} style={{ width: "100%", marginTop: 18, border: "none", background: limitPurchaseLoading ? "#e5e7eb" : "#000", color: limitPurchaseLoading ? "#9ca3af" : "#fff", borderRadius: 12, padding: "13px 14px", cursor: limitPurchaseLoading ? "wait" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: "'Inter', system-ui, sans-serif", transition: "background 0.15s" }}>
-                    {limitPurchaseLoading ? "Processing..." : "Increase Limit"}
+                    {limitPurchaseLoading ? "Processing..." : "Proceed to Secure Checkout"}
                   </button>
                   {limitPurchaseMessage && (
                     <p style={{ marginTop: 12, color: limitPurchaseMessage.toLowerCase().includes("failed") ? "#dc2626" : "#6b7280", fontSize: 11, lineHeight: 1.6, fontFamily: "'JetBrains Mono', monospace" }}>{limitPurchaseMessage}</p>
