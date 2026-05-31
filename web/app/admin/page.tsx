@@ -25,6 +25,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { PLAN_CONFIG } from "@/lib/constants";
 
 // ─── SWR Fetcher ──────────────────────────────────────────────────────────────
 const fetcher = async (url: string) => {
@@ -149,6 +150,16 @@ interface PlansConfig {
   offerEndsAt: string | null;
   contactEmail: string;
   plans: ManagedPlan[];
+}
+
+function clonePlanConfig(): PlansConfig {
+  return {
+    ...PLAN_CONFIG,
+    plans: PLAN_CONFIG.plans.map((plan) => ({
+      ...plan,
+      features: plan.features.map((feature) => ({ ...feature })),
+    })),
+  };
 }
 
 type EmailAudienceFilter =
@@ -465,8 +476,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 14 }}>Order Details</span>
-          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-            type="button"
+          <button type="button" onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <IconX />
           </button>
         </div>
@@ -579,8 +589,7 @@ function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: Use
               {displayEmail(user.email, showSensitiveInfo)}
             </p>
           </div>
-          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-            type="button"
+          <button type="button" onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <IconX />
           </button>
         </div>
@@ -765,8 +774,7 @@ function EmailComposerModal({
               Recipient: {recipientText}
             </p>
           </div>
-          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-            type="button"
+          <button type="button" onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <IconX />
           </button>
         </div>
@@ -911,8 +919,7 @@ function CreateOrderModal({
               Create paid/manual orders without changing order schema
             </p>
           </div>
-          <button onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-            type="button"
+          <button type="button" onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <IconX />
           </button>
         </div>
@@ -1063,7 +1070,7 @@ export default function AdminPanel() {
   const [emailHtml, setEmailHtml] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [planDraft, setPlanDraft] = useState<PlansConfig | null>(null);
+  const [planDraft, setPlanDraft] = useState<PlansConfig | null>(() => clonePlanConfig());
   const [savingPlans, setSavingPlans] = useState(false);
   const [plansFeedback, setPlansFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
@@ -1157,17 +1164,6 @@ export default function AdminPanel() {
     { revalidateOnFocus: true, refreshInterval: 60_000 }
   );
 
-  const {
-    data: plansData,
-    isLoading: plansLoading,
-    isValidating: plansValidating,
-    mutate: mutatePlans,
-  } = useSWR<{ success: boolean; config: PlansConfig }>(
-    isAdmin ? "/api/admin/plans" : null,
-    fetcher,
-    { revalidateOnFocus: true, refreshInterval: 60_000 }
-  );
-
   const users      = usersData?.users ?? [];
   const paidOrders = (ordersData?.orders ?? []).filter((o) => o.status === "paid");
   const unpaidOrders = (ordersData?.orders ?? []).filter((o) => o.status !== "paid");
@@ -1177,7 +1173,7 @@ export default function AdminPanel() {
   const auditDailyUsage = logsData?.logs?.dailyUsage ?? [];
   const recentLogs = logsData?.logs?.recent ?? [];
   const filteredEmailUsers = users.filter((user) => matchesEmailAudienceFilter(user, emailAudienceFilter));
-  const dataLoading = usersValidating || ordersValidating || topupsValidating || issuesValidating || plansValidating || logsValidating;
+  const dataLoading = usersValidating || ordersValidating || topupsValidating || issuesValidating || logsValidating;
   const normalizedUserSearch = userSearch.trim().toLowerCase();
   const filteredUsers = users.filter((user) => {
     const plan = (user.plan || "free").toLowerCase();
@@ -1220,12 +1216,6 @@ export default function AdminPanel() {
       }
     })();
   }, []);
-
-  useEffect(() => {
-    if (plansData?.config) {
-      setPlanDraft(plansData.config);
-    }
-  }, [plansData]);
 
   const totalRequests = auditDailyUsage.reduce((sum, entry) => sum + entry.requests, 0);
   const avgRequestsPerDay = auditDailyUsage.length > 0 
@@ -1390,7 +1380,7 @@ export default function AdminPanel() {
     }
   };
 
-  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateTopups(); mutateIssues(); mutatePlans(); mutateLogs(); };
+  const refreshAll = () => { mutateUsers(); mutateOrders(); mutateTopups(); mutateIssues(); mutateLogs(); };
 
   const clearAllUnpaidOrders = async () => {
     if (unpaidOrders.length === 0 || clearingUnpaid) return;
@@ -1475,30 +1465,11 @@ export default function AdminPanel() {
     setSavingPlans(true);
     setPlansFeedback(null);
     try {
-      const sanitizedDraft: PlansConfig = {
-        ...planDraft,
-        plans: planDraft.plans.map((plan) => ({
-          ...plan,
-          features: (plan.features || [])
-            .map((feature) => ({ ...feature, text: feature.text.trim() }))
-            .filter((feature) => feature.text.length > 0),
-        })),
-      };
-      const res = await fetch("/api/admin/plans", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sanitizedDraft),
+      setPlanDraft(clonePlanConfig());
+      setPlansFeedback({
+        type: "error",
+        message: "Pricing is managed in web/lib/constants.ts. Edit that file to change plans.",
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to save plans");
-      }
-
-      setPlanDraft(data.config);
-      setPlansFeedback({ type: "success", message: "Plans updated successfully." });
-      mutatePlans();
-    } catch (error: unknown) {
-      setPlansFeedback({ type: "error", message: getErrorMessage(error, "Failed to save plans.") });
     } finally {
       setSavingPlans(false);
     }
@@ -1539,7 +1510,7 @@ export default function AdminPanel() {
 
   // ── Loading screen ──────────────────────────────────────────────────────────
   if (authLoading) return <Loader text="Authenticating..." />;
-  if (isAdmin && (usersLoading || ordersLoading || topupsLoading || issuesLoading || plansLoading || logsLoading)) return <Loader text="Fetching data..." />;
+  if (isAdmin && (usersLoading || ordersLoading || topupsLoading || issuesLoading || logsLoading)) return <Loader text="Fetching data..." />;
 
   // ── Login screen ────────────────────────────────────────────────────────────
   if (!isAdmin) {

@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import User from "../db/models/User";
-import { getOrCreatePlanConfig, isOfferActive } from "@/lib/plans/config";
+import { PLAN_CONFIG } from "@/lib/constants";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -65,12 +65,9 @@ async function getInvoicePlanDetails(user: IUser): Promise<InvoicePlanDetails> {
   const normalizedPlan = user.plan.toLowerCase();
 
   try {
-    const config = await getOrCreatePlanConfig();
-    const offerActive = isOfferActive(config.offerEndsAt);
-
     const plan =
-      config.plans.find((item) => (item.userPlan || "").toLowerCase() === normalizedPlan) ||
-      config.plans.find((item) => item.planType.toLowerCase() === normalizedPlan) ||
+      PLAN_CONFIG.plans.find((item) => (item.userPlan || "").toLowerCase() === normalizedPlan) ||
+      PLAN_CONFIG.plans.find((item) => item.planType.toLowerCase() === normalizedPlan) ||
       null;
 
     if (!plan) {
@@ -80,14 +77,9 @@ async function getInvoicePlanDetails(user: IUser): Promise<InvoicePlanDetails> {
       };
     }
 
-    const amount =
-      offerActive || typeof plan.originalPrice !== "number"
-        ? plan.price
-        : plan.originalPrice;
-
     return {
       displayName: plan.name || `${capitalize(user.plan)} Plan`,
-      amount: Math.max(0, Number(amount) || 0),
+      amount: Math.max(0, Number(plan.price) || 0),
     };
   } catch (error) {
     console.error("Failed to resolve plan config for invoice:", error);

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { connectToDatabase } from "../../lib/db/db";
-import { getPublicPlanConfig } from "../../lib/plans/config";
+import { getPublicPlanConfig } from "../../lib/constants";
 import { buildMetadata } from "../../lib/seo";
 import PricingClient from "./PricingClient";
 
@@ -14,8 +13,7 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function PricingPage() {
-  await connectToDatabase();
-  const config = await getPublicPlanConfig();
+  const config = getPublicPlanConfig();
 
   const plans = JSON.parse(JSON.stringify(config?.plans || []));
   const offerEndsAt = config?.offerEndsAt ?? null;

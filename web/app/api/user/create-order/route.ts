@@ -13,8 +13,7 @@ import {
   getAppReturnUrl,
   getWebhookUrl,
 } from "@/lib/payments/cashfree";
-import { isPaidPlanType } from "@/lib/payments/plans";
-import { getPaidPlanRuntime } from "@/lib/plans/config";
+import { getPaidPlanRuntime, isPaidPlanType } from "@/lib/constants";
 
 function makeOrderId(userId: string) {
   const suffix = Math.random().toString(36).slice(2, 8);
@@ -69,7 +68,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const planConfig = await getPaidPlanRuntime(body.planType);
+    const planConfig = getPaidPlanRuntime(body.planType);
     if (!planConfig) {
       return NextResponse.json(
         { success: false, message: "plan config not found" },

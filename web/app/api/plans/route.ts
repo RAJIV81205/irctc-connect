@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/db";
-import { getPublicPlanConfig } from "@/lib/plans/config";
+import { getPublicPlanConfig } from "@/lib/constants";
 
 export async function GET() {
   try {
-    await connectToDatabase();
-    const config = await getPublicPlanConfig();
+    const config = getPublicPlanConfig();
 
     return NextResponse.json(
       {
