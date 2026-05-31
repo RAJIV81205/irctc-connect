@@ -845,7 +845,7 @@ export default function DashboardPage() {
               {/* Pricing calculator */}
               {canBuyLimitTopup && (
                 <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 20, padding: 28, boxShadow: "0 16px 40px rgba(0,0,0,0.06)" }}>
-                  <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 18 }}>Limit Top-Ups</p>
+                  <p style={{ color: "#9ca3af", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 18 }}>Scale your product</p>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
                     <span style={{ color: "#374151", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>
                       Selected: <b style={{ color: "#2563eb" }}>{selectedTopup.requests.toLocaleString("en-IN")} requests</b>

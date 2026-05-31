@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import type { PricingPlan, PaidPlanType } from "../../lib/constants";
+import { TOPUP_OPTIONS, formatINR } from "../../lib/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -642,30 +643,31 @@ function PricingPageContent({
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { requests: "+10K Requests", price: "₹100", note: "Great for testing" },
-                { requests: "+25K Requests", price: "₹225", note: "Most flexible" },
-                { requests: "+50K Requests", price: "₹400", note: "Best value" },
-              ].map((pack) => (
-                <div key={pack.requests}
-                  className="pr-pack flex items-center justify-between rounded-2xl border border-black/6 bg-white px-5 py-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-                  <div>
-                    <div className="text-sm font-medium text-black">{pack.requests}</div>
-                    <div className="mt-0.5 text-xs text-[#9ca3af]">{pack.note}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-base font-semibold text-black" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
-                      {pack.price}
+            <div className="grid gap-3 sm:grid-cols-4">
+              {TOPUP_OPTIONS.map((opt, i) => {
+                const lbl = opt.requests >= 1000 ? `+${Math.round(opt.requests / 1000)}K Requests` : `+${opt.requests} Requests`;
+                const notes = ["Great for testing", "Most flexible", "Best value", "Large volume"];
+                const note = notes[i] ?? "Flexible top-up";
+                return (
+                  <div key={String(opt.requests)}
+                    className="pr-pack flex items-center justify-between rounded-2xl border border-black/6 bg-white px-5 py-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+                    <div>
+                      <div className="text-sm font-medium text-black">{lbl}</div>
+                      <div className="mt-0.5 text-xs text-[#9ca3af]">{note}</div>
                     </div>
-                    <div className="mt-0.5 text-xs text-[#9ca3af]">one-time</div>
+                    <div className="text-right">
+                      <div className="text-base font-semibold text-black" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+                        {formatINR(opt.price)}
+                      </div>
+                      <div className="mt-0.5 text-xs text-[#9ca3af]">one-time</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <p className="mt-4 text-xs text-[#9ca3af]">
-              Request packs are coming soon. Contact us to arrange early access.
+              Request packs are available for purchase alongside any subscription plan, and can be bought multiple times as needed. They provide additional request capacity on top of your plan limits, without any expiration.
             </p>
           </section>
 
