@@ -4,10 +4,13 @@ export const SITE_TITLE =
 export const SITE_DESCRIPTION =
   "IRCTC Connect is a developer-focused Indian Railways API and Node.js SDK for PNR status, live train tracking, station boards, train search, and seat availability.";
 export const SITE_KEYWORDS = [
+  "irctc",
   "irctc connect",
   "irctc api",
   "irctc sdk",
   "indian railways api",
+  "railway api",
+  "train data api",
   "indian railways sdk",
   "node.js irctc package",
   "irctc npm package",
@@ -26,7 +29,7 @@ export const TWITTER_CARD = "summary_large_image";
 export const TWITTER_HANDLE = "@rajiv81205";
 
 export function getSiteUrl(): string {
-  const raw = "https://irctc.rajivdubey.tech";
+  const raw = "https://irctc.rajivdubey.dev";
   return raw.replace(/\/+$/, "");
 }
 
