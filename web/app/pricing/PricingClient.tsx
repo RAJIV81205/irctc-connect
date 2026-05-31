@@ -430,7 +430,7 @@ function PricingPageContent({
     const isAuthed = authState.status === "authenticated";
     const currentPlan = isAuthed ? (authState as { plan: "free" | PaidPlanType }).plan : null;
     if (isAuthed && currentPlan === "advance") {
-      if (plan.planType === "advance") return { label: "Current Plan", disabled: true, action: () => {} };
+      if (plan.planType === "advance") return { label: "Renew Plan", disabled: false, action: () => openPaymentModal(plan.planType) };
       if (plan.planType === "pro") return { label: "Downgrade Unavailable", disabled: true, action: () => {} };
       return { label: "Included", disabled: true, action: () => {} };
     }
