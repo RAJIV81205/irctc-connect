@@ -11,6 +11,7 @@
   "dependencies": {
     "@types/jsonwebtoken": "^9.0.10",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vercel/analytics": "^2.0.1",
     "cashfree-pg": "^5.1.0",
     "firebase": "^12.11.0",
     "irctc-connect": "^3.0.4",

@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "./ThemeProvider";
 import { Header } from "../components/Header";
+import { Analytics } from "@vercel/analytics/next"
 import {
   buildMetadata,
   OG_LOCALE,
@@ -133,6 +134,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <Header />
           {children}
         </ThemeProvider>
+        <Analytics />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-1SFQ77RRP2"
           strategy="afterInteractive"
