@@ -1,0 +1,405 @@
+import {
+  Document,
+  Image,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+  renderToBuffer,
+} from "@react-pdf/renderer";
+import fs from "fs";
+import path from "path";
+import { PLAN_CONFIG } from "@/lib/constants";
+
+export interface InvoiceUser {
+  name: string;
+  email: string;
+  plan: string;
+  billingDate?: Date | null;
+  limit: number;
+}
+
+type InvoicePlanDetails = {
+  displayName: string;
+  amount: number;
+};
+
+type InvoiceData = {
+  user: InvoiceUser;
+  billingDate: Date;
+  nextBillingDate: Date;
+  invoiceNumber: string;
+  planDetails: InvoicePlanDetails;
+  amountDue: number;
+  logoSrc: string | null;
+};
+
+let cachedLogoSrc: string | null | undefined;
+
+export function addOneMonth(date: Date): Date {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + 1);
+  return d;
+}
+
+export function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.max(0, Number(amount) || 0));
+}
+
+async function getInvoicePlanDetails(user: InvoiceUser): Promise<InvoicePlanDetails> {
+  const normalizedPlan = user.plan.toLowerCase();
+
+  try {
+    const plan =
+      PLAN_CONFIG.plans.find((item) => (item.userPlan || "").toLowerCase() === normalizedPlan) ||
+      PLAN_CONFIG.plans.find((item) => item.planType.toLowerCase() === normalizedPlan) ||
+      null;
+
+    if (!plan) {
+      return {
+        displayName: `${capitalize(user.plan)} Plan`,
+        amount: 0,
+      };
+    }
+
+    return {
+      displayName: plan.name || `${capitalize(user.plan)} Plan`,
+      amount: Math.max(0, Number(plan.price) || 0),
+    };
+  } catch (error) {
+    console.error("Failed to resolve plan config for invoice:", error);
+    return {
+      displayName: `${capitalize(user.plan)} Plan`,
+      amount: 0,
+    };
+  }
+}
+
+function getLogoSrc() {
+  if (cachedLogoSrc !== undefined) {
+    return cachedLogoSrc;
+  }
+
+  const candidatePaths = [
+    path.join(process.cwd(), "public", "icon.png"),
+    path.join(process.cwd(), "web", "public", "icon.png"),
+  ];
+  const logoPath = candidatePaths.find((candidate) => fs.existsSync(candidate));
+
+  if (!logoPath) {
+    cachedLogoSrc = null;
+    return cachedLogoSrc;
+  }
+
+  const logo = fs.readFileSync(logoPath);
+  cachedLogoSrc = `data:image/png;base64,${logo.toString("base64")}`;
+  return cachedLogoSrc;
+}
+
+function buildInvoiceData(user: InvoiceUser): Promise<InvoiceData> {
+  return getInvoicePlanDetails(user).then((planDetails) => {
+    const billingDate = user.billingDate ? new Date(user.billingDate) : new Date();
+    const nextBillingDate = addOneMonth(billingDate);
+    const invoiceNumber = `INV-${Date.now()}`;
+
+    return {
+      user,
+      billingDate,
+      nextBillingDate,
+      invoiceNumber,
+      planDetails,
+      amountDue: 0,
+      logoSrc: getLogoSrc(),
+    };
+  });
+}
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 28,
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    color: "#3f3f46",
+    backgroundColor: "#ffffff",
+  },
+  top: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 34,
+  },
+  brandColumn: {
+    width: "46%",
+  },
+  logo: {
+    width: 96,
+    height: 96,
+    objectFit: "contain",
+    marginBottom: 10,
+  },
+  fallbackLogo: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+    backgroundColor: "#0f4c81",
+    color: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  fallbackLogoText: {
+    fontSize: 28,
+    fontFamily: "Helvetica-Bold",
+  },
+  senderName: {
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+    marginBottom: 3,
+  },
+  textLine: {
+    lineHeight: 1,
+  },
+  billTo: {
+    marginTop: 16,
+  },
+  sectionLabel: {
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+    marginBottom: 7,
+  },
+  invoiceColumn: {
+    width: "42%",
+    alignItems: "flex-end",
+  },
+  invoiceTitle: {
+    fontSize: 30,
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+    marginBottom: 5,
+  },
+  invoiceNumber: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 28,
+  },
+  metaRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  metaLabel: {
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+  },
+  metaValue: {
+    color: "#52525b",
+  },
+  dueBox: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#f4f4f5",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 2,
+    marginTop: 2,
+  },
+  dueLabel: {
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+    fontSize: 12,
+  },
+  dueValue: {
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+    fontSize: 12,
+  },
+  table: {
+    marginTop: 8,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#3f3f46",
+    color: "#ffffff",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  itemCell: {
+    width: "58%",
+  },
+  qtyCell: {
+    width: "15%",
+  },
+  rateCell: {
+    width: "13%",
+    textAlign: "right",
+  },
+  amountCell: {
+    width: "14%",
+    textAlign: "right",
+  },
+  itemName: {
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+    marginBottom: 5,
+  },
+  itemDescription: {
+    color: "#3f3f46",
+    lineHeight: 1,
+  },
+  totals: {
+    marginTop: 34,
+    marginLeft: "65%",
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  totalLabel: {
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+  },
+  notes: {
+    marginTop: 30,
+    width: "88%",
+  },
+  noteParagraph: {
+    lineHeight: 1,
+    marginBottom: 16,
+  },
+});
+
+function InvoiceDocument({ data }: { data: InvoiceData }) {
+  const itemDescription = `${data.user.limit.toLocaleString("en-IN")} API calls/month · Valid till ${formatDate(
+    data.nextBillingDate,
+  )}`;
+
+  return (
+    <Document
+      title={`${data.invoiceNumber} - IRCTC Connect`}
+      author="Rajiv Dubey"
+      subject="IRCTC Connect invoice"
+      creator="IRCTC Connect"
+      producer="IRCTC Connect"
+    >
+      <Page size="A4" style={styles.page}>
+        <View style={styles.top}>
+          <View style={styles.brandColumn}>
+            {data.logoSrc ? (
+              // React PDF Image does not expose an alt prop.
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image src={data.logoSrc} style={styles.logo} />
+            ) : (
+              <View style={styles.fallbackLogo}>
+                <Text style={styles.fallbackLogoText}>IC</Text>
+              </View>
+            )}
+
+            <Text style={styles.senderName}>Rajiv Dubey</Text>
+            <Text style={styles.textLine}>IRCTC Connect</Text>
+            <Text style={styles.textLine}>irctc.rajivdubey.dev</Text>
+            <Text style={styles.textLine}>lucky81205@gmail.com</Text>
+
+            <View style={styles.billTo}>
+              <Text style={styles.sectionLabel}>Bill To:</Text>
+              <Text style={styles.senderName}>{data.user.name}</Text>
+              <Text style={styles.textLine}>{data.user.email}</Text>
+            </View>
+          </View>
+
+          <View style={styles.invoiceColumn}>
+            <Text style={styles.invoiceTitle}>INVOICE</Text>
+            <Text style={styles.invoiceNumber}># {data.invoiceNumber}</Text>
+
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Date:</Text>
+              <Text style={styles.metaValue}>{formatDate(data.billingDate)}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Payment Terms:</Text>
+              <Text style={styles.metaValue}>Paid</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Due Date:</Text>
+              <Text style={styles.metaValue}>{formatDate(data.nextBillingDate)}</Text>
+            </View>
+            <View style={styles.dueBox}>
+              <Text style={styles.dueLabel}>Amount Due:</Text>
+              <Text style={styles.dueValue}>{formatCurrency(data.amountDue)}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.itemCell}>Item</Text>
+            <Text style={styles.qtyCell}>Quantity</Text>
+            <Text style={styles.rateCell}>Rate</Text>
+            <Text style={styles.amountCell}>Amount</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <View style={styles.itemCell}>
+              <Text style={styles.itemName}>IRCTC Connect - {data.planDetails.displayName}</Text>
+              <Text style={styles.itemDescription}>{itemDescription}</Text>
+            </View>
+            <Text style={styles.qtyCell}>1</Text>
+            <Text style={styles.rateCell}>{formatCurrency(data.planDetails.amount)}</Text>
+            <Text style={styles.amountCell}>{formatCurrency(data.planDetails.amount)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.totals}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total:</Text>
+            <Text>{formatCurrency(data.planDetails.amount)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Amount Paid:</Text>
+            <Text>{formatCurrency(data.planDetails.amount)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.notes}>
+          <Text style={styles.sectionLabel}>Notes:</Text>
+          <Text style={styles.noteParagraph}>
+            Thank you for subscribing to IRCTC Connect! If you need a higher limit or have any
+            questions, reply to this email or reach me on Signal.
+          </Text>
+
+          <Text style={styles.sectionLabel}>Terms:</Text>
+          <Text>Payment is non-refundable.</Text>
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
+export async function generateInvoicePdf(user: InvoiceUser): Promise<Buffer> {
+  const data = await buildInvoiceData(user);
+  return renderToBuffer(<InvoiceDocument data={data} />);
+}

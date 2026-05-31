@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import User from "../db/models/User";
-import { PLAN_CONFIG } from "@/lib/constants";
+import { addOneMonth, capitalize, formatDate, generateInvoicePdf } from "./invoice";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -35,120 +35,6 @@ export type SendRawHtmlBatchEmailResult = {
   sentCount: number;
   failedEmails: string[];
 };
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-function addOneMonth(date: Date): Date {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + 1);
-  return d;
-}
-
-function formatDate(date: Date): string {
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-type InvoicePlanDetails = {
-  displayName: string;
-  amount: number;
-};
-
-async function getInvoicePlanDetails(user: IUser): Promise<InvoicePlanDetails> {
-  const normalizedPlan = user.plan.toLowerCase();
-
-  try {
-    const plan =
-      PLAN_CONFIG.plans.find((item) => (item.userPlan || "").toLowerCase() === normalizedPlan) ||
-      PLAN_CONFIG.plans.find((item) => item.planType.toLowerCase() === normalizedPlan) ||
-      null;
-
-    if (!plan) {
-      return {
-        displayName: `${capitalize(user.plan)} Plan`,
-        amount: 0,
-      };
-    }
-
-    return {
-      displayName: plan.name || `${capitalize(user.plan)} Plan`,
-      amount: Math.max(0, Number(plan.price) || 0),
-    };
-  } catch (error) {
-    console.error("Failed to resolve plan config for invoice:", error);
-    return {
-      displayName: `${capitalize(user.plan)} Plan`,
-      amount: 0,
-    };
-  }
-}
-
-// ─── Invoice Generator ───────────────────────────────────────────────────────
-
-async function generateInvoicePdf(user: IUser): Promise<Buffer> {
-  const billingDate = user.billingDate ? new Date(user.billingDate) : new Date();
-  const nextBillingDate = addOneMonth(billingDate);
-  const planDetails = await getInvoicePlanDetails(user);
-  const invoiceApiKey = process.env.INVOICE_API_KEY;
-
-  if (!invoiceApiKey) {
-    throw new Error("INVOICE_API_KEY is not configured");
-  }
-
-  // invoice-generator.com accepts JSON and returns raw PDF bytes
-  const invoicePayload = {
-    logo: "https://irctc.rajivdubey.tech/icon.png",
-    from: "Rajiv Dubey\nIRCTC Connect\nirctc.rajivdubey.tech\nlucky81205@gmail.com",
-    to: `${user.name}\n${user.email}`,
-    number: `INV-${Date.now()}`,
-    date: formatDate(billingDate),
-    due_date: formatDate(nextBillingDate),
-    currency: "INR",
-    items: [
-      {
-        name: `IRCTC Connect — ${planDetails.displayName}`,
-        description: `${user.limit.toLocaleString("en-IN")} API calls/month · Valid till ${formatDate(nextBillingDate)}`,
-        quantity: 1,
-        unit_cost: planDetails.amount,
-      },
-    ],
-    notes:
-      "Thank you for subscribing to IRCTC Connect! If you need a higher limit or have any questions, reply to this email or reach me on Signal.",
-    terms: "Payment is non-refundable.",
-    // tax_title: "GST",  // uncomment + add `tax` field if applicable
-    // tax: 18,
-  };
-
-  const response = await fetch("https://invoice-generator.com", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${invoiceApiKey}`,  // ← add this
-  },
-  body: JSON.stringify({
-    ...invoicePayload,
-    payment_terms: "Paid",           // shows "Paid" in payment terms field
-    amount_paid: planDetails.amount,           // ← makes balance = ₹0.00
-    amount_paid_title: "Amount Paid",
-    balance_title: "Amount Due",     // "Amount Due: ₹0.00" instead of "Balance Due"
-  }),
-});
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Invoice generation failed (${response.status}): ${text}`);
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-}
 
 // ─── Email Template ──────────────────────────────────────────────────────────
 
@@ -192,7 +78,7 @@ const welcomeTemplateHtml = (user: IUser): string => {
           <tr>
             <td style="background: #18181b; padding: 36px 40px 28px; text-align: center;">
               <img
-                src="https://irctc.rajivdubey.tech/icon.png"
+                src="https://irctc.rajivdubey.dev/icon.png"
                 alt="IRCTC Connect"
                 width="52" height="52"
                 style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); display: block; margin: 0 auto 14px;"
@@ -274,7 +160,7 @@ const welcomeTemplateHtml = (user: IUser): string => {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="https://irctc.rajivdubey.tech/dashboard" target="_blank" rel="noopener noreferrer"
+                    <a href="https://irctc.rajivdubey.dev/dashboard" target="_blank" rel="noopener noreferrer"
                       style="
                         display: inline-block;
                         background: #18181b;
@@ -300,7 +186,7 @@ const welcomeTemplateHtml = (user: IUser): string => {
             <td style="background: #fafafa; border-top: 1px solid #e4e4e7; padding: 20px 40px; text-align: center;">
               <p style="margin: 0 0 4px; font-size: 13px; color: #71717a;">
                 Built with ❤️ by Rajiv Dubey ·
-                <a href="https://irctc.rajivdubey.tech" style="color: #18181b; text-decoration: none;">irctc.rajivdubey.tech</a>
+                <a href="https://irctc.rajivdubey.dev" style="color: #18181b; text-decoration: none;">irctc.rajivdubey.dev</a>
               </p>
               <p style="margin: 0; font-size: 11px; color: #d4d4d8;">
                 You're receiving this because you subscribed with ${user.email}
