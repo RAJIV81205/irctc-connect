@@ -2089,9 +2089,9 @@ export default function AdminPanel() {
                     alignItems: "center",
                     gap: 6,
                   }}
-                  title="Delete unpaid orders older than 24 hours"
+                  title="Delete unpaid orders older than 1 hour"
                 >
-                  {clearingUnpaid ? "Clearing..." : "Clear Unpaid > 24h"}
+                  {clearingUnpaid ? "Clearing..." : "Clear Unpaid > 1h"}
                 </button>
               </div>
               <div style={{ overflowX: "auto" }}>

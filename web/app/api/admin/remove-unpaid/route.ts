@@ -23,7 +23,7 @@ export async function DELETE() {
 
 		await connectToDatabase();
 
-		const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+		const cutoffDate = new Date(Date.now() - 60 * 60 * 1000);
 
 		const result = await Order.deleteMany({
 			createdAt: { $lt: cutoffDate },
@@ -33,7 +33,7 @@ export async function DELETE() {
 		return NextResponse.json(
 			{
 				success: true,
-				message: "Unpaid orders older than 24 hours removed",
+				message: "Unpaid orders older than 1 hour removed",
 				deletedCount: result.deletedCount,
 				cutoffDate: cutoffDate.toISOString(),
 			},
