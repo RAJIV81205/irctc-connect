@@ -12,7 +12,7 @@ interface IUser {
   limit: number;
 }
 
-const senderEmail = "irctc-connect@contact.rajivdubey.tech";
+const senderEmail = "irctc-connect@rajivdubey.dev";
 const senderName = "IRCTC Connect";
 const replyToEmail = "lucky81205@gmail.com";
 const replyToName = "Rajiv Dubey";
