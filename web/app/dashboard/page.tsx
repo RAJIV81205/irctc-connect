@@ -526,7 +526,7 @@ export default function DashboardPage() {
   const avatarHue = (dbUser.email.charCodeAt(0) * 7) % 360;
   const canBuyLimitTopup = normalizedPlan === "pro" || normalizedPlan === "enterprise" || normalizedPlan === "advance" || normalizedPlan === "advanced";
 
-  const directApiBaseUrl = process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL || "https://irctc-connect-api.rajivdubey.tech";
+  const directApiBaseUrl = process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL || "https://irctc-api.rajivdubey.dev";
 
   const apiLanguageMeta: Record<ApiCodeLanguage, { label: string; syntax: "javascript" | "python" | "bash" }> = {
     javascript: { label: "JavaScript", syntax: "javascript" },
