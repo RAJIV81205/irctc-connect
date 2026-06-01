@@ -26,6 +26,7 @@
     "react-syntax-highlighter": "^16.1.0",
     "recharts": "^3.8.1",
     "resend": "^6.10.0",
+    "svix": "^1.95.1",
     "swr": "^2.4.1"
   },
   "devDependencies": {
