@@ -15,7 +15,7 @@
     "@vercel/analytics": "^2.0.1",
     "cashfree-pg": "^5.1.0",
     "firebase": "^12.11.0",
-    "irctc-connect": "^3.0.4",
+    "irctc-connect": "^3.0.5",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.556.0",
     "mongoose": "^9.3.3",
