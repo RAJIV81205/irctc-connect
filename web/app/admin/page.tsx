@@ -25,7 +25,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { PLAN_CONFIG } from "@/lib/constants";
 
 // ─── SWR Fetcher ──────────────────────────────────────────────────────────────
 const fetcher = async (url: string) => {
@@ -121,44 +120,6 @@ interface LogsData {
       requests: number;
     }>;
     recent: AuditLog[];
-  };
-}
-
-interface ManagedPlanFeature {
-  text: string;
-  highlight?: boolean;
-}
-
-interface ManagedPlan {
-  id: string;
-  name: string;
-  originalPrice?: number | null;
-  price: number;
-  period: string;
-  description: string;
-  features: ManagedPlanFeature[];
-  planType: "free" | "pro" | "advance";
-  buttonText: string;
-  popular?: boolean;
-  colorTheme: "blue" | "slate" | "emerald";
-  limit?: number;
-  userPlan?: "pro" | "enterprise" | null;
-}
-
-interface PlansConfig {
-  key: string;
-  offerEndsAt: string | null;
-  contactEmail: string;
-  plans: ManagedPlan[];
-}
-
-function clonePlanConfig(): PlansConfig {
-  return {
-    ...PLAN_CONFIG,
-    plans: PLAN_CONFIG.plans.map((plan) => ({
-      ...plan,
-      features: plan.features.map((feature) => ({ ...feature })),
-    })),
   };
 }
 
@@ -1057,7 +1018,7 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "topups" | "plans" | "email" | "issues" | "playground" | "logs">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "topups" | "email" | "issues" | "playground" | "logs">("users");
   const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
@@ -1070,9 +1031,6 @@ export default function AdminPanel() {
   const [emailHtml, setEmailHtml] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [planDraft, setPlanDraft] = useState<PlansConfig | null>(() => clonePlanConfig());
-  const [savingPlans, setSavingPlans] = useState(false);
-  const [plansFeedback, setPlansFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [createOrderFeedback, setCreateOrderFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -1459,22 +1417,6 @@ export default function AdminPanel() {
     }
   };
 
-  const savePlansConfig = async () => {
-    if (!planDraft || savingPlans) return;
-
-    setSavingPlans(true);
-    setPlansFeedback(null);
-    try {
-      setPlanDraft(clonePlanConfig());
-      setPlansFeedback({
-        type: "error",
-        message: "Pricing is managed in web/lib/constants.ts. Edit that file to change plans.",
-      });
-    } finally {
-      setSavingPlans(false);
-    }
-  };
-
   const createManualOrder = async (payload: ManualCreateOrderPayload) => {
     if (creatingOrder) return;
 
@@ -1721,7 +1663,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid", "topups", "plans", "email", "logs", "issues", "playground"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "topups", "email", "logs", "issues", "playground"] as const).map((tab) => (
               <button
                 type="button"
                 key={tab}
@@ -1744,8 +1686,6 @@ export default function AdminPanel() {
                   ? `Unpaid Orders (${unpaidOrders.length})`
                   : tab === "topups"
                   ? `Topups (${topups.length})`
-                  : tab === "plans"
-                  ? "Plans"
                   : tab === "email"
                   ? "Email"
                   : tab === "logs"
@@ -1769,22 +1709,6 @@ export default function AdminPanel() {
             >
               <p style={{ color: emailFeedback.type === "success" ? "#6ee7b7" : "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
                 {emailFeedback.message}
-              </p>
-            </div>
-          )}
-
-          {activeTab === "plans" && plansFeedback && (
-            <div
-              style={{
-                marginBottom: 14,
-                padding: "10px 14px",
-                borderRadius: 8,
-                background: plansFeedback.type === "success" ? "#0f2a1d" : "#2a0f0f",
-                border: `1px solid ${plansFeedback.type === "success" ? "#1a4731" : "#4a1f1f"}`,
-              }}
-            >
-              <p style={{ color: plansFeedback.type === "success" ? "#6ee7b7" : "#f87171", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
-                {plansFeedback.message}
               </p>
             </div>
           )}
@@ -2238,215 +2162,6 @@ export default function AdminPanel() {
                     )}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          )}
-
-          {/* Plans Config */}
-          {activeTab === "plans" && planDraft && (
-            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "12px 16px",
-                  borderBottom: "1px solid #1e2330",
-                  background: "#0a0d13",
-                  gap: 12,
-                }}
-              >
-                <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
-                  Manage pricing plans and offer settings shown on the pricing page
-                </span>
-                <button
-                  type="button"
-                  onClick={savePlansConfig}
-                  disabled={savingPlans}
-                  style={{
-                    background: savingPlans ? "#1a1f2e" : "#0f2a1d",
-                    border: `1px solid ${savingPlans ? "#2d3548" : "#1a4731"}`,
-                    color: savingPlans ? "#64748b" : "#6ee7b7",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 12,
-                    cursor: savingPlans ? "not-allowed" : "pointer",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontWeight: 700,
-                  }}
-                >
-                  {savingPlans ? "Saving..." : "Save Plans"}
-                </button>
-              </div>
-
-              <div style={{ padding: 16, borderBottom: "1px solid #1e2330", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Offer Ends At (ISO)</span>
-                  <input
-                    value={planDraft.offerEndsAt || ""}
-                    onChange={(e) => setPlanDraft({ ...planDraft, offerEndsAt: e.target.value || null })}
-                    placeholder="2026-04-10T23:59:59+05:30"
-                    style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
-                  />
-                </label>
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Contact Email</span>
-                  <input
-                    value={planDraft.contactEmail}
-                    onChange={(e) => setPlanDraft({ ...planDraft, contactEmail: e.target.value })}
-                    placeholder="owner@example.com"
-                    style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "9px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
-                  />
-                </label>
-              </div>
-
-              <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-                {planDraft.plans.map((plan, index) => (
-                  <div key={plan.id} style={{ border: "1px solid #1e2330", borderRadius: 10, padding: 14, background: "#0b0f16" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700 }}>{plan.name} ({plan.planType})</p>
-                      <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>ID: {plan.id}</span>
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
-                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Name</span>
-                        <input
-                          value={plan.name}
-                          onChange={(e) =>
-                            setPlanDraft({
-                              ...planDraft,
-                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, name: e.target.value } : item)),
-                            })
-                          }
-                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
-                        />
-                      </label>
-                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Offer Price</span>
-                        <input
-                          type="number"
-                          value={plan.price}
-                          onChange={(e) =>
-                            setPlanDraft({
-                              ...planDraft,
-                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, price: Number(e.target.value) } : item)),
-                            })
-                          }
-                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
-                        />
-                      </label>
-                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Original Price</span>
-                        <input
-                          type="number"
-                          value={plan.originalPrice ?? ""}
-                          onChange={(e) =>
-                            setPlanDraft({
-                              ...planDraft,
-                              plans: planDraft.plans.map((item, i) =>
-                                i === index
-                                  ? { ...item, originalPrice: e.target.value === "" ? null : Number(e.target.value) }
-                                  : item
-                              ),
-                            })
-                          }
-                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
-                        />
-                      </label>
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
-                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Button Text</span>
-                        <input
-                          value={plan.buttonText}
-                          onChange={(e) =>
-                            setPlanDraft({
-                              ...planDraft,
-                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, buttonText: e.target.value } : item)),
-                            })
-                          }
-                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
-                        />
-                      </label>
-                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Usage Limit</span>
-                        <input
-                          type="number"
-                          value={plan.limit ?? 0}
-                          onChange={(e) =>
-                            setPlanDraft({
-                              ...planDraft,
-                              plans: planDraft.plans.map((item, i) => (i === index ? { ...item, limit: Number(e.target.value) } : item)),
-                            })
-                          }
-                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
-                        />
-                      </label>
-                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>User Plan</span>
-                        <select
-                          value={plan.userPlan || ""}
-                          onChange={(e) =>
-                            setPlanDraft({
-                              ...planDraft,
-                              plans: planDraft.plans.map((item, i) =>
-                                i === index
-                                  ? { ...item, userPlan: e.target.value === "" ? null : (e.target.value as "pro" | "enterprise") }
-                                  : item
-                              ),
-                            })
-                          }
-                          style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12 }}
-                        >
-                          <option value="">None</option>
-                          <option value="pro">Pro</option>
-                          <option value="enterprise">Enterprise</option>
-                        </select>
-                      </label>
-                    </div>
-
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Description</span>
-                      <textarea
-                        rows={2}
-                        value={plan.description}
-                        onChange={(e) =>
-                          setPlanDraft({
-                            ...planDraft,
-                            plans: planDraft.plans.map((item, i) => (i === index ? { ...item, description: e.target.value } : item)),
-                          })
-                        }
-                        style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12, resize: "vertical" }}
-                      />
-                    </label>
-
-                    <label style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
-                      <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Features (one per line)</span>
-                      <textarea
-                        rows={4}
-                        value={(plan.features || []).map((feature) => feature.text).join("\n")}
-                        onChange={(e) =>
-                          setPlanDraft({
-                            ...planDraft,
-                            plans: planDraft.plans.map((item, i) =>
-                              i === index
-                                ? {
-                                    ...item,
-                                    features: e.target.value
-                                      .split("\n")
-                                      .map((text) => ({ text, highlight: false })),
-                                  }
-                                : item
-                            ),
-                          })
-                        }
-                        style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 9px", fontSize: 12, resize: "vertical", fontFamily: "'JetBrains Mono', monospace" }}
-                      />
-                    </label>
-                  </div>
-                ))}
               </div>
             </div>
           )}
