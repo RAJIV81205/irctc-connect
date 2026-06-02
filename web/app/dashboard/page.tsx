@@ -362,7 +362,7 @@ export default function DashboardPage() {
   const [verifiedReturnOrderId, setVerifiedReturnOrderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
-  const [topupSelection, setTopupSelection] = useState(0);
+  const [topupSelection, setTopupSelection] = useState(1);
   const [apiCodeLanguage, setApiCodeLanguage] = useState<ApiCodeLanguage>("javascript");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1034,16 +1034,16 @@ export default function DashboardPage() {
                         const active = index === topupSelection;
                         return (
                           <button key={option.requests} type="button" onClick={() => setTopupSelection(index)} disabled={limitPurchaseLoading}
-                            style={{ textAlign: "left", padding: "12px 14px", borderRadius: 12, border: active ? "1px solid #000" : "1px solid #e5e7eb", background: active ? "#000" : "#fafafa", color: active ? "#fff" : "#111827", cursor: limitPurchaseLoading ? "wait" : "pointer", transition: "background 0.15s, border-color 0.15s" }}>
-                            <div style={{ fontSize: 12, fontWeight: 700 }}>{option.requests.toLocaleString("en-IN")} req</div>
-                            <div style={{ marginTop: 5, fontSize: 11, opacity: 0.7 }}>₹{option.price} · ₹{option.perReq.toFixed(3)}/req</div>
+                            style={{ textAlign: "left", padding: "12px 14px", borderRadius: 12, border: active ? "2px solid #111" : "1px solid #e5e7eb", background: active ? "#f8f8f8" : "#fafafa", color: "#111827", cursor: limitPurchaseLoading ? "wait" : "pointer", transition: "border-color 0.15s, background 0.15s", outline: "none" }}>
+                            <div style={{ fontSize: 12, fontWeight: active ? 700 : 600 }}>{option.requests.toLocaleString("en-IN")} req</div>
+                            <div style={{ marginTop: 5, fontSize: 11, color: active ? "#374151" : "#9ca3af" }}>₹{option.price} · ₹{option.perReq.toFixed(3)}/req</div>
                           </button>
                         );
                       })}
                     </div>
                     <p style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.6, marginBottom: 6 }}>Payments processed securely by Cashfree. Top-ups add requests only and do not extend your plan expiry.</p>
-                    <button type="button" onClick={startLimitTopupPayment} disabled={limitPurchaseLoading} style={{ width: "100%", marginTop: 12, border: "none", background: limitPurchaseLoading ? "#e5e7eb" : "#000", color: limitPurchaseLoading ? "#9ca3af" : "#fff", borderRadius: 12, padding: "13px", cursor: limitPurchaseLoading ? "wait" : "pointer", fontSize: 13, fontWeight: 700, transition: "background 0.15s" }}>
-                      {limitPurchaseLoading ? "Processing..." : "Proceed to Secure Checkout"}
+                    <button type="button" onClick={startLimitTopupPayment} disabled={limitPurchaseLoading} style={{ width: "100%", marginTop: 12, border: "none", background: limitPurchaseLoading ? "#e5e7eb" : "#4f46e5", color: limitPurchaseLoading ? "#9ca3af" : "#fff", borderRadius: 12, padding: "13px", cursor: limitPurchaseLoading ? "wait" : "pointer", fontSize: 13, fontWeight: 700, transition: "background 0.15s", letterSpacing: "0.01em" }}>
+                      {limitPurchaseLoading ? "Processing..." : "Proceed to Secure Checkout →"}
                     </button>
                     {limitPurchaseMessage && (
                       <p style={{ marginTop: 10, color: limitPurchaseMessage.toLowerCase().includes("failed") ? "#dc2626" : "#6b7280", fontSize: 12, lineHeight: 1.6 }}>{limitPurchaseMessage}</p>
