@@ -186,7 +186,7 @@ export type LegalDocument = {
 
 export const TERMS_AND_CONDITIONS: LegalDocument = {
   "title": "Terms and Conditions",
-  "lastUpdated": "2026-06-18",
+  "lastUpdated": "2026-06-02",
   "sections": [
     {
         "heading": "Acceptance of Terms",
@@ -344,7 +344,7 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
 
 export const PRIVACY_POLICY: LegalDocument = {
   "title": "Privacy Policy",
-  "lastUpdated": "2026-06-18",
+  "lastUpdated": "2026-06-02",
   "sections": [
     {
         "heading": "Introduction",
