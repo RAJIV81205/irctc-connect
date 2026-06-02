@@ -1018,7 +1018,7 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin]       = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "topups" | "email" | "issues" | "playground" | "logs">("users");
+  const [activeTab, setActiveTab]   = useState<"users" | "orders" | "unpaid" | "topups" | "issues" | "playground" | "logs">("users");
   const [logsTimelineDays, setLogsTimelineDays] = useState<14 | 30>(14);
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
@@ -1036,7 +1036,6 @@ export default function AdminPanel() {
   const [createOrderFeedback, setCreateOrderFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(true);
   const [userSearch, setUserSearch] = useState("");
-  const [userPlanFilter, setUserPlanFilter] = useState<"all" | "free" | "pro" | "advance">("all");
   const [adminApiKey, setAdminApiKey] = useState<string | null>(null);
   const [playgroundAction, setPlaygroundAction] = useState<
     "pnr" | "train" | "track" | "station" | "search" | "availability"
@@ -1133,14 +1132,7 @@ export default function AdminPanel() {
   const filteredEmailUsers = users.filter((user) => matchesEmailAudienceFilter(user, emailAudienceFilter));
   const dataLoading = usersValidating || ordersValidating || topupsValidating || issuesValidating || logsValidating;
   const normalizedUserSearch = userSearch.trim().toLowerCase();
-  const filteredUsers = users.filter((user) => {
-    const plan = (user.plan || "free").toLowerCase();
-    const matchesPlan =
-      userPlanFilter === "all" ||
-      (userPlanFilter === "advance"
-        ? plan === "enterprise" || plan === "advance"
-        : plan === userPlanFilter);
-    if (!matchesPlan) return false;
+  const filteredUsers = filteredEmailUsers.filter((user) => {
     if (!normalizedUserSearch) return true;
     const haystack = `${user.name || ""} ${user.email || ""}`.toLowerCase();
     return haystack.includes(normalizedUserSearch);
@@ -1663,7 +1655,7 @@ export default function AdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#0f1117", border: "1px solid #1e2330", borderRadius: 8, padding: 4, width: "fit-content" }}>
-            {(["users", "orders", "unpaid", "topups", "email", "logs", "issues", "playground"] as const).map((tab) => (
+            {(["users", "orders", "unpaid", "topups", "logs", "issues", "playground"] as const).map((tab) => (
               <button
                 type="button"
                 key={tab}
@@ -1686,8 +1678,6 @@ export default function AdminPanel() {
                   ? `Unpaid Orders (${unpaidOrders.length})`
                   : tab === "topups"
                   ? `Topups (${topups.length})`
-                  : tab === "email"
-                  ? "Email"
                   : tab === "logs"
                   ? `Logs${recentLogs.length ? ` (${recentLogs.length > 99 ? "99+" : recentLogs.length})` : ""}`
                   : tab === "issues"
@@ -1697,7 +1687,7 @@ export default function AdminPanel() {
             ))}
           </div>
 
-          {activeTab === "email" && emailFeedback && (
+          {activeTab === "users" && emailFeedback && (
             <div
               style={{
                 marginBottom: 14,
@@ -1748,6 +1738,7 @@ export default function AdminPanel() {
           {/* Users Table */}
           {activeTab === "users" && (
             <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
+              {/* Unified toolbar */}
               <div
                 style={{
                   display: "flex",
@@ -1777,8 +1768,8 @@ export default function AdminPanel() {
                     }}
                   />
                   <select
-                    value={userPlanFilter}
-                    onChange={(e) => setUserPlanFilter(e.target.value as "all" | "free" | "pro" | "advance")}
+                    value={emailAudienceFilter}
+                    onChange={(e) => setEmailAudienceFilter(e.target.value as EmailAudienceFilter)}
                     style={{
                       background: "#1a1f2e",
                       border: "1px solid #2d3548",
@@ -1789,16 +1780,34 @@ export default function AdminPanel() {
                       fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
-                    <option value="all">All plans</option>
-                    <option value="free">Free</option>
-                    <option value="pro">Pro</option>
-                    <option value="advance">Advance</option>
+                    {EMAIL_AUDIENCE_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
+                  <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap" }}>
+                    {filteredUsers.length} of {users.length}
+                  </span>
                 </div>
-                <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
-                  Showing {filteredUsers.length} of {users.length}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => openEmailComposer("all")}
+                  disabled={filteredUsers.length === 0}
+                  style={{
+                    background: filteredUsers.length === 0 ? "#1a1f2e" : "#0f2233",
+                    border: `1px solid ${filteredUsers.length === 0 ? "#2d3548" : "#1a3a5c"}`,
+                    color: filteredUsers.length === 0 ? "#64748b" : "#60a5fa",
+                    borderRadius: 6, padding: "6px 12px", fontSize: 12,
+                    cursor: filteredUsers.length === 0 ? "not-allowed" : "pointer",
+                    fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Send to {getEmailAudienceLabel(emailAudienceFilter)} ({filteredUsers.length})
+                </button>
               </div>
+
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
@@ -1853,22 +1862,43 @@ export default function AdminPanel() {
                           <BillingTimer user={u} />
                         </td>
                         <td style={{ padding: "14px 16px" }}>
-                          <button
-                            type="button"
-                            className="action-btn"
-                            onClick={() => setEditingUser(u)}
-                            title="Edit user"
-                            style={{
-                              background: "#1a1f2e", border: "1px solid #2d3548",
-                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
-                              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-                              transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                            }}
-                          >
-                            <IconEdit />
-                            <span>Edit</span>
-                          </button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <button
+                              type="button"
+                              className="action-btn"
+                              onClick={() => setEditingUser(u)}
+                              title="Edit user"
+                              style={{
+                                background: "#1a1f2e", border: "1px solid #2d3548",
+                                color: "#64748b", borderRadius: 6, padding: "6px 10px",
+                                cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                                fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                                transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                              }}
+                            >
+                              <IconEdit />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="action-btn"
+                              onClick={() => openEmailComposer("single", u)}
+                              title="Send email"
+                              style={{
+                                background: "#0f2233", border: "1px solid #1a3a5c",
+                                color: "#60a5fa", borderRadius: 6, padding: "6px 10px",
+                                cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                                fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                                transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                              }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                              </svg>
+                              <span>Email</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -2159,124 +2189,6 @@ export default function AdminPanel() {
                     ))}
                     {topups.length === 0 && (
                       <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No topups found</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Email Table */}
-          {activeTab === "email" && (
-            <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: 12, overflow: "hidden" }}>
-              <div
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "12px 16px", borderBottom: "1px solid #1e2330", background: "#0a0d13",
-                  gap: 12,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <span style={{ color: "#94a3b8", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
-                    Send product info emails individually or in batches by audience filter
-                  </span>
-                  <select
-                    value={emailAudienceFilter}
-                    onChange={(e) => setEmailAudienceFilter(e.target.value as EmailAudienceFilter)}
-                    style={{
-                      background: "#1a1f2e",
-                      border: "1px solid #2d3548",
-                      color: "#e2e8f0",
-                      borderRadius: 6,
-                      padding: "6px 9px",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {EMAIL_AUDIENCE_FILTER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
-                    Recipients: {filteredEmailUsers.length}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openEmailComposer("all")}
-                  disabled={filteredEmailUsers.length === 0}
-                  style={{
-                    background: filteredEmailUsers.length === 0 ? "#1a1f2e" : "#0f2233",
-                    border: `1px solid ${filteredEmailUsers.length === 0 ? "#2d3548" : "#1a3a5c"}`,
-                    color: filteredEmailUsers.length === 0 ? "#64748b" : "#60a5fa",
-                    borderRadius: 6, padding: "6px 12px", fontSize: 12,
-                    cursor: filteredEmailUsers.length === 0 ? "not-allowed" : "pointer",
-                    fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
-                  }}
-                >
-                  Send to {getEmailAudienceLabel(emailAudienceFilter)}
-                </button>
-              </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
-                      {["User", "Plan", "Status", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredEmailUsers.map((u) => (
-                      <tr key={u._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
-                        <td style={{ padding: "14px 16px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{
-                              width: 30, height: 30, borderRadius: 8,
-                              background: `hsl(${u.email.charCodeAt(0) * 7 % 360}, 60%, 20%)`,
-                              border: `1px solid hsl(${u.email.charCodeAt(0) * 7 % 360}, 60%, 30%)`,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 13, fontWeight: 700, color: `hsl(${u.email.charCodeAt(0) * 7 % 360}, 70%, 65%)`,
-                              flexShrink: 0,
-                            }}>
-                              {(u.name || u.email)[0].toUpperCase()}
-                            </div>
-                            <div>
-                              <p style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>{u.name || "—"}</p>
-                              <p style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>
-                                {displayEmail(u.email, showSensitiveInfo)}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: "14px 16px" }}><PlanBadge plan={u.plan} /></td>
-                        <td style={{ padding: "14px 16px" }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
-                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: u.active ? "#34d399" : "#64748b", flexShrink: 0 }} />
-                            <span style={{ color: u.active ? "#6ee7b7" : "#64748b" }}>{u.active ? "Active" : "Inactive"}</span>
-                          </span>
-                        </td>
-                        <td style={{ padding: "14px 16px" }}>
-                          <button
-                            type="button"
-                            className="action-btn"
-                            onClick={() => openEmailComposer("single", u)}
-                            style={{
-                              background: "#1a1f2e", border: "1px solid #2d3548",
-                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
-                              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace", transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                            }}
-                          >
-                            <span>Send Email</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredEmailUsers.length === 0 && (
-                      <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users match this filter</td></tr>
                     )}
                   </tbody>
                 </table>
