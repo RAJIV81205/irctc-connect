@@ -53,7 +53,7 @@ export function Header() {
     if (!isDocsPage) setSidebarOpen(false);
   }, [isDocsPage, setSidebarOpen]);
 
-  if (isAdminPage || isDashboardPage) return null;
+  if (isAdminPage) return null;
 
   const handleLogout = async () => {
     try {
