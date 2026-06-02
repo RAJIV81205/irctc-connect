@@ -323,7 +323,7 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
             <Text style={styles.senderName}>Rajiv Dubey</Text>
             <Text style={styles.textLine}>IRCTC Connect</Text>
             <Text style={styles.textLine}>irctc.rajivdubey.dev</Text>
-            <Text style={styles.textLine}>lucky81205@gmail.com</Text>
+            <Text style={styles.textLine}>lucky81205+irctc@gmail.com</Text>
 
             <View style={styles.billTo}>
               <Text style={styles.sectionLabel}>Bill To:</Text>

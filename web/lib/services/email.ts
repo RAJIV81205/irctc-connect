@@ -14,7 +14,7 @@ interface IUser {
 
 const senderEmail = "irctc@rajivdubey.dev";
 const senderName = "IRCTC Connect";
-const replyToEmail = "lucky81205@gmail.com";
+const replyToEmail = "lucky81205+irctc@gmail.com";
 const replyToName = "Rajiv Dubey";
 
 type SendRawHtmlEmailParams = {
