@@ -1034,6 +1034,7 @@ export default function AdminPanel() {
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [createOrderFeedback, setCreateOrderFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [sendingReminderOrderId, setSendingReminderOrderId] = useState<string | null>(null);
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(true);
   const [userSearch, setUserSearch] = useState("");
   const [adminApiKey, setAdminApiKey] = useState<string | null>(null);
@@ -1439,6 +1440,26 @@ export default function AdminPanel() {
       setCreateOrderFeedback({ type: "error", message: getErrorMessage(error, "Failed to create order.") });
     } finally {
       setCreatingOrder(false);
+    }
+  };
+
+  const sendReminder = async (email: string, orderId: string) => {
+    setSendingReminderOrderId(orderId);
+    try {
+      const res = await fetch("/api/admin/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: "reminder", email }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to send reminder");
+      }
+      window.alert(`Reminder sent to ${email}`);
+    } catch (error: unknown) {
+      window.alert(getErrorMessage(error, "Failed to send reminder"));
+    } finally {
+      setSendingReminderOrderId(null);
     }
   };
 
@@ -2082,21 +2103,48 @@ export default function AdminPanel() {
                           </span>
                         </td>
                         <td style={{ padding: "14px 16px" }}>
-                          <button
-                            type="button"
-                            className="action-btn"
-                            onClick={() => setViewingOrder(o)}
-                            style={{
-                              background: "#1a1f2e", border: "1px solid #2d3548",
-                              color: "#64748b", borderRadius: 6, padding: "6px 10px",
-                              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-                              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-                              transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                            }}
-                          >
-                            <IconEye />
-                            <span>View</span>
-                          </button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <button
+                              type="button"
+                              className="action-btn"
+                              onClick={() => setViewingOrder(o)}
+                              style={{
+                                background: "#1a1f2e", border: "1px solid #2d3548",
+                                color: "#64748b", borderRadius: 6, padding: "6px 10px",
+                                cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                                fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                                transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                              }}
+                            >
+                              <IconEye />
+                              <span>View</span>
+                            </button>
+                            {o.userId?.email && (
+                              <button
+                                type="button"
+                                className="action-btn"
+                                onClick={() => sendReminder(o.userId!.email, o._id)}
+                                disabled={sendingReminderOrderId === o._id}
+                                title="Send checkout reminder"
+                                style={{
+                                  background: sendingReminderOrderId === o._id ? "#1a1f2e" : "#2a1f0f",
+                                  border: `1px solid ${sendingReminderOrderId === o._id ? "#2d3548" : "#4a3a1f"}`,
+                                  color: sendingReminderOrderId === o._id ? "#64748b" : "#fb923c",
+                                  borderRadius: 6, padding: "6px 10px",
+                                  cursor: sendingReminderOrderId === o._id ? "not-allowed" : "pointer",
+                                  display: "flex", alignItems: "center", gap: 5,
+                                  fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                                  transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                  <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                                <span>{sendingReminderOrderId === o._id ? "Sending..." : "Remind"}</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

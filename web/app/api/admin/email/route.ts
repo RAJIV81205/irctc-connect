@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/db/db";
 import User from "@/lib/db/models/User";
 import { getAdminAuthTokenFromCookies, verifyAdminAuthToken } from "@/lib/auth";
 import { sendRawHtmlEmail, sendRawHtmlEmailBatch } from "@/lib/services/email";
+import { reminder_template } from "@/lib/services/templates.email";
 
 const BILLING_CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
 const BATCH_SIZE = 50;
@@ -178,8 +179,9 @@ async function sendBatchEmailWithRetry(params: {
 }
 
 type EmailRequestBody = {
-  scope?: "single" | "all";
+  scope?: "single" | "all" | "reminder";
   userId?: string;
+  email?: string;
   subject?: string;
   html?: string;
   filter?: EmailAudienceFilter;
@@ -198,10 +200,30 @@ export async function POST(req: Request) {
     const html = body.html?.trim();
     const filter = (body.filter || "all_users") as EmailAudienceFilter;
 
-    if (!scope || (scope !== "single" && scope !== "all")) {
+    if (!scope || (scope !== "single" && scope !== "all" && scope !== "reminder")) {
       return NextResponse.json({ success: false, message: "Invalid email scope" }, { status: 400 });
     }
 
+    // ── Reminder scope — sends the fixed reminder template to a direct email ──
+    if (scope === "reminder") {
+      const to = body.email?.trim();
+      if (!to) {
+        return NextResponse.json({ success: false, message: "email is required for reminder" }, { status: 400 });
+      }
+
+      await sendEmailWithRetry({
+        to,
+        subject: reminder_template.subject,
+        html: reminder_template.text,
+      });
+
+      return NextResponse.json(
+        { success: true, message: `Reminder sent to ${to}`, sentCount: 1, failedCount: 0 },
+        { status: 200 }
+      );
+    }
+
+    // scope is now narrowed to "single" | "all" — reminder already returned above
     if (!subject) {
       return NextResponse.json({ success: false, message: "Email subject is required" }, { status: 400 });
     }
@@ -228,8 +250,8 @@ export async function POST(req: Request) {
 
       await sendEmailWithRetry({
         to: user.email,
-        subject,
-        html,
+        subject: subject as string,
+        html: html as string,
       });
 
       return NextResponse.json(
@@ -282,8 +304,8 @@ export async function POST(req: Request) {
 
       const payload = batch.map((user) => ({
         to: user.email,
-        subject,
-        html,
+        subject: subject as string,
+        html: html as string,
       }));
 
       try {
