@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getPublicPlanConfig } from "../../lib/constants";
-import { buildMetadata } from "../../lib/seo";
+import { buildMetadata, absoluteUrl } from "../../lib/seo";
 import PricingClient from "./PricingClient";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +12,15 @@ export const metadata: Metadata = buildMetadata({
   path: "/pricing",
 });
 
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+    { "@type": "ListItem", position: 2, name: "Pricing", item: absoluteUrl("/pricing") },
+  ],
+};
+
 export default async function PricingPage() {
   const config = getPublicPlanConfig();
 
@@ -20,10 +29,16 @@ export default async function PricingPage() {
   const contactEmail = config?.contactEmail || "lucky81205+irctc@gmail.com";
 
   return (
-    <PricingClient
-      initialPlans={plans}
-      initialOfferEndsAt={offerEndsAt}
-      initialContactEmail={contactEmail}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <PricingClient
+        initialPlans={plans}
+        initialOfferEndsAt={offerEndsAt}
+        initialContactEmail={contactEmail}
+      />
+    </>
   );
 }

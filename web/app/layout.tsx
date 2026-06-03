@@ -8,12 +8,15 @@ import { Analytics } from "@vercel/analytics/next"
 import {
   buildMetadata,
   OG_LOCALE,
+  OG_IMAGE_WIDTH,
+  OG_IMAGE_HEIGHT,
   SITE_DESCRIPTION,
   SITE_KEYWORDS,
   SITE_NAME,
   SITE_TITLE,
   TWITTER_CARD,
   TWITTER_HANDLE,
+  TWITTER_SITE,
   getSiteUrl,
 } from "../lib/seo";
 
@@ -49,8 +52,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: buildMetadata({}).openGraph.images[0].url,
-        width: 512,
-        height: 512,
+        width: OG_IMAGE_WIDTH,
+        height: OG_IMAGE_HEIGHT,
         alt: "IRCTC Connect",
       },
     ],
@@ -59,6 +62,7 @@ export const metadata: Metadata = {
     card: TWITTER_CARD,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+    site: TWITTER_SITE,
     creator: TWITTER_HANDLE,
     images: [buildMetadata({}).twitter.images[0]],
   },

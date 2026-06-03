@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
 	Activity,
@@ -9,6 +10,14 @@ import {
 	ShieldCheck,
 	Send,
 } from "lucide-react";
+import { buildMetadata, absoluteUrl, SITE_NAME } from "../../lib/seo";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Contact",
+  description:
+    "Get in touch with the IRCTC Connect team for API support, enterprise onboarding, billing questions, or technical help with the Indian Railways SDK.",
+  path: "/contact",
+});
 
 const contactCards = [
 	{
@@ -100,9 +109,39 @@ const faqs = [
 	},
 ] as const;
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.a,
+    },
+  })),
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+    { "@type": "ListItem", position: 2, name: "Contact", item: absoluteUrl("/contact") },
+  ],
+};
+
 export default function ContactPage() {
 	return (
 		<main className="cp-root">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
 			<section className="cp-hero cp-section">
 				<div className="cp-inner">
 					<p className="cp-eyebrow">Contact</p>

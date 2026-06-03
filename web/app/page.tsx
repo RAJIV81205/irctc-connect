@@ -153,6 +153,14 @@ export default async function LandingPage() {
     name: SITE_NAME,
     url: absoluteUrl("/"),
     description: SITE_DESCRIPTION,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${absoluteUrl("/docs")}?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
   };
   const softwareSchema = {
     "@context": "https://schema.org",
@@ -165,12 +173,30 @@ export default async function LandingPage() {
     softwareVersion: "3.0.4",
     downloadUrl: "https://www.npmjs.com/package/irctc-connect",
     codeRepository: "https://github.com/RAJIV81205/irctc-connect",
+    featureList: [
+      "PNR Status API",
+      "Live Train Tracking",
+      "Seat Availability API",
+      "Train Search Between Stations",
+      "Station Live Board",
+      "Train Schedule and Route Info",
+    ],
     author: {
       "@type": "Person",
       name: "Rajiv Dubey",
       url: "https://github.com/RAJIV81205",
     },
-    offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+    offers: [
+      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "INR" },
+      { "@type": "Offer", name: "Pro", price: "49", priceCurrency: "INR", url: absoluteUrl("/pricing") },
+    ],
+  };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+    ],
   };
 
   return (
@@ -182,6 +208,10 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       {/* ── CINEMATIC HERO ── */}
