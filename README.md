@@ -555,7 +555,7 @@ ISC License — free to use in personal and commercial projects.
 ## 🙋 Support
 
 - **Issues:** [GitHub Issues](https://github.com/RAJIV81205/irctc-connect/issues)
-- **Docs:** [irctc.rajivdubey.tech/docs](https://irctc.rajivdubey.tech/docs)
+- **Docs:** [irctc.rajivdubey.dev/docs](https://irctc.rajivdubey.dev/docs)
 - **Discussions:** [GitHub Discussions](https://github.com/RAJIV81205/irctc-connect/discussions)
 
 ---

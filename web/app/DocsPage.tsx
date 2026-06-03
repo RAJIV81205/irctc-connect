@@ -152,7 +152,7 @@ const stn    = await liveAtStation("NDLS");
 const search = await searchTrainBetweenStations("NDLS", "BCT");
 const seats  = await getAvailability("12496","ASN","DDU","27-12-2025","2A","GN");`;
 
-const docsBaseUrl = "https://irctc.rajivdubey.tech/docs";
+const docsBaseUrl = "https://irctc.rajivdubey.dev/docs";
 
 export default function DocsPage() {
   const { sidebarOpen, setSidebarOpen } = useTheme();

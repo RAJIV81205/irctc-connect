@@ -38,4 +38,4 @@ jobs:
         run: |
           curl --fail --show-error --silent \
             --max-time 120 \
-            "https://irctc-connect-api.rajivdubey.tech/update-station"
+            "https://irctc-api.rajivdubey.dev/update-station"
