@@ -18,6 +18,7 @@ A comprehensive Node.js SDK for Indian Railways. Get real-time PNR status, train
 - 🚉 **Live Station Board** — Upcoming trains at any station right now
 - 🔍 **Train Search** — Find all direct trains between two stations
 - 💺 **Seat Availability** — Check availability and fare for any class and quota
+- 💰 **Fare Lookup** — Full fare breakdown for any train, class, and quota
 - ⚡ **Fast & Reliable** — Built-in timeout handling, input validation, and caching
 
 ---
@@ -69,6 +70,7 @@ import {
   liveAtStation,
   searchTrainBetweenStations,
   getAvailability,
+  fareLookup,
 } from 'irctc-connect';
 
 // Configure once
@@ -91,6 +93,9 @@ const searchResult = await searchTrainBetweenStations('NDLS', 'BCT');
 
 // Get seat availability with fare breakdown
 const availResult = await getAvailability('12496', 'ASN', 'DDU', '27-12-2025', '2A', 'GN');
+
+// Get fare for a journey
+const fareResult = await fareLookup('12313', 'ASN', 'NDLS', '06-06-2026', '3A', 'GN');
 ```
 
 ---
@@ -414,30 +419,8 @@ Check seat availability and fare breakdown for a specific train, class, and date
 | `fromStnCode` | string | Origin station code (e.g., `'NDLS'`) |
 | `toStnCode` | string | Destination station code (e.g., `'BCT'`) |
 | `date` | string | Journey date in `DD-MM-YYYY` format |
-| `coach` | string | `2S` \| `SL` \| `3A` \| `3E` \| `2A` \| `1A` \| `CC` \| `EC` |
-| `quota` | string | `GN` \| `LD` \| `SS` \| `TQ` |
-
-**Coach Types:**
-
-| Code | Class |
-|------|-------|
-| `2S` | Second Seating |
-| `SL` | Sleeper Class |
-| `3A` | Third AC |
-| `3E` | Third AC Economy |
-| `2A` | Second AC |
-| `1A` | First AC |
-| `CC` | Chair Car |
-| `EC` | Executive Chair Car |
-
-**Quota Types:**
-
-| Code | Quota |
-|------|-------|
-| `GN` | General |
-| `LD` | Ladies |
-| `SS` | Senior Citizen |
-| `TQ` | Tatkal |
+| `coach` | string | Coach/class code — see [Class & Quota Reference](#-class--quota-reference) |
+| `quota` | string | Quota code — see [Class & Quota Reference](#-class--quota-reference) |
 
 **Example:**
 ```javascript
@@ -459,6 +442,71 @@ if (result.success) {
   availability.forEach(day => {
     console.log(`   ${day.date}: ${day.availabilityText} — ${day.prediction}`);
   });
+}
+```
+
+---
+
+### 7. `fareLookup(trainNo, fromStnCode, toStnCode, date, travelClass, quota)`
+
+Get the full fare breakdown for a journey — base fare, reservation, superfast, catering, GST, dynamic fare, and total.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `trainNo` | string | 5-digit train number |
+| `fromStnCode` | string | Origin station code (e.g., `'ASN'`) |
+| `toStnCode` | string | Destination station code (e.g., `'NDLS'`) |
+| `date` | string | Journey date in `DD-MM-YYYY` format |
+| `travelClass` | string | See class codes below |
+| `quota` | string | See quota codes below |
+
+**Class Codes:** see [Class & Quota Reference](#-class--quota-reference)
+
+**Quota Codes:** see [Class & Quota Reference](#-class--quota-reference)
+
+**Example:**
+```javascript
+const result = await fareLookup('12313', 'ASN', 'NDLS', '06-06-2026', '3A', 'GN');
+
+if (result.success) {
+  const d = result.data;
+  console.log(`🚂 ${d.trainName} (${d.trainNo})`);
+  console.log(`📍 ${d.from} → ${d.to}  |  ${d.distance} km`);
+  console.log(`\n💰 Fare Breakdown:`);
+  console.log(`   Base Fare:    ₹${d.baseFare}`);
+  console.log(`   Reservation:  ₹${d.reservation}`);
+  console.log(`   Superfast:    ₹${d.superfast}`);
+  console.log(`   Catering:     ₹${d.catering}`);
+  console.log(`   Dynamic Fare: ₹${d.dynamicFare}`);
+  console.log(`   GST:          ₹${d.gst}`);
+  console.log(`   ─────────────────`);
+  console.log(`   Total:        ₹${d.totalFare}`);
+}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  data: {
+    trainNo:     "12313",
+    trainName:   "RAJDHANI EXPRES",
+    from:        "ASN",
+    to:          "NDLS",
+    class:       "3A",
+    distance:    1249,
+    baseFare:    1617,
+    reservation: 40,
+    superfast:   45,
+    catering:    310,
+    dynamicFare: 647,
+    gst:         118,
+    totalFare:   2780,
+    tatkalFare:  0,
+    concession:  0
+  }
 }
 ```
 
@@ -499,8 +547,8 @@ The SDK validates inputs locally before making any network call:
 - **Train number** — must be exactly 5 characters
 - **Station codes** — must be uppercase alphabetic, 1–5 chars
 - **Date** — must be `DD-MM-YYYY`, validated for real calendar dates
-- **Coach** — must be one of: `2S`, `SL`, `3A`, `3E`, `2A`, `1A`, `CC`, `EC`
-- **Quota** — must be one of: `GN`, `LD`, `SS`, `TQ`
+- **Coach / Class** — see [Class & Quota Reference](#-class--quota-reference)
+- **Quota** — see [Class & Quota Reference](#-class--quota-reference)
 
 ---
 
@@ -518,6 +566,49 @@ The SDK validates inputs locally before making any network call:
 
 ---
 
+## 🚃 Class & Quota Reference
+
+Used by both `getAvailability` and `fareLookup`.
+
+### Coach / Travel Class
+
+| Code | Class | Functions |
+|------|-------|-----------|
+| `SL` | Sleeper Class | both |
+| `2S` | Second Seating | both |
+| `3A` | Third AC | both |
+| `3E` | Third AC Economy | both |
+| `2A` | Second AC | both |
+| `1A` | First AC | both |
+| `CC` | AC Chair Car | both |
+| `EC` | Executive Class | both |
+| `EA` | Executive Anubhuti | `fareLookup` |
+| `FC` | First Class | `fareLookup` |
+| `VS` | Vistadome Non AC | `fareLookup` |
+| `CH` | Chair Car High Capacity | `fareLookup` |
+| `HS` | Sleeper High Capacity | `fareLookup` |
+| `VC` | Vistadome CC | `fareLookup` |
+| `VA` | Vistadome AC | `fareLookup` |
+
+### Quota
+
+| Code | Quota | Functions |
+|------|-------|-----------|
+| `GN` | General | both |
+| `TQ` | Tatkal | both |
+| `LD` | Ladies | both |
+| `SS` | Senior Citizen | both |
+| `PT` | Premium Tatkal | `fareLookup` |
+| `DF` | Defence | `fareLookup` |
+| `FT` | Foreign Tourist | `fareLookup` |
+| `LB` | Lower Berth | `fareLookup` |
+| `YU` | Yuva | `fareLookup` |
+| `DP` | Duty Pass | `fareLookup` |
+| `HP` | Handicapped | `fareLookup` |
+| `PH` | Parliament House | `fareLookup` |
+
+---
+
 ## 🔧 Requirements
 
 - Node.js 18+ (native `fetch` required)
@@ -525,32 +616,6 @@ The SDK validates inputs locally before making any network call:
 - A valid IRCTC Connect API key
 
 ---
-
-## 📱 Platform Support
-
-| Platform | Supported |
-|----------|-----------|
-| Node.js | ✅ |
-| Express.js | ✅ |
-| Next.js (server-side) | ✅ |
-| Fastify / Hono | ✅ |
-| React Native | ⚠️ Needs fetch polyfill |
-
----
-
-## 🤝 Contributing
-
-1. 🍴 Fork the repository
-2. 🌿 Create a feature branch
-3. 💻 Make your changes
-4. 📝 Update documentation
-5. 🚀 Submit a pull request
-
----
-
-## 📄 License
-
-ISC License — free to use in personal and commercial projects.
 
 ## 🙋 Support
 
