@@ -19,6 +19,7 @@ import {
 import {
   checkPNRStatus,
   configure,
+  fareLookup,
   getAvailability,
   getTrainInfo,
   liveAtStation,
@@ -366,7 +367,7 @@ export default function DashboardPage() {
   const [apiCodeLanguage, setApiCodeLanguage] = useState<ApiCodeLanguage>("javascript");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [playgroundAction, setPlaygroundAction] = useState<"pnr" | "train" | "track" | "station" | "search" | "seat">("pnr");
+  const [playgroundAction, setPlaygroundAction] = useState<"pnr" | "train" | "track" | "station" | "search" | "seat" | "fare">("pnr");
   const [playgroundLoading, setPlaygroundLoading] = useState(false);
   const [playgroundStatusCode, setPlaygroundStatusCode] = useState<number | null>(null);
   const [playgroundResponseTime, setPlaygroundResponseTime] = useState<number | null>(null);
@@ -386,6 +387,12 @@ export default function DashboardPage() {
   const [seatDateInput, setSeatDateInput] = useState("");
   const [seatClassInput, setSeatClassInput] = useState("SL");
   const [seatQuotaInput, setSeatQuotaInput] = useState("GN");
+  const [fareTrainInput, setFareTrainInput] = useState("");
+  const [fareFromInput, setFareFromInput] = useState("");
+  const [fareToInput, setFareToInput] = useState("");
+  const [fareDateInput, setFareDateInput] = useState("");
+  const [fareClassInput, setFareClassInput] = useState("SL");
+  const [fareQuotaInput, setFareQuotaInput] = useState("GN");
 
   const { data: userData, error: userError, isLoading: userLoading, isValidating: userValidating, mutate: mutateUser } =
     useSWR<VerifyUserResponse>(`/api/user/verify?days=${logsTimelineDays}`, fetcher, { revalidateOnFocus: true });
@@ -525,6 +532,11 @@ export default function DashboardPage() {
           if (!seatFromInput.trim() || !seatToInput.trim()) throw new Error("From and To station codes are required");
           if (!/^\d{2}-\d{2}-\d{4}$/.test(seatDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
           result = await getAvailability(seatTrainInput, seatFromInput.trim().toUpperCase(), seatToInput.trim().toUpperCase(), seatDateInput, seatClassInput, seatQuotaInput); break;
+        case "fare":
+          if (!/^\d{5}$/.test(fareTrainInput)) throw new Error("Train number must be exactly 5 digits");
+          if (!fareFromInput.trim() || !fareToInput.trim()) throw new Error("From and To station codes are required");
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(fareDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
+          result = await fareLookup(fareTrainInput, fareFromInput.trim().toUpperCase(), fareToInput.trim().toUpperCase(), fareDateInput, fareClassInput, fareQuotaInput); break;
       }
       const codeGuess = typeof result === "object" && result !== null && "statusCode" in result && typeof (result as { statusCode?: unknown }).statusCode === "number"
         ? ((result as { statusCode: number }).statusCode ?? 200) : 200;
@@ -580,6 +592,7 @@ export default function DashboardPage() {
     { name: "Live At Station", method: "GET", path: "/api/liveAtStation/:stnCode", examplePath: "/api/liveAtStation/NDLS", notes: "Use station code in uppercase." },
     { name: "Search Trains Between Stations", method: "GET", path: "/api/searchTrainBetweenStations/:fromStnCode/:toStnCode?date=DD-MM-YYYY", examplePath: "/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026", notes: "Date query param is optional." },
     { name: "Get Seat Availability", method: "GET", path: "/api/getAvailability/:trainNo/:fromStnCode/:toStnCode/:date/:coach/:quota", examplePath: "/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN", notes: "Date format: DD-MM-YYYY." },
+    { name: "Fare Lookup", method: "GET", path: "/api/fareLookup/:trainNo/:date/:fromStation/:toStation/:class/:quota", examplePath: "/api/fareLookup/12313/06-06-2026/ASN/NDLS/3A/GN", notes: "Returns full fare breakdown — base fare, GST, dynamic fare, total. Date format: DD-MM-YYYY." },
   ] as const;
 
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
@@ -1157,7 +1170,7 @@ export default function DashboardPage() {
                   <p style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.7, marginBottom: 16 }}>Run live requests without leaving your workspace.</p>
                   {/* Action pills */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-                    {[{ id: "pnr", label: "PNR" }, { id: "train", label: "Train" }, { id: "track", label: "Track" }, { id: "station", label: "Station" }, { id: "search", label: "Search" }, { id: "seat", label: "Seat" }].map((item) => (
+                    {[{ id: "pnr", label: "PNR" }, { id: "train", label: "Train" }, { id: "track", label: "Track" }, { id: "station", label: "Station" }, { id: "search", label: "Search" }, { id: "seat", label: "Seat" }, { id: "fare", label: "Fare" }].map((item) => (
                       <button type="button" key={item.id} onClick={() => { setPlaygroundAction(item.id as typeof playgroundAction); resetPlaygroundMeta(); }}
                         style={{ background: playgroundAction === item.id ? "#000" : "#f3f4f6", border: `1px solid ${playgroundAction === item.id ? "#000" : "#e5e7eb"}`, color: playgroundAction === item.id ? "#fff" : "#6b7280", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "background 0.15s, color 0.15s" }}>
                         {item.label}
@@ -1188,6 +1201,18 @@ export default function DashboardPage() {
                       </select>
                       <select value={seatQuotaInput} onChange={(e) => setSeatQuotaInput(e.target.value)} className="db-select">
                         {["GN", "TQ", "LD", "PT", "SS"].map((q) => <option key={q} value={q}>{q}</option>)}
+                      </select>
+                    </>)}
+                    {playgroundAction === "fare" && (<>
+                      <input value={fareTrainInput} onChange={(e) => setFareTrainInput(e.target.value.replace(/\D/g, ""))} maxLength={5} placeholder="Train number" className="db-input" />
+                      <input type="date" value={toInputDate(fareDateInput)} onChange={(e) => setFareDateInput(fromInputDate(e.target.value))} className="db-input" />
+                      <input value={fareFromInput} onChange={(e) => setFareFromInput(e.target.value.toUpperCase())} placeholder="From station code" className="db-input" />
+                      <input value={fareToInput} onChange={(e) => setFareToInput(e.target.value.toUpperCase())} placeholder="To station code" className="db-input" />
+                      <select value={fareClassInput} onChange={(e) => setFareClassInput(e.target.value)} className="db-select">
+                        {["SL","3A","2A","1A","CC","EC","EA","FC","2S","3E","VS","CH","HS","VC","VA"].map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <select value={fareQuotaInput} onChange={(e) => setFareQuotaInput(e.target.value)} className="db-select">
+                        {["GN","TQ","PT","LD","DF","FT","LB","YU","DP","HP","PH","SS"].map((q) => <option key={q} value={q}>{q}</option>)}
                       </select>
                     </>)}
                   </div>
