@@ -109,6 +109,7 @@ interface AuditLog {
   path: string;
   ip: string;
   duration: number;
+  source: "SDK" | "API";
   createdAt: string;
 }
 
@@ -2487,7 +2488,7 @@ export default function AdminPanel() {
                           borderBottom: "1px solid #1e2330",
                         }}
                       >
-                        {["Time", "User", "Path", "Status", "Duration", "IP"].map((h) => (
+                        {["Time", "User", "Path", "Status", "Duration", "IP", "Source"].map((h) => (
                           <th
                             key={h}
                             style={{
@@ -2511,7 +2512,7 @@ export default function AdminPanel() {
                       {recentLogs.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={7}
                             style={{
                               padding: 48,
                               textAlign: "center",
@@ -2602,6 +2603,26 @@ export default function AdminPanel() {
                               }}
                             >
                               {log.ip}
+                            </td>
+                            <td style={{ padding: "12px 16px" }}>
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                  padding: "2px 8px",
+                                  borderRadius: 4,
+                                  fontSize: 11,
+                                  fontFamily: "'JetBrains Mono', monospace",
+                                  fontWeight: 700,
+                                  letterSpacing: "0.05em",
+                                  background: log.source === "SDK" ? "#0f2a1d" : "#1a1060",
+                                  border: `1px solid ${log.source === "SDK" ? "#1a4731" : "#2d1f8a"}`,
+                                  color: log.source === "SDK" ? "#6ee7b7" : "#a78bfa",
+                                }}
+                              >
+                                {log.source ?? "API"}
+                              </span>
                             </td>
                           </tr>
                         ))

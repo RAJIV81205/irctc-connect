@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
     const recentLogsRaw = await AuditLog.find()
       .sort({ createdAt: -1 })
       .limit(100)
-      .select("email statusCode path ip duration createdAt")
+      .select("email statusCode path ip duration source createdAt")
       .lean();
 
     const recent = recentLogsRaw.map((log) => ({
@@ -83,6 +83,7 @@ export async function GET(req: NextRequest) {
       path: log.path as string,
       ip: log.ip as string,
       duration: log.duration as number,
+      source: (log.source as string) || "Unknown",
       createdAt: (log.createdAt instanceof Date
         ? log.createdAt
         : new Date(log.createdAt as string)

@@ -25,6 +25,13 @@ const auditLogSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  source: {
+    type: String,
+    enum: ['SDK', 'API'],
+    required: true,
+    default: 'API',
+    index: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
