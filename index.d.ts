@@ -41,3 +41,22 @@ export function getAvailability(
   coach: string,
   quota: string
 ): Promise<any>;
+
+/**
+ * Get the fare breakdown for a train journey.
+ * Returns baseFare, reservation, superfast, catering, GST, dynamicFare and totalFare.
+ *
+ * @param travelClass - '1A' | '2A' | '3A' | '3E' | 'CC' | 'EC' | 'EA' | 'FC' | 'SL' | '2S' | 'VS' | 'CH' | 'HS' | 'VC' | 'VA'
+ * @param quota       - 'GN' | 'TQ' | 'LD' | 'DF' | 'FT' | 'LB' | 'PT' | 'YU' | 'DP' | 'HP' | 'PH' | 'SS'
+ *
+ * @example
+ * const result = await fareLookup('12313', 'ASN', 'NDLS', '06-06-2026', '3A', 'GN');
+ */
+export function fareLookup(
+  trainNo: string,
+  fromStnCode: string,
+  toStnCode: string,
+  date: string,
+  travelClass: string,
+  quota: string
+): Promise<any>;
