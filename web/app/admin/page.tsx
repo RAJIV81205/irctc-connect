@@ -9,6 +9,7 @@ import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import {
   checkPNRStatus,
   configure,
+  fareLookup,
   getAvailability,
   getTrainInfo,
   liveAtStation,
@@ -1039,7 +1040,7 @@ export default function AdminPanel() {
   const [userSearch, setUserSearch] = useState("");
   const [adminApiKey, setAdminApiKey] = useState<string | null>(null);
   const [playgroundAction, setPlaygroundAction] = useState<
-    "pnr" | "train" | "track" | "station" | "search" | "availability"
+    "pnr" | "train" | "track" | "station" | "search" | "availability" | "fare"
   >("pnr");
   const [playgroundInput, setPlaygroundInput] = useState({
     pnr: "",
@@ -1267,6 +1268,25 @@ export default function AdminPanel() {
             throw new Error("Date must be in DD-MM-YYYY format");
           }
           result = await getAvailability(
+            playgroundInput.trainNumber,
+            playgroundInput.fromStation.trim().toUpperCase(),
+            playgroundInput.toStation.trim().toUpperCase(),
+            playgroundInput.journeyDate,
+            playgroundInput.classCode,
+            playgroundInput.quota,
+          );
+          break;
+        case "fare":
+          if (!/^\d{5}$/.test(playgroundInput.trainNumber)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          if (!playgroundInput.fromStation.trim() || !playgroundInput.toStation.trim()) {
+            throw new Error("From and To station codes are required");
+          }
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(playgroundInput.journeyDate)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+          result = await fareLookup(
             playgroundInput.trainNumber,
             playgroundInput.fromStation.trim().toUpperCase(),
             playgroundInput.toStation.trim().toUpperCase(),
@@ -2746,6 +2766,7 @@ export default function AdminPanel() {
                     { id: "station", label: "Station" },
                     { id: "search", label: "Search" },
                     { id: "availability", label: "Availability" },
+                    { id: "fare", label: "Fare" },
                   ].map((item) => (
                     <button
                       type="button"
@@ -3094,6 +3115,54 @@ export default function AdminPanel() {
                           <option key={quota} value={quota}>
                             {quota}
                           </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+
+                  {playgroundAction === "fare" && (
+                    <>
+                      <input
+                        value={playgroundInput.trainNumber}
+                        onChange={(e) => setPlaygroundInput((prev) => ({ ...prev, trainNumber: e.target.value.replace(/\D/g, "") }))}
+                        maxLength={5}
+                        placeholder="Train number"
+                        style={{ background: "#0a0d13", border: "1px solid #2d3548", borderRadius: 8, padding: "11px 12px", color: "#cbd5e1", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", outline: "none" }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(playgroundInput.journeyDate)}
+                        onChange={(e) => setPlaygroundInput((prev) => ({ ...prev, journeyDate: fromInputDate(e.target.value) }))}
+                        style={{ background: "#0a0d13", border: "1px solid #2d3548", borderRadius: 8, padding: "11px 12px", color: "#cbd5e1", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", outline: "none" }}
+                      />
+                      <input
+                        value={playgroundInput.fromStation}
+                        onChange={(e) => setPlaygroundInput((prev) => ({ ...prev, fromStation: e.target.value.toUpperCase() }))}
+                        placeholder="From station"
+                        style={{ background: "#0a0d13", border: "1px solid #2d3548", borderRadius: 8, padding: "11px 12px", color: "#cbd5e1", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", outline: "none" }}
+                      />
+                      <input
+                        value={playgroundInput.toStation}
+                        onChange={(e) => setPlaygroundInput((prev) => ({ ...prev, toStation: e.target.value.toUpperCase() }))}
+                        placeholder="To station"
+                        style={{ background: "#0a0d13", border: "1px solid #2d3548", borderRadius: 8, padding: "11px 12px", color: "#cbd5e1", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", outline: "none" }}
+                      />
+                      <select
+                        value={playgroundInput.classCode}
+                        onChange={(e) => setPlaygroundInput((prev) => ({ ...prev, classCode: e.target.value }))}
+                        style={{ background: "#0a0d13", border: "1px solid #2d3548", borderRadius: 8, padding: "11px 12px", color: "#cbd5e1", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", outline: "none" }}
+                      >
+                        {["SL","3A","2A","1A","CC","EC","EA","FC","2S","3E","VS","CH","HS","VC","VA"].map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={playgroundInput.quota}
+                        onChange={(e) => setPlaygroundInput((prev) => ({ ...prev, quota: e.target.value }))}
+                        style={{ background: "#0a0d13", border: "1px solid #2d3548", borderRadius: 8, padding: "11px 12px", color: "#cbd5e1", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", outline: "none" }}
+                      >
+                        {["GN","TQ","PT","LD","DF","FT","LB","YU","DP","HP","PH","SS"].map((q) => (
+                          <option key={q} value={q}>{q}</option>
                         ))}
                       </select>
                     </>
