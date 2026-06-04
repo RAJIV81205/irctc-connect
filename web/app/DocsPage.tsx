@@ -14,6 +14,7 @@ import {
   CheckCircle,
   ChevronRight,
   Gamepad2,
+  IndianRupee,
   MapPin,
   Package,
   Rocket,
@@ -129,6 +130,32 @@ if (result.success) {
   "27-12-2025", "2A", "GN"
 );`,
   },
+  {
+    id: "fare-lookup",
+    title: "Fare Lookup",
+    icon: IndianRupee,
+    description: "Get the full fare breakdown for a journey — base fare, reservation, superfast, catering, GST, dynamic fare, and total collectible amount.",
+    signature: "fareLookup(trainNo, fromStnCode, toStnCode, date, travelClass, quota)",
+    params: [
+      { name: "trainNo", type: "string", desc: "5-digit train number" },
+      { name: "fromStnCode", type: "string", desc: "Origin station code" },
+      { name: "toStnCode", type: "string", desc: "Destination station code" },
+      { name: "date", type: "string", desc: "Journey date in DD-MM-YYYY" },
+      { name: "travelClass", type: "string", desc: "1A · 2A · 3A · 3E · CC · EC · EA · FC · SL · 2S · VS · CH · HS · VC · VA" },
+      { name: "quota", type: "string", desc: "GN · TQ · PT · LD · DF · FT · LB · YU · DP · HP · PH · SS" },
+    ],
+    example: `const result = await fareLookup(
+  "12313", "ASN", "NDLS",
+  "06-06-2026", "3A", "GN"
+);
+
+if (result.success) {
+  const d = result.data;
+  console.log(\`\${d.trainName} (\${d.trainNo})\`);
+  console.log(\`\${d.from} → \${d.to} | \${d.distance} km\`);
+  console.log(\`Base: ₹\${d.baseFare}  GST: ₹\${d.gst}  Total: ₹\${d.totalFare}\`);
+}`,
+  },
 ];
 
 const installSnippet = "npm install irctc-connect";
@@ -140,7 +167,8 @@ const quickStartSnippet = `import {
   trackTrain,
   liveAtStation,
   searchTrainBetweenStations,
-  getAvailability
+  getAvailability,
+  fareLookup
 } from "irctc-connect";
 
 configure(process.env.IRCTC_API_KEY);
@@ -150,7 +178,8 @@ const train  = await getTrainInfo("12345");
 const live   = await trackTrain("12345", "06-12-2025");
 const stn    = await liveAtStation("NDLS");
 const search = await searchTrainBetweenStations("NDLS", "BCT");
-const seats  = await getAvailability("12496","ASN","DDU","27-12-2025","2A","GN");`;
+const seats  = await getAvailability("12496","ASN","DDU","27-12-2025","2A","GN");
+const fare   = await fareLookup("12313","ASN","NDLS","06-06-2026","3A","GN");`;
 
 const docsBaseUrl = "https://irctc.rajivdubey.dev/docs";
 
@@ -169,7 +198,7 @@ export default function DocsPage() {
       return `### ${ep.title}\nLink: [${docsBaseUrl}#${ep.id}](${docsBaseUrl}#${ep.id})\nSignature: \`${ep.signature}\`\nParameters:\n${params}\n\nExample:\n\`\`\`javascript\n${ep.example}\n\`\`\``;
     }).join("\n\n");
 
-    const sectionLinks = ["installation","quickstart","pnr-status","train-info","live-tracking","station-live","train-search","seat-availability","validation","errors"]
+    const sectionLinks = ["installation","quickstart","pnr-status","train-info","live-tracking","station-live","train-search","seat-availability","fare-lookup","validation","errors"]
       .map((id) => { const s = flatSections.find((i) => i.id === id); return s ? `- [${s.label}](${docsBaseUrl}#${s.id})` : null; })
       .filter(Boolean).join("\n");
 
@@ -445,7 +474,7 @@ export default function DocsPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
                 {[
-                  { label: "Endpoints", value: "6" },
+                  { label: "Endpoints", value: "7" },
                   { label: "Runtime", value: "Node 14+" },
                   { label: "Auth", value: "API Key" },
                   { label: "Package", value: "irctc-connect" },

@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   Gamepad2,
   type LucideIcon,
-  Armchair
+  Armchair,
+  IndianRupee
 } from "lucide-react";
 
 export const packageInfo = {
@@ -60,6 +61,7 @@ export const sidebarGroups: SidebarGroup[] = [
       { id: "station-live", label: "Live at Station", icon: Building2 },
       { id: "train-search", label: "Train Search", icon: Search },
       { id: "seat-availability", label: "Seat Availability", icon: Armchair },
+      { id: "fare-lookup", label: "Fare Lookup", icon: IndianRupee },
     ],
   },
   {
@@ -90,11 +92,11 @@ export const sections: Array<{ id: string; label: string; icon: LucideIcon }> = 
   { id: "station-live", label: "Live at Station", icon: Building2 },
   { id: "train-search", label: "Train Search", icon: Search },
   { id: "seat-availability", label: "Seat Availability", icon: Armchair },
+  { id: "fare-lookup", label: "Fare Lookup", icon: IndianRupee },
   { id: "playground", label: "Playground", icon: Gamepad2 },
   { id: "validation", label: "Input Validation", icon: CheckCircle },
   { id: "status-codes", label: "Status Codes", icon: BarChart3 },
   { id: "errors", label: "Error Handling", icon: AlertTriangle },
-
 ];
 
 export const features = [
