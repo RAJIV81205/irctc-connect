@@ -189,8 +189,6 @@ export async function POST(req: Request) {
             : `Plan check completed with ${failed.length} error(s)`,
         updated: succeeded.length,
         failed: failed.length,
-        details: succeeded,
-        errors: failed,
       },
       { status }
     );
