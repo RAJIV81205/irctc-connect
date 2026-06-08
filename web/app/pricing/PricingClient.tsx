@@ -145,7 +145,7 @@ function PricingPageSkeleton() {
         <div className="mb-16 h-5 max-w-lg animate-pulse rounded-lg bg-gray-100 mx-auto" />
         <div className="grid gap-5 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-[560px] animate-pulse rounded-3xl bg-gray-50 border border-gray-100"
+            <div key={i} className="h-140 animate-pulse rounded-3xl bg-gray-50 border border-gray-100"
               style={{ animationDelay: `${i * 80}ms` }} />
           ))}
         </div>
@@ -317,6 +317,127 @@ function PaymentModal({
   );
 }
 
+// ─── Restart plan caution modal ─────────────────────────────────────────────
+
+function RestartPlanCautionModal({
+  isOpen,
+  onProceed,
+  onCancel,
+}: {
+  isOpen: boolean;
+  onProceed: () => void;
+  onCancel: () => void;
+}) {
+  const [secondsLeft, setSecondsLeft] = useState(3);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setSecondsLeft(3);
+    setProgress(0);
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      const elapsedMs = Date.now() - startedAt;
+      const elapsedSeconds = Math.floor(elapsedMs / 1000);
+      const remaining = Math.max(0, 3 - elapsedSeconds);
+      setSecondsLeft(remaining);
+      setProgress(Math.min(100, (elapsedMs / 3000) * 100));
+      if (remaining === 0) {
+        setProgress(100);
+        clearInterval(timer);
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const prev = document.activeElement as HTMLElement | null;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
+      prev?.focus();
+    };
+  }, [isOpen, onCancel]);
+
+  if (!isOpen) return null;
+
+  const canProceed = secondsLeft === 0;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="restart-caution-title"
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: "rgba(0,0,0,0.42)", backdropFilter: "blur(8px)" }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
+      <div
+        className="w-full max-w-md overflow-y-auto rounded-3xl border border-amber-200 bg-white p-8 shadow-2xl"
+        style={{ maxHeight: "90dvh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500">
+          <AlertCircle className="h-5 w-5 text-white" aria-hidden />
+        </div>
+
+        <h3 id="restart-caution-title" className="text-xl font-semibold text-black" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+          Restart plan caution
+        </h3>
+        <p className="mt-3 text-sm leading-7 text-[#6F6F6F]">
+          Renewing this plan will remove your remaining request quota and reset the expiry date. The plan will start again from a fresh cycle.
+        </p>
+
+        <div className="mt-8 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={onProceed}
+            disabled={!canProceed}
+            aria-busy={!canProceed}
+            className="relative inline-flex items-center justify-center overflow-hidden rounded-full border border-black/10 px-6 py-3.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-100"
+            style={{
+              background: canProceed ? "#000000" : "#f5f5f5",
+              color: canProceed ? "#ffffff" : "#111827",
+            }}
+          >
+            {!canProceed && (
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0 bg-amber-400/90 transition-[width] duration-75 ease-linear"
+                style={{ width: `${progress}%` }}
+              />
+            )}
+            <span className="relative z-10 inline-flex items-center gap-2">
+              Continue to payment
+              {!canProceed && <span className="text-xs font-medium text-black/45">{secondsLeft}s</span>}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full border border-black/10 px-6 py-3.5 text-sm text-[#6F6F6F] transition hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page content ────────────────────────────────────────────────────────
 
 function PricingPageContent({
@@ -332,6 +453,7 @@ function PricingPageContent({
   const [authState, setAuthState] = useState<AuthState>({ status: "loading" });
   const [notice, setNotice] = useState<Notice>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showRestartWarningModal, setShowRestartWarningModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanType | null>(null);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
@@ -403,6 +525,13 @@ function PricingPageContent({
     setShowPaymentModal(true);
   };
 
+  const openRestartWarningModal = (planType: PaidPlanType) => {
+    if (authState.status === "loading") { showNotice("info", "Please wait while we check your login status."); return; }
+    if (authState.status === "unauthenticated") { router.push("/auth?redirect=/pricing"); return; }
+    setSelectedPlan(planType);
+    setShowRestartWarningModal(true);
+  };
+
   const startPayment = async () => {
     if (!selectedPlan) return;
     setIsCreatingOrder(true);
@@ -430,7 +559,7 @@ function PricingPageContent({
     const isAuthed = authState.status === "authenticated";
     const currentPlan = isAuthed ? (authState as { plan: "free" | PaidPlanType }).plan : null;
     if (isAuthed && currentPlan === "advance") {
-      if (plan.planType === "advance") return { label: "Renew Plan", disabled: false, action: () => openPaymentModal(plan.planType) };
+      if (plan.planType === "advance") return { label: "Restart Plan", disabled: false, action: () => openRestartWarningModal("advance") };
       if (plan.planType === "pro") return { label: "Downgrade Unavailable", disabled: true, action: () => {} };
       return { label: "Included", disabled: true, action: () => {} };
     }
@@ -598,7 +727,7 @@ function PricingPageContent({
                     {/* CTA */}
                     <button type="button" onClick={btnState.action} disabled={btnState.disabled}
                       aria-label={`${btnState.label} — ${plan.name} plan`}
-                      className="pr-btn w-full rounded-full py-3.5 text-sm font-medium"
+                      className="pr-btn w-full rounded-full py-3.5 text-sm font-medium cursor-pointer"
                       style={{
                         background: btnState.disabled ? (isPopular ? "rgba(255,255,255,0.08)" : "#f5f5f5") : isPopular ? "#ffffff" : "#000000",
                         color: btnState.disabled ? (isPopular ? "rgba(255,255,255,0.3)" : "#9ca3af") : isPopular ? "#000" : "#fff",
@@ -729,6 +858,20 @@ function PricingPageContent({
           onCancel={() => { if (!isCreatingOrder) { setShowPaymentModal(false); setSelectedPlan(null); } }}
         />
       )}
+
+      {/* Restart plan caution modal */}
+      <RestartPlanCautionModal
+        isOpen={showRestartWarningModal && !!selectedPlan}
+        onProceed={() => {
+          if (!selectedPlan) return;
+          setShowRestartWarningModal(false);
+          setShowPaymentModal(true);
+        }}
+        onCancel={() => {
+          setShowRestartWarningModal(false);
+          setSelectedPlan(null);
+        }}
+      />
     </div>
   );
 }
