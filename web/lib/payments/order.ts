@@ -84,18 +84,33 @@ export async function applyOrderPaymentState(input: PaymentStateInput) {
     return { found: true, paid: true, credited: true };
   }
 
-  await grantPlanToUser(creditedOrder.userId.toString(), creditedOrder.planType);
-  await sendWelcomeEmail(creditedOrder.userId.toString());
+  try {
+    await grantPlanToUser(creditedOrder.userId.toString(), creditedOrder.planType);
+  } catch (error) {
+    await Order.findByIdAndUpdate(creditedOrder._id, {
+      $set: {
+        credited: false,
+      },
+    }).catch(() => {});
+    throw error;
+  }
+
+  try {
+    await sendWelcomeEmail(creditedOrder.userId.toString());
+  } catch (error) {
+    console.error("Welcome email failed after plan grant:", error);
+  }
+
   return { found: true, paid: true, credited: true };
 }
 
 async function grantPlanToUser(userId: string, planType: PaidPlanType) {
   const planConfig = getPaidPlanRuntime(planType);
   if (!planConfig) {
-    return;
+    throw new Error(`Unsupported paid plan type: ${planType}`);
   }
 
-  await User.findByIdAndUpdate(userId, {
+  const updatedUser = await User.findByIdAndUpdate(userId, {
     $set: {
       plan: planConfig.userPlan,
       limit: planConfig.limit,
@@ -104,7 +119,9 @@ async function grantPlanToUser(userId: string, planType: PaidPlanType) {
     },
   });
 
-
+  if (!updatedUser) {
+    throw new Error(`User not found while granting plan for order fulfillment: ${userId}`);
+  }
 }
 
 export async function syncOrderWithCashfree(

@@ -77,6 +77,20 @@ export async function POST(request: Request) {
     }
     const orderId = makeOrderId(user._id.toString());
 
+    const createdOrderDoc = await Order.create({
+      userId: user._id,
+      orderId,
+      cfOrderId: null,
+      paymentSessionId: null,
+      planType: body.planType,
+      amount: planConfig.amount,
+      currency: "INR",
+      status: "created",
+      paymentStatus: "PENDING",
+      credited: false,
+      cashfreeOrderStatus: null,
+    });
+
     const cashfreeRequest = {
       order_id: orderId,
       order_amount: planConfig.amount,
@@ -97,29 +111,47 @@ export async function POST(request: Request) {
       },
     };
 
-    const cashfreeResponse = await cashfree.PGCreateOrder(cashfreeRequest);
-    const cfOrder = cashfreeResponse.data;
+    try {
+      const cashfreeResponse = await cashfree.PGCreateOrder(cashfreeRequest);
+      const cfOrder = cashfreeResponse.data;
 
-    if (!cfOrder.payment_session_id) {
-      return NextResponse.json(
-        { success: false, message: "payment session was not created" },
-        { status: 502 }
-      );
+      if (!cfOrder.payment_session_id) {
+        await createdOrderDoc
+          .updateOne({
+            $set: {
+              status: "failed",
+              paymentStatus: "FAILED",
+              cashfreeOrderStatus: "FAILED",
+            },
+          })
+          .catch(() => {});
+
+        return NextResponse.json(
+          { success: false, message: "payment session was not created" },
+          { status: 502 }
+        );
+      }
+
+      createdOrderDoc.cfOrderId =
+        typeof cfOrder.cf_order_id === "number" ? cfOrder.cf_order_id : null;
+      createdOrderDoc.orderId = cfOrder.order_id || orderId;
+      createdOrderDoc.paymentSessionId = cfOrder.payment_session_id || null;
+      createdOrderDoc.status =
+        cfOrder.order_status?.toLowerCase() === "active" ? "active" : "created";
+      createdOrderDoc.cashfreeOrderStatus = cfOrder.order_status || "ACTIVE";
+      await createdOrderDoc.save();
+    } catch (error) {
+      await createdOrderDoc
+        .updateOne({
+          $set: {
+            status: "failed",
+            paymentStatus: "FAILED",
+            cashfreeOrderStatus: "FAILED",
+          },
+        })
+        .catch(() => {});
+      throw error;
     }
-
-    const createdOrderDoc = await Order.create({
-      userId: user._id,
-      orderId: cfOrder.order_id || orderId,
-      cfOrderId:
-        typeof cfOrder.cf_order_id === "number" ? cfOrder.cf_order_id : null,
-      paymentSessionId: cfOrder.payment_session_id || null,
-      planType: body.planType,
-      amount: planConfig.amount,
-      currency: "INR",
-      status: cfOrder.order_status?.toLowerCase() === "active" ? "active" : "created",
-      paymentStatus: "PENDING",
-      cashfreeOrderStatus: cfOrder.order_status || "ACTIVE",
-    });
 
     return NextResponse.json(
       {
