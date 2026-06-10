@@ -151,10 +151,10 @@ export const installation = {
 
 export const quickStartCode = {
   basic: `// .env
-// IRCTC_API_KEY=your_api_key_here
+// RAILKIT_API_KEY=your_api_key_here
 
-if (!process.env.IRCTC_API_KEY) {
-  throw new Error('IRCTC_API_KEY is required in environment variables');
+if (!process.env.RAILKIT_API_KEY) {
+  throw new Error('RAILKIT_API_KEY is required in environment variables');
 }
 
 // Import the functions you need

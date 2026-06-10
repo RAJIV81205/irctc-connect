@@ -204,7 +204,7 @@ const quickStartSnippet = `import {
   fareLookup
 } from "railkit";
 
-configure(process.env.IRCTC_API_KEY);
+configure(process.env.RAILKIT_API_KEY);
 
 const pnr    = await checkPNRStatus("1234567890");
 const train  = await getTrainInfo("12345");

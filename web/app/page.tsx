@@ -406,7 +406,7 @@ export default async function LandingPage() {
                   {"\n"}
                   <span className="lf">configure</span>
                   {"(process.env."}
-                  <span className="le">IRCTC_API_KEY</span>
+                  <span className="le">RAILKIT_API_KEY</span>
                   {")\n\n"}
                   <span className="lk">export async function</span>
                   {" "}
