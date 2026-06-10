@@ -162,8 +162,8 @@ export const PRICING_PLANS: PricingPlan[] = PLAN_CONFIG.plans.map((plan) => ({
 }));
 
 export const TOPUP_OPTIONS = [
-  { requests: 10000, price: 79, perReq: 0.008 },
-  { requests: 25000, price: 179, perReq: 0.007 },
+  { requests: 20000, price: 149, perReq: 0.007 },
+  { requests: 30000, price: 209, perReq: 0.007 },
   { requests: 50000, price: 349, perReq: 0.007 },
   { requests: 100000, price: 699, perReq: 0.007 },
 ] as const;
