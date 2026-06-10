@@ -37,10 +37,10 @@ export const metadata: Metadata = {
 async function getStats() {
   try {
     const [githubRes, npmRes] = await Promise.all([
-      fetch("https://api.github.com/repos/RAJIV81205/irctc-connect", {
+      fetch("https://api.github.com/repos/RAJIV81205/railkit", {
         next: { revalidate: 3600 },
       }),
-      fetch("https://api.npmjs.org/downloads/point/last-month/irctc-connect", {
+      fetch("https://api.npmjs.org/downloads/point/last-month/railkit", {
         next: { revalidate: 3600 },
       }),
     ]);
@@ -195,9 +195,9 @@ export default async function LandingPage() {
       url: "https://github.com/RAJIV81205",
     },
     sameAs: [
-      "https://github.com/RAJIV81205/irctc-connect",
+      "https://github.com/RAJIV81205/railkit",
       "https://github.com/RAJIV81205",
-      "https://www.npmjs.com/package/irctc-connect",
+      "https://www.npmjs.com/package/railkit",
       "https://twitter.com/rajiv81205",
     ],
   };
@@ -222,14 +222,14 @@ export default async function LandingPage() {
   const softwareSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "irctc-connect",
+    name: "railkit",
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Node.js",
     url: absoluteUrl("/"),
     description: SITE_DESCRIPTION,
     softwareVersion: "3.3.0",
-    downloadUrl: "https://www.npmjs.com/package/irctc-connect",
-    codeRepository: "https://github.com/RAJIV81205/irctc-connect",
+    downloadUrl: "https://www.npmjs.com/package/railkit",
+    codeRepository: "https://github.com/RAJIV81205/railkit",
     featureList: [
       "PNR Status API",
       "Live Train Tracking",
@@ -282,7 +282,7 @@ export default async function LandingPage() {
     },
     {
       q: "Does RailKit support Node.js and TypeScript?",
-      a: "RailKit is a promise-based Node.js SDK with first-class TypeScript types built in. Install it with npm install irctc-connect, import the client, and every method is fully typed with autocomplete for requests and responses.",
+      a: "RailKit is a promise-based Node.js SDK with first-class TypeScript types built in. Install it with npm install railkit, import the client, and every method is fully typed with autocomplete for requests and responses.",
     },
   ];
 
@@ -400,7 +400,7 @@ export default async function LandingPage() {
                   <span className="lk">import</span>
                   {" { configure,\n         checkPNRStatus, trackTrain }\n"}
                   <span className="lk">from</span>{" "}
-                  <span className="ls">&quot;irctc-connect&quot;</span>
+                  <span className="ls">&quot;railkit&quot;</span>
                   {"\n\n"}
                   <span className="lc">{"// one-time setup"}</span>
                   {"\n"}
@@ -480,7 +480,7 @@ export default async function LandingPage() {
                 <ArrowRight size={15} />
               </Link>
               <a
-                href="https://github.com/RAJIV81205/irctc-connect"
+                href="https://github.com/RAJIV81205/railkit"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="lp-cta-btn-ghost"

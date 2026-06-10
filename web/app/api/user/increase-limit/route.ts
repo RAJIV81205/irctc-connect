@@ -135,7 +135,7 @@ export async function POST(request: Request) {
       order_meta: {
         return_url: getDashboardReturnUrl(),
       },
-      order_note: `${quote.extraLimit} extra API requests for irctc-connect`,
+      order_note: `${quote.extraLimit} extra API requests for railkit`,
       order_tags: {
         order_type: "limit_topup",
         extra_limit: String(quote.extraLimit),

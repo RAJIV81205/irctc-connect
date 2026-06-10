@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminAuthTokenFromCookies, verifyAdminAuthToken } from "@/lib/auth";
 
 const DEFAULT_OWNER = "RAJIV81205";
-const DEFAULT_REPO = "irctc-connect";
+const DEFAULT_REPO = "railkit";
 const RECENT_WINDOW_DAYS = 14;
 const MAX_ISSUES = 30;
 
@@ -43,7 +43,7 @@ export async function GET() {
 
     const headers: HeadersInit = {
       Accept: "application/vnd.github+json",
-      "User-Agent": "irctc-connect-admin-issues",
+      "User-Agent": "railkit-admin-issues",
     };
 
     if (githubToken) {

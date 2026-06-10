@@ -105,7 +105,7 @@ export async function POST(request: Request) {
         return_url: getAppReturnUrl(),
         notify_url: getWebhookUrl(),
       },
-      order_note: `${body.planType} plan for irctc-connect`,
+      order_note: `${body.planType} plan for railkit`,
       order_tags: {
         plan_type: body.planType,
       },

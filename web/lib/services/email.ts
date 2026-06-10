@@ -12,9 +12,9 @@ interface IUser {
   limit: number;
 }
 
-const senderEmail = "irctc@rajivdubey.dev";
+const senderEmail = "railkit@rajivdubey.dev";
 const senderName = "RailKit";
-const replyToEmail = "lucky81205+irctc@gmail.com";
+const replyToEmail = "lucky81205+railkit@gmail.com";
 const replyToName = "Rajiv Dubey";
 
 type SendRawHtmlEmailParams = {
@@ -230,7 +230,7 @@ export async function sendWelcomeEmail(userId: string) {
     ...(invoicePdf && {
       attachments: [
         {
-          filename: `irctc-connect-invoice-${Date.now()}.pdf`,
+          filename: `railkit-invoice-${Date.now()}.pdf`,
           content: invoicePdf.toString("base64"),
         },
       ],

@@ -61,7 +61,7 @@ const contactCards = [
 		primaryHref:
 			"https://t.me/rajiv81205",
 		secondaryLabel: "GitHub",
-		secondaryHref: "https://github.com/RAJIV81205/irctc-connect",
+		secondaryHref: "https://github.com/RAJIV81205/railkit",
 	},
 ] as const;
 
@@ -70,7 +70,7 @@ const communityLinks = [
 		icon: Github,
 		label: "GitHub",
 		sub: "Code, issues, releases",
-		href: "https://github.com/RAJIV81205/irctc-connect",
+		href: "https://github.com/RAJIV81205/railkit",
 	},
 	{
 		icon: BookOpen,
@@ -82,7 +82,7 @@ const communityLinks = [
 		icon: Activity,
 		label: "Roadmap Feedback",
 		sub: "Request features and improvements",
-		href: "https://github.com/RAJIV81205/irctc-connect/issues",
+		href: "https://github.com/RAJIV81205/railkit/issues",
 	},
 	{
 		icon: Mail,
@@ -324,7 +324,7 @@ export default function ContactPage() {
 						<Link href="/pricing">Pricing</Link>
 						<Link href="/docs">Docs</Link>
 						<a
-							href="https://github.com/RAJIV81205/irctc-connect"
+							href="https://github.com/RAJIV81205/railkit"
 							target="_blank"
 							rel="noopener noreferrer"
 						>

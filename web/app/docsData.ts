@@ -27,9 +27,9 @@ export const packageInfo = {
     nodeVersion: '14+'
   },
   links: {
-    github: 'https://github.com/RAJIV81205/irctc-connect',
-    npm: 'https://www.npmjs.com/package/irctc-connect',
-    issues: 'https://github.com/RAJIV81205/irctc-connect/issues'
+    github: 'https://github.com/RAJIV81205/railkit',
+    npm: 'https://www.npmjs.com/package/railkit',
+    issues: 'https://github.com/RAJIV81205/railkit/issues'
   }
 };
 
@@ -158,7 +158,7 @@ if (!process.env.IRCTC_API_KEY) {
 }
 
 // Import the functions you need
-import { checkPNRStatus, getTrainInfo } from 'irctc-connect';
+import { checkPNRStatus, getTrainInfo } from 'railkit';
 
 // Check PNR status
 const pnrResult = await checkPNRStatus('1234567890');
@@ -176,7 +176,7 @@ export const apiDocs = {
     title: 'PNR Status',
     description: 'Check real-time PNR status with passenger details, journey details, chart status, and booking fare.',
     signature: 'checkPNRStatus(pnr: string): Promise<Result>',
-    example: `import { checkPNRStatus } from 'irctc-connect';
+    example: `import { checkPNRStatus } from 'railkit';
 
 const result = await checkPNRStatus('5827194603');
 
@@ -220,7 +220,7 @@ if (result.success) {
     title: 'Train Information',
     description: 'Get complete train details including route, schedule, and station coordinates.',
     signature: 'getTrainInfo(trainNo: string): Promise<Result>',
-    example: `import { getTrainInfo } from 'irctc-connect';
+    example: `import { getTrainInfo } from 'railkit';
 
 const result = await getTrainInfo('12345');
 
@@ -234,7 +234,7 @@ if (result.success) {
     title: 'Live Train Tracking',
     description: 'Track trains in real-time with current location, delays, and station updates.',
     signature: 'trackTrain(trainNo: string, date: string): Promise<Result>',
-    example: `import { trackTrain } from 'irctc-connect';
+    example: `import { trackTrain } from 'railkit';
 
 // Date format: DD-MM-YYYY
 const result = await trackTrain('12345', '06-12-2025');
@@ -250,7 +250,7 @@ if (result.success) {
     title: 'Train History',
     description: 'Get the completed journey history of a train for a specific journey date. The backend persists a record once the train has reached its destination, including the full station-by-station timeline, per-stop delays, and the final coach position.',
     signature: 'getTrainHistory(trainNumber: string, journeyDate: string): Promise<Result>',
-    example: `import { getTrainHistory } from 'irctc-connect';
+    example: `import { getTrainHistory } from 'railkit';
 
 const result = await getTrainHistory('12301', '15-04-2025');
 
@@ -290,7 +290,7 @@ if (result.success) {
     title: 'Station Live',
     description: 'Get upcoming and passing trains at a station with arrival/departure times, delays, and platform info.',
     signature: 'liveAtStation(stationCode: string, hours?: 2 | 4 | 8): Promise<Result>',
-    example: `import { liveAtStation } from 'irctc-connect';
+    example: `import { liveAtStation } from 'railkit';
 
 // hours: 2, 4, or 8 (default 2)
 const result = await liveAtStation('NDLS', 2);

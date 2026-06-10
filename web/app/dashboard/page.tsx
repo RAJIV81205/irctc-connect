@@ -26,7 +26,7 @@ import {
   liveAtStation,
   searchTrainBetweenStations,
   trackTrain,
-} from "irctc-connect";
+} from "railkit";
 import { auth } from "../../lib/firebase";
 import { TOPUP_OPTIONS } from "../../lib/constants";
 
@@ -591,7 +591,7 @@ export default function DashboardPage() {
     return `const API_KEY = process.env.IRCTC_API_KEY;\n\nconst response = await fetch("${url}", {\n  method: "GET",\n  headers: {\n    "x-api-key": API_KEY,\n    "accept": "application/json",\n  },\n});\n\nconst data = await response.json();\nconsole.log(data);`;
   };
 
-  const usageExampleCode = `import {\n  configure,\n  checkPNRStatus,\n  getTrainInfo,\n  trackTrain,\n  getTrainHistory,\n} from "irctc-connect";\n\n// Step 1: configure once with your API key\nconfigure(process.env.IRCTC_API_KEY);\n\n// Check PNR status\nconst pnrResult = await checkPNRStatus("1234567890");\n\n// Get train information\nconst trainResult = await getTrainInfo("12345");\n\n// Track Live Train\nconst liveTrainResult = await trackTrain("12345", "28-03-2026");\n\n// Get Train History (for completed journeys)\nconst historyResult = await getTrainHistory("12345", "28-03-2026");`;
+  const usageExampleCode = `import {\n  configure,\n  checkPNRStatus,\n  getTrainInfo,\n  trackTrain,\n  getTrainHistory,\n} from "railkit";\n\n// Step 1: configure once with your API key\nconfigure(process.env.IRCTC_API_KEY);\n\n// Check PNR status\nconst pnrResult = await checkPNRStatus("1234567890");\n\n// Get train information\nconst trainResult = await getTrainInfo("12345");\n\n// Track Live Train\nconst liveTrainResult = await trackTrain("12345", "28-03-2026");\n\n// Get Train History (for completed journeys)\nconst historyResult = await getTrainHistory("12345", "28-03-2026");`;
 
   const endpointDocs = [
     { name: "Check PNR Status", method: "GET", path: "/api/checkPNRStatus/:pnr", examplePath: "/api/checkPNRStatus/1234567890", notes: "PNR must be 10 digits." },
@@ -1130,7 +1130,7 @@ export default function DashboardPage() {
                 </div>
                 <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 20, lineHeight: 1.7 }}>
                   Install{" "}
-                  <span style={{ color: "#16a34a", background: "#f0fdf4", padding: "1px 7px", borderRadius: 5, border: "1px solid #bbf7d0", fontSize: 12 }}>npm install irctc-connect</span>
+                  <span style={{ color: "#16a34a", background: "#f0fdf4", padding: "1px 7px", borderRadius: 5, border: "1px solid #bbf7d0", fontSize: 12 }}>npm install railkit</span>
                   {" "}→ configure your key → call any function
                 </p>
                 <div style={{ background: "#f8f8f8", border: "1px solid #f0f0f0", borderRadius: 10, padding: "10px 14px", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>

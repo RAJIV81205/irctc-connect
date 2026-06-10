@@ -1,8 +1,8 @@
 # RailKit
 
-[![npm version](https://badge.fury.io/js/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
-[![Downloads](https://img.shields.io/npm/dm/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
-[![License](https://img.shields.io/npm/l/irctc-connect.svg)](https://github.com/RAJIV81205/irctc-connect/blob/main/LICENSE)
+  [![npm version](https://badge.fury.io/js/railkit.svg)](https://www.npmjs.com/package/railkit)
+[![Downloads](https://img.shields.io/npm/dm/railkit.svg)](https://www.npmjs.com/package/railkit)
+[![License](https://img.shields.io/npm/l/railkit.svg)](https://github.com/RAJIV81205/railkit/blob/main/LICENSE)
 
 <img width="1536" height="657" alt="RailKit Banner" src="https://github.com/user-attachments/assets/6bdcc05f-186d-4f6f-918d-a99a65026c97" />
 
@@ -676,7 +676,7 @@ All functions return a consistent response structure. Always check `success` bef
 
 | Error | Cause |
 |-------|-------|
-| `irctc-connect is not configured` | `configure()` was not called |
+| `railkit is not configured` | `configure()` was not called |
 | `Invalid API key` (401) | Key doesn't exist in the system |
 | `API key is inactive` (403) | Key has been deactivated |
 | `Usage limit exceeded` (429) | Monthly request quota reached |

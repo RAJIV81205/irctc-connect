@@ -52,6 +52,6 @@ export function getAppReturnUrl() {
 export function getExternalOrderDataUrl() {
   return (
     process.env.PAYMENT_ORDER_DATA_URL ||
-    "https://rapidbite.rajivdubey.tech/irctc-connect/orderData"
+    "https://rapidbite.rajivdubey.tech/railkit/orderData"
   );
 }

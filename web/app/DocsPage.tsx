@@ -190,7 +190,7 @@ if (result.success) {
   },
 ];
 
-const installSnippet = "npm install irctc-connect";
+const installSnippet = "npm install railkit";
 
 const quickStartSnippet = `import {
   configure,
@@ -202,7 +202,7 @@ const quickStartSnippet = `import {
   searchTrainBetweenStations,
   getAvailability,
   fareLookup
-} from "irctc-connect";
+} from "railkit";
 
 configure(process.env.IRCTC_API_KEY);
 
@@ -495,7 +495,7 @@ export default function DocsPage() {
                 <Link href="/dashboard" className="docs-chip docs-chip-primary">
                   Open Dashboard <ChevronRight size={13} />
                 </Link>
-                <a href="https://www.npmjs.com/package/irctc-connect" target="_blank" rel="noreferrer" className="docs-chip">
+                <a href="https://www.npmjs.com/package/railkit" target="_blank" rel="noreferrer" className="docs-chip">
                   NPM Package
                 </a>
                 <button type="button" onClick={copyAIDocsMarkdown} className="docs-chip">
@@ -511,7 +511,7 @@ export default function DocsPage() {
                   { label: "Endpoints", value: "7" },
                   { label: "Runtime", value: "Node 14+" },
                   { label: "Auth", value: "API Key" },
-                  { label: "Package", value: "irctc-connect" },
+                  { label: "Package", value: "railkit" },
                 ].map((stat) => (
                   <div key={stat.label} className="docs-card docs-card-lift" style={{ padding: "14px 16px" }}>
                     <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9ca3af", marginBottom: 6 }}>{stat.label}</p>

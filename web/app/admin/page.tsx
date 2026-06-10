@@ -16,7 +16,7 @@ import {
   liveAtStation,
   searchTrainBetweenStations,
   trackTrain,
-} from "irctc-connect";
+} from "railkit";
 import {
   Area,
   AreaChart,

@@ -133,13 +133,13 @@ export function CinematicHero({ stats }: CinematicHeroProps) {
               <span className="ck">import</span>
               {" { configure, checkPNRStatus, trackTrain }\n"}
               <span className="ck">from</span>{" "}
-              <span className="cs">&quot;irctc-connect&quot;</span>
+              <span className="cs">&quot;railkit&quot;</span>
               {"\n\n"}
               <span className="cc">{"// one-time setup"}</span>
               {"\n"}
               <span className="cf">configure</span>
               {"(process.env."}
-              <span className="ce">IRCTC_API_KEY</span>
+              <span className="ce">RAILKIT_API_KEY</span>
               {")\n\n"}
               <span className="ck">const</span>
               {" pnr = "}
