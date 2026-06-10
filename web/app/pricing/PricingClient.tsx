@@ -488,7 +488,7 @@ function PricingPageContent({
 
   const timeLeft = useCountdown(initialOfferEndsAt);
   const missingByPlan = computeMissingByPlan(initialPlans);
-  const contactUrl = `mailto:${initialContactEmail}?subject=${encodeURIComponent("IRCTC Connect Payment Help")}`;
+  const contactUrl = `mailto:${initialContactEmail}?subject=${encodeURIComponent("RailKit Payment Help")}`;
   const orderIdFromQuery = searchParams.get("order_id");
   const isPaymentReturn = searchParams.get("payment_return") === "1";
 
@@ -640,7 +640,7 @@ function PricingPageContent({
           {/* ── Hero ── */}
           <div className="mb-20 text-center">
             <p className="pr-a1 mb-6 text-xs tracking-[0.22em] uppercase text-[#9ca3af]">
-              IRCTC Connect Pricing
+              RailKit Pricing
             </p>
             <h1 className="pr-a2 mx-auto max-w-4xl leading-[0.95] tracking-[-0.04em] text-black"
               style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px, 7vw, 80px)", fontWeight: 400 }}>

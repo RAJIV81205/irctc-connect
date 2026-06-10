@@ -54,7 +54,7 @@ export const metadata: Metadata = {
         url: buildMetadata({}).openGraph.images[0].url,
         width: OG_IMAGE_WIDTH,
         height: OG_IMAGE_HEIGHT,
-        alt: "IRCTC Connect",
+        alt: "RailKit",
       },
     ],
   },

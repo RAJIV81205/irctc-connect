@@ -191,7 +191,7 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
     {
         "heading": "Acceptance of Terms",
         "items": [
-        "By accessing or using IRCTC Connect, you agree to be bound by these Terms.",
+        "By accessing or using RailKit, you agree to be bound by these Terms.",
         "If you do not agree, you must stop using the Service.",
         "Continued use after updates indicates acceptance of the revised Terms.",
       ]
@@ -199,16 +199,16 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
     {
         "heading": "Service Description",
         "items": [
-        "IRCTC Connect provides APIs and developer tools that aggregate and process railway-related information.",
+        "RailKit provides APIs and developer tools that aggregate and process railway-related information.",
         "Access to the service does not grant ownership of any data, software, infrastructure, documentation, or intellectual property.",
       ]
       },
     {
         "heading": "API License",
         "items": [
-        "IRCTC Connect grants a limited, non-exclusive, non-transferable, revocable license to access and use the API.",
+        "RailKit grants a limited, non-exclusive, non-transferable, revocable license to access and use the API.",
         "The license is governed by your active subscription plan and these Terms.",
-        "All rights not expressly granted are reserved by IRCTC Connect.",
+        "All rights not expressly granted are reserved by RailKit.",
       ]
       },
     {
@@ -217,7 +217,7 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
         "API keys are issued to a single account and must remain confidential.",
         "API keys may not be shared, transferred, sold, leased, sublicensed, or provided to any third party.",
         "Users are responsible for all activity performed using their API keys.",
-        "Users must immediately notify IRCTC Connect if they suspect unauthorized access."
+        "Users must immediately notify RailKit if they suspect unauthorized access."
       ]
     },
     {
@@ -237,9 +237,9 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
     {
       "heading": "Data Storage Restrictions",
       "items": [
-        "Users may not copy, export, scrape, mirror, archive, or permanently store substantial portions of IRCTC Connect data.",
-        "Users may not build independent databases using IRCTC Connect data.",
-        "Users may not create historical datasets, analytics warehouses, or commercial repositories derived primarily from IRCTC Connect data.",
+        "Users may not copy, export, scrape, mirror, archive, or permanently store substantial portions of RailKit data.",
+        "Users may not build independent databases using RailKit data.",
+        "Users may not create historical datasets, analytics warehouses, or commercial repositories derived primarily from RailKit data.",
         "Temporary caching for application functionality is permitted when necessary.",
         "Stored data may not be redistributed, resold, or exposed through another service."
       ]
@@ -263,11 +263,11 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
     {
       "heading": "Security and Suspicious Activity",
       "items": [
-        "IRCTC Connect may monitor API activity to maintain platform security.",
+        "RailKit may monitor API activity to maintain platform security.",
         "Any suspicious, abusive, fraudulent, or unauthorized activity may result in immediate suspension or termination.",
         "Suspicious activity includes unusual request patterns, credential sharing, scraping, quota abuse, automated account creation, resale attempts, and security violations.",
         "Users may be asked to provide additional verification during investigations.",
-        "IRCTC Connect reserves the sole right to determine whether activity is suspicious or abusive."
+        "RailKit reserves the sole right to determine whether activity is suspicious or abusive."
       ]
     },
     {
@@ -293,7 +293,7 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
     {
         "heading": "Service Availability",
         "items": [
-        "IRCTC Connect does not guarantee uninterrupted availability.",
+        "RailKit does not guarantee uninterrupted availability.",
         "Maintenance, outages, upgrades, or third-party failures may affect service.",
         "Service-level commitments, if any, are described separately in your plan.",
       ]
@@ -301,7 +301,7 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
     {
         "heading": "Intellectual Property",
         "items": [
-        "All software, branding, APIs, and documentation are owned by IRCTC Connect.",
+        "All software, branding, APIs, and documentation are owned by RailKit.",
         "Infrastructure, logos, designs, and platform components are also included.",
         "No transfer of ownership is implied by use of the Service.",
       ]
@@ -310,14 +310,14 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
         "heading": "Disclaimer",
         "items": [
         "The service is provided on an 'as-is' and 'as-available' basis.",
-        "IRCTC Connect disclaims all warranties, express or implied.",
+        "RailKit disclaims all warranties, express or implied.",
         "We do not guarantee accuracy, completeness, or availability of any information.",
       ]
       },
     {
         "heading": "Limitation of Liability",
         "items": [
-        "IRCTC Connect is not liable for direct or indirect damages.",
+        "RailKit is not liable for direct or indirect damages.",
         "This includes incidental, consequential, special, or punitive damages.",
         "This limitation applies to the maximum extent permitted by law.",
       ]
@@ -325,7 +325,7 @@ export const TERMS_AND_CONDITIONS: LegalDocument = {
     {
         "heading": "Changes to Terms",
         "items": [
-        "IRCTC Connect may modify these Terms at any time.",
+        "RailKit may modify these Terms at any time.",
         "Updates will be reflected by revising the 'lastUpdated' value.",
         "Continued use of the service constitutes acceptance of the updated Terms.",
       ]
@@ -349,7 +349,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     {
         "heading": "Introduction",
         "items": [
-        "This Privacy Policy describes how IRCTC Connect handles your information.",
+        "This Privacy Policy describes how RailKit handles your information.",
         "It applies to our website, APIs, dashboard, and Node.js SDK.",
         "By using the Service, you agree to the practices described here.",
       ]
@@ -368,7 +368,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     {
         "heading": "Usage Logs",
         "items": [
-        "IRCTC Connect records API requests, response metrics, and timestamps.",
+        "RailKit records API requests, response metrics, and timestamps.",
         "We log IP addresses and other operational metadata for security and reliability.",
         "Logs are used to detect abuse, debug issues, and improve the Service.",
       ]
@@ -428,7 +428,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     {
         "heading": "Third-Party Services",
         "items": [
-        "IRCTC Connect may integrate with third-party services.",
+        "RailKit may integrate with third-party services.",
         "Each provider follows its own privacy practices.",
         "We are not responsible for the privacy practices of external providers.",
       ]

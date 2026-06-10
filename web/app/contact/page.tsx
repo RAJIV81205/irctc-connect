@@ -15,7 +15,7 @@ import { buildMetadata, absoluteUrl, SITE_NAME } from "../../lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Contact",
   description:
-    "Get in touch with the IRCTC Connect team for API support, enterprise onboarding, billing questions, or technical help with the Indian Railways SDK.",
+    "Get in touch with the RailKit team for API support, enterprise onboarding, billing questions, or technical help with the Indian Railways SDK.",
   path: "/contact",
   keywords: [
     "irctc connect contact",
@@ -260,7 +260,7 @@ export default function ContactPage() {
 							<p className="cp-eyebrow">Status & Reliability</p>
 							<h2 className="cp-h2">Built for stable production traffic</h2>
 							<p className="cp-body">
-								IRCTC Connect is monitored continuously with usage-aware limits,
+								RailKit is monitored continuously with usage-aware limits,
 								fallback handling, and request-level observability to keep
 								critical journeys resilient.
 							</p>
@@ -316,7 +316,7 @@ export default function ContactPage() {
 			<footer className="cp-footer">
 				<div className="cp-inner cp-footer-inner">
 					<p>
-						IRCTC Connect · API for PNR status, train tracking, availability,
+						RailKit · API for PNR status, train tracking, availability,
 						and station intelligence.
 					</p>
 					<div className="cp-footer-links">

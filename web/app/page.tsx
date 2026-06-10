@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   ...buildMetadata({
     title: undefined,
     description:
-      "IRCTC Connect is a Node.js SDK and Indian Railways API for PNR status, live train tracking, train search, station boards, and seat availability.",
+      "RailKit is a Node.js SDK and Indian Railways API for PNR status, live train tracking, train search, station boards, and seat availability.",
     path: "/",
   }),
 };
@@ -262,7 +262,7 @@ export default async function LandingPage() {
   const faqs = [
     {
       q: "How do I check PNR status with an API?",
-      a: "Sign up for a free IRCTC Connect API key, then call the getPNRStatus method (or the REST PNR endpoint) with a 10-digit PNR number. You get back the booking status, coach and berth details, boarding point, and chart status as JSON — ready to use in any Node.js, JavaScript, or TypeScript backend.",
+      a: "Sign up for a free RailKit API key, then call the getPNRStatus method (or the REST PNR endpoint) with a 10-digit PNR number. You get back the booking status, coach and berth details, boarding point, and chart status as JSON — ready to use in any Node.js, JavaScript, or TypeScript backend.",
     },
     {
       q: "How do I track a train live and get its running status?",
@@ -270,19 +270,19 @@ export default async function LandingPage() {
     },
     {
       q: "How do I search for trains between two stations?",
-      a: "Call the train-between-stations method with a source and destination station code (and optional date). IRCTC Connect returns every train on that route with departure and arrival times, running days, train type, and available classes — ideal for building journey-planning features.",
+      a: "Call the train-between-stations method with a source and destination station code (and optional date). RailKit returns every train on that route with departure and arrival times, running days, train type, and available classes — ideal for building journey-planning features.",
     },
     {
       q: "Is there a free tier and how do I get an API key?",
-      a: "Yes. IRCTC Connect has a free tier so you can start building right away. Create an account, generate your API key from the dashboard, and start calling railway endpoints in minutes. Paid plans start at ₹49 when you need higher rate limits — see the pricing page for details.",
+      a: "Yes. RailKit has a free tier so you can start building right away. Create an account, generate your API key from the dashboard, and start calling railway endpoints in minutes. Paid plans start at ₹49 when you need higher rate limits — see the pricing page for details.",
     },
     {
       q: "Does it support seat availability and fare enquiry?",
       a: "It does. You can check seat and berth availability for a train, class, and date, and run a fare enquiry to get class-wise ticket prices. Both are exposed as simple promise-based methods in the SDK and as REST endpoints.",
     },
     {
-      q: "Does IRCTC Connect support Node.js and TypeScript?",
-      a: "IRCTC Connect is a promise-based Node.js SDK with first-class TypeScript types built in. Install it with npm install irctc-connect, import the client, and every method is fully typed with autocomplete for requests and responses.",
+      q: "Does RailKit support Node.js and TypeScript?",
+      a: "RailKit is a promise-based Node.js SDK with first-class TypeScript types built in. Install it with npm install irctc-connect, import the client, and every method is fully typed with autocomplete for requests and responses.",
     },
   ];
 

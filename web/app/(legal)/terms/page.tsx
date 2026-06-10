@@ -7,13 +7,13 @@ import { TERMS_AND_CONDITIONS } from "../../../lib/constants";
 export const metadata: Metadata = buildMetadata({
   title: "Terms and Conditions",
   description:
-    "Read the IRCTC Connect terms of service. Understand the rules, acceptable use, payment terms, and obligations that govern your use of the Indian Railways API, dashboard, and Node.js SDK.",
+    "Read the RailKit terms of service. Understand the rules, acceptable use, payment terms, and obligations that govern your use of the Indian Railways API, dashboard, and Node.js SDK.",
   path: "/terms",
   type: "article",
   publishedTime: TERMS_AND_CONDITIONS.lastUpdated + "T00:00:00.000Z",
   modifiedTime: TERMS_AND_CONDITIONS.lastUpdated + "T00:00:00.000Z",
   keywords: [
-    "irctc connect terms",
+    "railkit terms",
     "irctc api terms of service",
     "irctc terms and conditions",
     "irctc sdk terms",
@@ -187,7 +187,7 @@ export default function TermsPage() {
                     <p className="mb-3.5 last:mb-0">Reach out and we will get back to you.</p>
                     <p>
                       <a
-                        href="mailto:lucky81205+irctc@gmail.com?subject=IRCTC%20Connect%20Terms"
+                        href="mailto:lucky81205+irctc@gmail.com?subject=RailKit%20Terms"
                         className="inline-flex items-center gap-2 border-b border-neutral-300 pb-0.5 text-sm font-medium text-black transition-colors hover:border-black"
                       >
                         <Mail size={14} />

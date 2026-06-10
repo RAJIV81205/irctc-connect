@@ -878,7 +878,7 @@ function EmailComposerModal({
             <input
               value={subject}
               onChange={(e) => onSubjectChange(e.target.value)}
-              placeholder="New updates in IRCTC Connect"
+              placeholder="New updates in RailKit"
               style={{
                 background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0",
                 borderRadius: 6, padding: "9px 12px", fontSize: 13, fontFamily: "'JetBrains Mono', monospace",

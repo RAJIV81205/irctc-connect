@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 export const packageInfo = {
-  name: 'IRCTC Connect',
+  name: 'RailKit',
   tagline: 'Node.js SDK for Indian Railways',
   description: 'Comprehensive Node.js SDK for Indian Railways with real-time PNR status, live train tracking, station updates, and complete route information.',
   stats: {

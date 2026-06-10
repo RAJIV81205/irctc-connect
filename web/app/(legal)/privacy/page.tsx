@@ -7,13 +7,13 @@ import { PRIVACY_POLICY } from "../../../lib/constants";
 export const metadata: Metadata = buildMetadata({
   title: "Privacy Policy",
   description:
-    "Read the IRCTC Connect privacy policy. Learn what data we collect, how we use it, how it is stored, and the choices you have when using the Indian Railways API, dashboard, and SDK.",
+    "Read the RailKit privacy policy. Learn what data we collect, how we use it, how it is stored, and the choices you have when using the Indian Railways API, dashboard, and SDK.",
   path: "/privacy",
   type: "article",
   publishedTime: PRIVACY_POLICY.lastUpdated + "T00:00:00.000Z",
   modifiedTime: PRIVACY_POLICY.lastUpdated + "T00:00:00.000Z",
   keywords: [
-    "irctc connect privacy policy",
+    "railkit privacy policy",
     "irctc api privacy",
     "irctc data policy",
     "indian railways api privacy",
@@ -187,7 +187,7 @@ export default function PrivacyPage() {
                     <p className="mb-3.5 last:mb-0">Reach out and we will get back to you.</p>
                     <p>
                       <a
-                        href="mailto:lucky81205+irctc@gmail.com?subject=IRCTC%20Connect%20Privacy"
+                        href="mailto:lucky81205+irctc@gmail.com?subject=RailKit%20Privacy"
                         className="inline-flex items-center gap-2 border-b border-neutral-300 pb-0.5 text-sm font-medium text-black transition-colors hover:border-black"
                       >
                         <Mail size={14} />

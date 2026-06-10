@@ -301,11 +301,11 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
 
   return (
     <Document
-      title={`${data.invoiceNumber} - IRCTC Connect`}
+      title={`${data.invoiceNumber} - RailKit`}
       author="Rajiv Dubey"
-      subject="IRCTC Connect invoice"
-      creator="IRCTC Connect"
-      producer="IRCTC Connect"
+      subject="RailKit invoice"
+      creator="RailKit"
+      producer="RailKit"
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.top}>
@@ -321,8 +321,8 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
             )}
 
             <Text style={styles.senderName}>Rajiv Dubey</Text>
-            <Text style={styles.textLine}>IRCTC Connect</Text>
-            <Text style={styles.textLine}>irctc.rajivdubey.dev</Text>
+            <Text style={styles.textLine}>RailKit</Text>
+            <Text style={styles.textLine}>railkit.rajivdubey.dev</Text>
             <Text style={styles.textLine}>lucky81205+irctc@gmail.com</Text>
 
             <View style={styles.billTo}>
@@ -364,7 +364,7 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
           </View>
           <View style={styles.tableRow}>
             <View style={styles.itemCell}>
-              <Text style={styles.itemName}>IRCTC Connect - {data.planDetails.displayName}</Text>
+              <Text style={styles.itemName}>RailKit - {data.planDetails.displayName}</Text>
               <Text style={styles.itemDescription}>{itemDescription}</Text>
             </View>
             <Text style={styles.qtyCell}>1</Text>
@@ -387,7 +387,7 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
         <View style={styles.notes}>
           <Text style={styles.sectionLabel}>Notes:</Text>
           <Text style={styles.noteParagraph}>
-            Thank you for subscribing to IRCTC Connect! If you need a higher limit or have any
+            Thank you for subscribing to RailKit! If you need a higher limit or have any
             questions, reply to this email or reach me on Signal.
           </Text>
 

@@ -13,7 +13,7 @@ interface IUser {
 }
 
 const senderEmail = "irctc@rajivdubey.dev";
-const senderName = "IRCTC Connect";
+const senderName = "RailKit";
 const replyToEmail = "lucky81205+irctc@gmail.com";
 const replyToName = "Rajiv Dubey";
 
@@ -49,7 +49,7 @@ const welcomeTemplateHtml = (user: IUser): string => {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to IRCTC Connect</title>
+  <title>Welcome to RailKit</title>
 </head>
 <body style="
   margin: 0;
@@ -78,13 +78,13 @@ const welcomeTemplateHtml = (user: IUser): string => {
           <tr>
             <td style="background: #18181b; padding: 36px 40px 28px; text-align: center;">
               <img
-                src="https://irctc.rajivdubey.dev/icon.png"
-                alt="IRCTC Connect"
+                src="https://railkit.rajivdubey.dev/icon.png"
+                alt="RailKit"
                 width="52" height="52"
                 style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); display: block; margin: 0 auto 14px;"
               />
               <h1 style="margin: 0 0 4px; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px;">
-                IRCTC Connect
+                RailKit
               </h1>
               <p style="margin: 0; color: #a1a1aa; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;">
                 Your Smart Rail Companion
@@ -103,7 +103,7 @@ const welcomeTemplateHtml = (user: IUser): string => {
 
               <!-- Personal note -->
               <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.75; color: #3f3f46;">
-                Really appreciate you subscribing to IRCTC Connect. I built this as a side project to make
+                Really appreciate you subscribing to RailKit. I built this as a side project to make
                 working with IRCTC data easy for developers, and it genuinely means a lot when someone finds it useful.
               </p>
               <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.75; color: #3f3f46;">
@@ -160,7 +160,7 @@ const welcomeTemplateHtml = (user: IUser): string => {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="https://irctc.rajivdubey.dev/dashboard" target="_blank" rel="noopener noreferrer"
+                    <a href="https://railkit.rajivdubey.dev/dashboard" target="_blank" rel="noopener noreferrer"
                       style="
                         display: inline-block;
                         background: #18181b;
@@ -186,7 +186,7 @@ const welcomeTemplateHtml = (user: IUser): string => {
             <td style="background: #fafafa; border-top: 1px solid #e4e4e7; padding: 20px 40px; text-align: center;">
               <p style="margin: 0 0 4px; font-size: 13px; color: #71717a;">
                 Built with ❤️ by Rajiv Dubey ·
-                <a href="https://irctc.rajivdubey.dev" style="color: #18181b; text-decoration: none;">irctc.rajivdubey.dev</a>
+                <a href="https://railkit.rajivdubey.dev" style="color: #18181b; text-decoration: none;">railkit.rajivdubey.dev</a>
               </p>
               <p style="margin: 0; font-size: 11px; color: #d4d4d8;">
                 You're receiving this because you subscribed with ${user.email}

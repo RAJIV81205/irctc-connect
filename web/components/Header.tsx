@@ -449,10 +449,10 @@ export function Header() {
             )}
             <Link href="/" className="hdr-logo">
               <div className="hdr-logo-mark">
-                <Image src="/icon.png" alt="IRCTC Connect" width={20} height={20} style={{ objectFit: "contain" }} />
+                <Image src="/icon.png" alt="RailKit" width={20} height={20} style={{ objectFit: "contain" }} />
               </div>
               <span className="hdr-logo-name">
-                IRCTC Connect<sup>®</sup>
+                RailKit<sup>®</sup>
               </span>
             </Link>
           </div>

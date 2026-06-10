@@ -279,7 +279,7 @@ function AuthPageInner() {
       `}</style>
 
       <div className="auth-wrap">
-        <p className="auth-eyebrow">IRCTC Connect</p>
+        <p className="auth-eyebrow">RailKit</p>
 
         <h1 className="auth-heading">
           Your API key,<br />

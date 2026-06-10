@@ -1,13 +1,13 @@
-export const SITE_NAME = "IRCTC Connect";
+export const SITE_NAME = "RailKit";
 export const SITE_TITLE =
-  "IRCTC Connect - Indian Railways API & Node.js SDK for PNR Status, Live Train Tracking & Seat Availability";
+  "RailKit - Indian Railways API & Node.js SDK for PNR Status, Live Train Tracking & Seat Availability";
 export const SITE_DESCRIPTION =
-  "IRCTC Connect is a developer-first Indian Railways REST API and Node.js SDK. Check PNR status, track live trains, search trains between stations, view seat availability, fare, and station boards in real time.";
+  "RailKit is a developer-first Indian Railways REST API and Node.js SDK. Check PNR status, track live trains, search trains between stations, view seat availability, fare, and station boards in real time.";
 
 // Primary brand + product keywords (high-intent, brand-defining).
 export const PRIMARY_KEYWORDS = [
   "irctc",
-  "irctc connect",
+  "railkit",
   "irctc api",
   "irctc sdk",
   "irctc developer",
@@ -17,7 +17,7 @@ export const PRIMARY_KEYWORDS = [
   "irctc nodejs",
   "irctc npm",
   "irctc npm package",
-  "irctc connect npm",
+  "railkit npm",
   "irctc package for nodejs",
   "irctc integration nodejs",
   "node.js irctc package",
@@ -112,7 +112,7 @@ export const OG_IMAGE_WIDTH = 512;
 export const OG_IMAGE_HEIGHT = 512;
 
 export function getSiteUrl(): string {
-  const raw = "https://irctc.rajivdubey.dev";
+  const raw = "https://railkit.rajivdubey.dev";
   return raw.replace(/\/+$/, "");
 }
 

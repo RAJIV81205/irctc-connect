@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = buildMetadata({
   title: "Pricing",
   description:
-    "Compare IRCTC Connect pricing plans for Indian Railways API access. Free, Pro and Enterprise tiers with monthly request limits, seat-availability quota, and priority support.",
+    "Compare RailKit pricing plans for Indian Railways API access. Free, Pro and Enterprise tiers with monthly request limits, seat-availability quota, and priority support.",
   path: "/pricing",
   keywords: [
     "irctc api pricing",

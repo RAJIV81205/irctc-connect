@@ -215,7 +215,7 @@ const search = await searchTrainBetweenStations("NDLS", "BCT");
 const seats  = await getAvailability("12496","ASN","DDU","27-12-2025","2A","GN");
 const fare   = await fareLookup("12313","ASN","NDLS","06-06-2026","3A","GN");`;
 
-const docsBaseUrl = "https://irctc.rajivdubey.dev/docs";
+const docsBaseUrl = "https://railkit.rajivdubey.dev/docs";
 
 export default function DocsPage() {
   const { sidebarOpen, setSidebarOpen } = useTheme();
@@ -236,7 +236,7 @@ export default function DocsPage() {
       .map((id) => { const s = flatSections.find((i) => i.id === id); return s ? `- [${s.label}](${docsBaseUrl}#${s.id})` : null; })
       .filter(Boolean).join("\n");
 
-    return `# IRCTC Connect - Implementation Essentials\n\n## Official Links\n- Docs: [${docsBaseUrl}](${docsBaseUrl})\n- NPM: [${packageInfo.links.npm}](${packageInfo.links.npm})\n- GitHub: [${packageInfo.links.github}](${packageInfo.links.github})\n\n## Quick Setup\n\`\`\`bash\n${installSnippet}\n\`\`\`\n\n\`\`\`javascript\n${quickStartSnippet}\n\`\`\`\n\n## Section Links\n${sectionLinks}\n\n## Endpoint Contracts\n${endpointDetails}\n\n## Required Input Rules\n- PNR: exactly 10 digits\n- Train number: exactly 5 digits (string)\n- Date: DD-MM-YYYY\n- Station code: uppercase\n\n## Response Handling\nSuccess: \`{ success: true, data: { ... } }\`\nError: \`{ success: false, message: "..." }\`\n\nAlso handle:\n\`\`\`ts\n${responseFormats.error}\n\`\`\``;
+    return `# RailKit - Implementation Essentials\n\n## Official Links\n- Docs: [${docsBaseUrl}](${docsBaseUrl})\n- NPM: [${packageInfo.links.npm}](${packageInfo.links.npm})\n- GitHub: [${packageInfo.links.github}](${packageInfo.links.github})\n\n## Quick Setup\n\`\`\`bash\n${installSnippet}\n\`\`\`\n\n\`\`\`javascript\n${quickStartSnippet}\n\`\`\`\n\n## Section Links\n${sectionLinks}\n\n## Endpoint Contracts\n${endpointDetails}\n\n## Required Input Rules\n- PNR: exactly 10 digits\n- Train number: exactly 5 digits (string)\n- Date: DD-MM-YYYY\n- Station code: uppercase\n\n## Response Handling\nSuccess: \`{ success: true, data: { ... } }\`\nError: \`{ success: false, message: "..." }\`\n\nAlso handle:\n\`\`\`ts\n${responseFormats.error}\n\`\`\``;
   }, [flatSections]);
 
   const scrollToSection = (sectionId: string) => {
@@ -480,7 +480,7 @@ export default function DocsPage() {
             {/* ── Introduction ── */}
             <section id="introduction" className="docs-section docs-reveal">
               <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9ca3af", marginBottom: 12 }}>
-                IRCTC Connect SDK
+                RailKit SDK
               </p>
               <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(32px, 4vw, 52px)", fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.025em", color: "#000", marginBottom: 16, maxWidth: 640 }}>
                 Railway API documentation,{" "}
