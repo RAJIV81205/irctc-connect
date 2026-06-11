@@ -323,7 +323,7 @@ function InvoiceDocument({ data }: { data: InvoiceData }) {
             <Text style={styles.senderName}>Rajiv Dubey</Text>
             <Text style={styles.textLine}>RailKit</Text>
             <Text style={styles.textLine}>railkit.rajivdubey.dev</Text>
-            <Text style={styles.textLine}>lucky81205+irctc@gmail.com</Text>
+            <Text style={styles.textLine}>lucky81205+railkit@gmail.com</Text>
 
             <View style={styles.billTo}>
               <Text style={styles.sectionLabel}>Bill To:</Text>

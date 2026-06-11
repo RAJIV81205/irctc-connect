@@ -37,7 +37,7 @@ const contactCards = [
 			"Best for detailed requests, billing questions, and anything that needs a written trail.",
 		primaryLabel: "Email Me",
 		primaryHref:
-			"mailto:lucky81205+irctc@gmail.com?subject=IRCTC%20Connect%20Contact",
+			"mailto:lucky81205+railkit@gmail.com?subject=IRCTC%20Connect%20Contact",
 		secondaryLabel: "Open Pricing",
 		secondaryHref: "/pricing",
 	},
@@ -88,7 +88,7 @@ const communityLinks = [
 		icon: Mail,
 		label: "Direct Updates",
 		sub: "Announcements and support replies",
-		href: "mailto:lucky81205+irctc@gmail.com?subject=IRCTC%20Connect%20Updates",
+		href: "mailto:lucky81205+railkit@gmail.com?subject=IRCTC%20Connect%20Updates",
 	},
 ] as const;
 
@@ -165,7 +165,7 @@ export default function ContactPage() {
 						enterprise onboarding. No long form. Just direct channels.
 					</p>
 					<div className="cp-hero-cta">
-						<Link href="mailto:lucky81205+irctc@gmail.com" className="cp-btn-primary">
+						<Link href="mailto:lucky81205+railkit@gmail.com" className="cp-btn-primary">
 							Email the Team
 							<ArrowRight size={15} />
 						</Link>
@@ -265,7 +265,7 @@ export default function ContactPage() {
 								critical journeys resilient.
 							</p>
 							<a
-								href="mailto:lucky81205+irctc@gmail.com?subject=IRCTC%20Connect%20Reliability%20Questions"
+								href="mailto:lucky81205+railkit@gmail.com?subject=IRCTC%20Connect%20Reliability%20Questions"
 								className="cp-inline-link"
 							>
 								Ask about reliability practices

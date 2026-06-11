@@ -69,17 +69,7 @@ const webPageSchema = {
 
 export default function PrivacyPage() {
   return (
-    <>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-
-      <main className="min-h-screen bg-white text-black font-[Inter,system-ui,sans-serif]">
+    <main className="min-h-screen bg-white text-black font-[Inter,system-ui,sans-serif]">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
@@ -187,11 +177,11 @@ export default function PrivacyPage() {
                     <p className="mb-3.5 last:mb-0">Reach out and we will get back to you.</p>
                     <p>
                       <a
-                        href="mailto:lucky81205+irctc@gmail.com?subject=RailKit%20Privacy"
+                        href="mailto:lucky81205+railkit@gmail.com?subject=RailKit%20Privacy"
                         className="inline-flex items-center gap-2 border-b border-neutral-300 pb-0.5 text-sm font-medium text-black transition-colors hover:border-black"
                       >
                         <Mail size={14} />
-                        lucky81205+irctc@gmail.com
+                        lucky81205+railkit@gmail.com
                       </a>
                     </p>
                   </div>
@@ -224,6 +214,5 @@ export default function PrivacyPage() {
           </div>
         </footer>
       </main>
-    </>
   );
 }

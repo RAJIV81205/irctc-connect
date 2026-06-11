@@ -41,7 +41,7 @@ export default async function PricingPage() {
 
   const plans = JSON.parse(JSON.stringify(config?.plans || []));
   const offerEndsAt = config?.offerEndsAt ?? null;
-  const contactEmail = config?.contactEmail || "lucky81205+irctc@gmail.com";
+  const contactEmail = config?.contactEmail || "lucky81205+railkit@gmail.com";
 
   return (
     <>

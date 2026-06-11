@@ -48,7 +48,7 @@ export type PlanConfigShape = {
 export const PLAN_CONFIG: PlanConfigShape = {
   key: "default",
   offerEndsAt: null,
-  contactEmail: "lucky81205+irctc@gmail.com",
+  contactEmail: "lucky81205+railkit@gmail.com",
   plans: [
     {
       id: "free",
@@ -185,161 +185,251 @@ export type LegalDocument = {
 };
 
 export const TERMS_AND_CONDITIONS: LegalDocument = {
-  "title": "Terms and Conditions",
-  "lastUpdated": "2026-06-02",
-  "sections": [
+  title: "Terms and Conditions",
+  lastUpdated: "2026-06-02",
+  sections: [
     {
-        "heading": "Acceptance of Terms",
-        "items": [
-        "By accessing or using RailKit, you agree to be bound by these Terms.",
-        "If you do not agree, you must stop using the Service.",
-        "Continued use after updates indicates acceptance of the revised Terms.",
-      ]
-      },
-    {
-        "heading": "Service Description",
-        "items": [
-        "RailKit provides APIs and developer tools that aggregate and process railway-related information.",
-        "Access to the service does not grant ownership of any data, software, infrastructure, documentation, or intellectual property.",
-      ]
-      },
-    {
-        "heading": "API License",
-        "items": [
-        "RailKit grants a limited, non-exclusive, non-transferable, revocable license to access and use the API.",
-        "The license is governed by your active subscription plan and these Terms.",
-        "All rights not expressly granted are reserved by RailKit.",
-      ]
-      },
-    {
-      "heading": "API Key Security",
-      "items": [
-        "API keys are issued to a single account and must remain confidential.",
-        "API keys may not be shared, transferred, sold, leased, sublicensed, or provided to any third party.",
-        "Users are responsible for all activity performed using their API keys.",
-        "Users must immediately notify RailKit if they suspect unauthorized access."
+      heading: "Acceptance of Terms",
+      items: [
+        "By accessing, purchasing, or using RailKit, you agree to be bound by these Terms and Conditions.",
+        "If you do not agree with any part of these Terms, you must immediately discontinue use of the Service.",
+        "Continued use of RailKit following any modification of these Terms constitutes acceptance of the revised Terms."
       ]
     },
+
     {
-      "heading": "Prohibited Uses",
-      "items": [
-        "Reselling API access or API responses.",
-        "Redistributing API data to third parties.",
-        "Creating a competing railway API service.",
-        "Providing API responses as a standalone product.",
-        "Sharing API keys with clients, partners, or other organizations.",
-        "Creating multiple accounts to bypass limits.",
-        "Circumventing quotas, authentication systems, or rate limits.",
-        "Reverse engineering platform functionality.",
-        "Using the service for unlawful purposes."
+      heading: "Independent Service Disclaimer",
+      items: [
+        "RailKit is an independent developer platform.",
+        "RailKit is not affiliated with, endorsed by, authorized by, sponsored by, or officially connected with Indian Railways, IRCTC, CRIS, the Government of India, or any railway authority.",
+        "RailKit is not an official source of railway information.",
+        "Users must independently verify information before relying upon it for operational, financial, legal, regulatory, commercial, or customer-facing purposes.",
+        "Use of RailKit does not imply any relationship with or approval from any government organization."
       ]
     },
+
     {
-      "heading": "Data Storage Restrictions",
-      "items": [
-        "Users may not copy, export, scrape, mirror, archive, or permanently store substantial portions of RailKit data.",
-        "Users may not build independent databases using RailKit data.",
-        "Users may not create historical datasets, analytics warehouses, or commercial repositories derived primarily from RailKit data.",
-        "Temporary caching for application functionality is permitted when necessary.",
-        "Stored data may not be redistributed, resold, or exposed through another service."
+      heading: "Service Description",
+      items: [
+        "RailKit provides APIs, developer tools, and related services that aggregate, process, and present railway-related information in a developer-friendly format.",
+        "The Service is intended primarily for developers, experimentation, learning, prototyping, and lightweight integrations.",
+        "Access to RailKit does not transfer ownership of any software, infrastructure, documentation, intellectual property, or service components."
       ]
     },
+
     {
-        "heading": "Commercial Usage",
-        "items": [
-        "Commercial use is permitted only under an active subscription.",
-        "All restrictions in these Terms apply to both free and paid usage.",
-        "Misuse may result in suspension, termination, or legal action.",
-      ]
-      },
-    {
-        "heading": "Rate Limits and Fair Usage",
-        "items": [
-        "All plans are subject to rate limits, quotas, and fair usage policies.",
-        "Limits may be enforced per API key, per account, or per IP range.",
-        "Excessive usage may result in throttling, suspension, or termination.",
-      ]
-      },
-    {
-      "heading": "Security and Suspicious Activity",
-      "items": [
-        "RailKit may monitor API activity to maintain platform security.",
-        "Any suspicious, abusive, fraudulent, or unauthorized activity may result in immediate suspension or termination.",
-        "Suspicious activity includes unusual request patterns, credential sharing, scraping, quota abuse, automated account creation, resale attempts, and security violations.",
-        "Users may be asked to provide additional verification during investigations.",
-        "RailKit reserves the sole right to determine whether activity is suspicious or abusive."
+      heading: "API License",
+      items: [
+        "RailKit grants a limited, non-exclusive, non-transferable, non-sublicensable, revocable license to access and use the Service.",
+        "The license remains valid only while the user's account is active and compliant with these Terms.",
+        "All rights not expressly granted are reserved by RailKit."
       ]
     },
+
     {
-      "heading": "Account Suspension and Termination",
-      "items": [
-        "Accounts may be suspended or terminated without prior notice.",
-        "Termination may occur due to key sharing, resale, abuse, data extraction, suspicious activity, or violations of these Terms.",
-        "All licenses granted under these Terms immediately cease upon termination.",
-        "Associated API keys, IP addresses, applications, and organizations may also be blocked."
+      heading: "API Key Security",
+      items: [
+        "API keys are issued to individual accounts and must remain confidential.",
+        "Users may not share, transfer, lease, sell, sublicense, publish, or distribute API keys.",
+        "Users are solely responsible for all activity performed using their API keys.",
+        "Users must immediately notify RailKit of any suspected unauthorized access or compromise."
       ]
     },
+
     {
-      "heading": "Payments and Refunds",
-      "items": [
+      heading: "Commercial Usage",
+      items: [
+        "Commercial usage is permitted only through an active paid subscription.",
+        "RailKit is an independent developer project and is not marketed as enterprise-grade infrastructure.",
+        "Businesses integrating RailKit do so entirely at their own risk.",
+        "RailKit makes no guarantees regarding suitability for commercial operations, business continuity, compliance requirements, customer obligations, production workloads, or operational decision-making.",
+        "Users are solely responsible for determining whether RailKit is appropriate for their intended use."
+      ]
+    },
+
+    {
+      heading: "Prohibited Uses",
+      items: [
+        "Reselling API access, API responses, or any RailKit-derived service.",
+        "Redistributing RailKit data to third parties.",
+        "Providing RailKit responses through another API, platform, product, or service.",
+        "Creating a competing railway information service or API.",
+        "Building derivative products whose primary value is RailKit data.",
+        "Sharing API keys with customers, clients, partners, contractors, or other organizations.",
+        "Creating multiple accounts to bypass quotas, restrictions, pricing, or enforcement actions.",
+        "Attempting to circumvent authentication systems, security controls, quotas, or rate limits.",
+        "Reverse engineering, probing, testing, or attempting to discover internal implementation details.",
+        "Using RailKit for unlawful, fraudulent, deceptive, abusive, or unauthorized purposes."
+      ]
+    },
+
+    {
+      heading: "Data Usage and Storage Restrictions",
+      items: [
+        "Users may not create, maintain, replicate, enrich, archive, export, mirror, scrape, or distribute databases derived substantially from RailKit data.",
+        "Users may not use RailKit as a source for building permanent railway information repositories.",
+        "Users may not create historical datasets, commercial archives, analytics warehouses, or large-scale repositories derived primarily from RailKit data.",
+        "Long-term retention of RailKit data is prohibited except for temporary application functionality.",
+        "Temporary caching is permitted only to improve application performance and must not be used to avoid API usage.",
+        "Stored data may not be redistributed, resold, licensed, exposed through another service, or made publicly available.",
+        "RailKit reserves sole discretion in determining whether a user's storage or caching practices violate these Terms."
+      ]
+    },
+
+    {
+      heading: "Acceptable Use of Data",
+      items: [
+        "RailKit data may only be used within applications owned or operated by the subscribing user.",
+        "Users may not expose bulk data feeds, downloadable datasets, public APIs, exports, or derivative services primarily based on RailKit data.",
+        "Users may not use RailKit data to create competing platforms, marketplaces, aggregators, analytics products, or commercial data repositories."
+      ]
+    },
+
+    {
+      heading: "Rate Limits and Fair Usage",
+      items: [
+        "All plans are subject to request limits, quotas, fair usage requirements, and technical restrictions.",
+        "Rate limits may be enforced per API key, account, IP address, application, organization, or other identifiers.",
+        "RailKit may throttle, restrict, suspend, or terminate access where usage adversely affects service stability or violates fair usage policies.",
+        "Unused request quotas do not carry over unless explicitly stated."
+      ]
+    },
+
+    {
+      heading: "Security and Suspicious Activity",
+      items: [
+        "RailKit may monitor service activity for security, fraud prevention, abuse detection, compliance, and operational purposes.",
+        "Any suspicious, abusive, fraudulent, unauthorized, or potentially harmful activity may result in immediate restriction, suspension, or termination.",
+        "Examples include credential sharing, unusual request patterns, scraping, quota abuse, automated account creation, resale attempts, data harvesting, or security violations.",
+        "Users may be required to provide additional verification during investigations.",
+        "RailKit reserves sole discretion in determining whether activity is suspicious or abusive."
+      ]
+    },
+
+    {
+      heading: "Account Suspension and Termination",
+      items: [
+        "RailKit may suspend, restrict, disable, or terminate accounts without prior notice.",
+        "Violations involving resale, redistribution, key sharing, abuse, data extraction, suspicious activity, or breaches of these Terms may result in immediate termination.",
+        "All licenses and access rights immediately cease upon termination.",
+        "Associated API keys, accounts, IP addresses, domains, applications, organizations, and related resources may also be blocked."
+      ]
+    },
+
+    {
+      heading: "Payments and Refunds",
+      items: [
         "All payments are final.",
-        "Subscriptions are non-refundable.",
-        "Unused API requests or credits are non-refundable.",
-        "No refunds will be issued for account suspensions resulting from policy violations.",
-        "Chargebacks or fraudulent payment disputes may result in immediate account termination.",
-        "Users are responsible for evaluating the service before purchase."
+        "Subscriptions, credits, and usage fees are non-refundable unless required by applicable law.",
+        "Unused requests, quotas, or subscription periods are non-refundable.",
+        "No refunds will be provided for suspensions or terminations resulting from violations of these Terms.",
+        "Users are responsible for evaluating the Service before purchasing a subscription.",
+        "Chargebacks, payment fraud, or abusive dispute activity may result in immediate account termination."
       ]
     },
+
     {
-        "heading": "Service Availability",
-        "items": [
-        "RailKit does not guarantee uninterrupted availability.",
-        "Maintenance, outages, upgrades, or third-party failures may affect service.",
-        "Service-level commitments, if any, are described separately in your plan.",
+      heading: "Third-Party Data Sources",
+      items: [
+        "RailKit may rely on third-party systems, publicly available information, external services, and infrastructure providers.",
+        "RailKit does not control such third-party sources and cannot guarantee their availability, continuity, legality, accuracy, completeness, or future accessibility.",
+        "Changes made by third-party providers may affect RailKit without notice.",
+        "RailKit is not responsible for inaccuracies, interruptions, delays, or failures resulting from third-party systems."
       ]
-      },
+    },
+
     {
-        "heading": "Intellectual Property",
-        "items": [
-        "All software, branding, APIs, and documentation are owned by RailKit.",
-        "Infrastructure, logos, designs, and platform components are also included.",
-        "No transfer of ownership is implied by use of the Service.",
+      heading: "Service Availability",
+      items: [
+        "RailKit is provided on a best-effort basis.",
+        "No service level agreement (SLA), uptime commitment, availability guarantee, reliability guarantee, or response-time guarantee is provided unless explicitly agreed in writing.",
+        "Maintenance, outages, upgrades, infrastructure failures, data source changes, technical issues, force majeure events, or third-party failures may affect service availability.",
+        "The Service may become unavailable at any time without prior notice."
       ]
-      },
+    },
+
     {
-        "heading": "Disclaimer",
-        "items": [
-        "The service is provided on an 'as-is' and 'as-available' basis.",
-        "RailKit disclaims all warranties, express or implied.",
-        "We do not guarantee accuracy, completeness, or availability of any information.",
+      heading: "Business Dependency Disclaimer",
+      items: [
+        "Users must not treat RailKit as their sole source of operationally critical railway information.",
+        "Users are responsible for maintaining backup systems, fallback providers, alternative solutions, and contingency plans where business continuity is important.",
+        "RailKit shall not be responsible for losses arising from outages, service interruptions, reduced availability, data changes, or service discontinuation.",
+        "Users acknowledge that RailKit may be modified, restricted, suspended, or discontinued at any time."
       ]
-      },
+    },
+
     {
-        "heading": "Limitation of Liability",
-        "items": [
-        "RailKit is not liable for direct or indirect damages.",
-        "This includes incidental, consequential, special, or punitive damages.",
-        "This limitation applies to the maximum extent permitted by law.",
+      heading: "Service Modifications and Discontinuation",
+      items: [
+        "RailKit reserves the right to modify, suspend, restrict, replace, remove, or discontinue any feature, endpoint, API version, pricing plan, subscription tier, or service component at any time.",
+        "RailKit has no obligation to continue operating any part of the Service indefinitely.",
+        "No compensation, migration assistance, replacement services, consulting services, source code access, technical support, or continued operation shall be owed following service modifications or discontinuation except where required by law."
       ]
-      },
+    },
+
     {
-        "heading": "Changes to Terms",
-        "items": [
-        "RailKit may modify these Terms at any time.",
-        "Updates will be reflected by revising the 'lastUpdated' value.",
-        "Continued use of the service constitutes acceptance of the updated Terms.",
+      heading: "Intellectual Property",
+      items: [
+        "All RailKit software, APIs, branding, documentation, infrastructure, website content, designs, logos, and platform components are protected by applicable intellectual property laws.",
+        "No ownership rights are transferred through use of the Service.",
+        "Users may not copy, reproduce, distribute, modify, or create derivative works from RailKit except as expressly permitted."
       ]
-      },
+    },
+
     {
-        "heading": "Governing Law",
-        "items": [
-        "These Terms are governed by the laws of India.",
-        "Any disputes will be resolved in the competent courts of India.",
-        "Mandatory consumer protection laws of your jurisdiction still apply where required.",
+      heading: "Disclaimer of Warranties",
+      items: [
+        "The Service is provided on an 'AS IS' and 'AS AVAILABLE' basis.",
+        "RailKit expressly disclaims all warranties, whether express, implied, statutory, or otherwise.",
+        "RailKit does not guarantee accuracy, completeness, reliability, availability, suitability, performance, or fitness for any particular purpose.",
+        "Users assume all risks associated with use of the Service."
       ]
-      }
+    },
+
+    {
+      heading: "Limitation of Liability",
+      items: [
+        "To the maximum extent permitted by law, RailKit and its owner shall not be liable for any direct, indirect, incidental, consequential, special, exemplary, punitive, or economic damages.",
+        "This includes loss of revenue, profits, business opportunities, customers, goodwill, data, contracts, operational capability, or business continuity.",
+        "RailKit shall not be liable for decisions made based on information obtained through the Service.",
+        "In all circumstances, RailKit's total aggregate liability shall not exceed the amount paid by the user to RailKit during the thirty (30) days preceding the event giving rise to the claim."
+      ]
+    },
+
+    {
+      heading: "Indemnification",
+      items: [
+        "Users agree to defend, indemnify, and hold harmless RailKit and its owner from any claims, liabilities, damages, losses, expenses, legal costs, or demands arising from their use of the Service, violation of these Terms, misuse of API data, or infringement of third-party rights."
+      ]
+    },
+
+    {
+      heading: "No Agency Relationship",
+      items: [
+        "Nothing in these Terms creates any partnership, joint venture, employment relationship, agency relationship, franchise relationship, or official representation between RailKit and any user.",
+        "Users may not represent themselves as official partners, distributors, agents, or representatives of RailKit."
+      ]
+    },
+
+    {
+      heading: "Changes to Terms",
+      items: [
+        "RailKit may update these Terms at any time.",
+        "Changes become effective upon publication.",
+        "Continued use of the Service after publication constitutes acceptance of the revised Terms."
+      ]
+    },
+
+    {
+      heading: "Governing Law",
+      items: [
+        "These Terms shall be governed by and construed in accordance with the laws of India.",
+        "Any disputes arising from or relating to the Service shall be subject to the exclusive jurisdiction of the courts located in West Bengal, India.",
+        "Mandatory consumer protection rights under applicable law shall remain unaffected where legally required."
+      ]
+    }
   ]
-}
+};
 
 
 export const PRIVACY_POLICY: LegalDocument = {
