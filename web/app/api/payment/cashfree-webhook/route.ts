@@ -5,15 +5,31 @@ import { applyOrderPaymentState } from "@/lib/payments/order";
 
 type CashfreeWebhookPayload = {
   type?: string;
+  event_time?: string;
   data?: {
     order?: {
       order_id?: string;
       order_status?: string;
+      order_amount?: number;
+      order_currency?: string;
+      order_tags?: Record<string, string | undefined> | null;
     };
     payment?: {
       cf_payment_id?: string | number;
       payment_status?: string;
+      payment_amount?: number;
+      payment_currency?: string;
+      payment_message?: string;
+      bank_reference?: string | null;
+      auth_id?: string | null;
     };
+    customer_details?: {
+      customer_id?: string;
+      customer_email?: string;
+      customer_phone?: string;
+      customer_name?: string;
+    };
+    payment_gateway_details?: Record<string, unknown> | null;
   };
 };
 
@@ -22,8 +38,8 @@ function getVerifiedWebhookPayload(
   rawBody: string
 ): CashfreeWebhookPayload {
   const objectPayload =
-    typeof verified === "object" && verified !== null && "object" in verified
-      ? (verified as { object?: unknown }).object
+    typeof verified === "object" && verified !== null
+      ? (verified as { object?: unknown }).object ?? verified
       : verified;
 
   if (typeof objectPayload === "string") {
@@ -67,12 +83,20 @@ export async function POST(request: Request) {
     );
 
     const eventPayload = getVerifiedWebhookPayload(verified, rawBody);
-    const orderId = eventPayload?.data?.order?.order_id;
+    const eventType = eventPayload?.type?.toUpperCase() || null;
+    const orderId = eventPayload?.data?.order?.order_id?.trim();
     const paymentStatus = eventPayload?.data?.payment?.payment_status || null;
     const orderStatus =
       eventPayload?.data?.order?.order_status ||
       getOrderStatusForPaymentStatus(paymentStatus);
-    const transactionReference = eventPayload?.data?.payment?.cf_payment_id;
+    const transactionReference =
+      eventPayload?.data?.payment?.cf_payment_id ||
+      eventPayload?.data?.payment?.bank_reference ||
+      eventPayload?.data?.payment?.auth_id ||
+      null;
+    const isSuccessfulPayment =
+      paymentStatus?.toUpperCase() === "SUCCESS" ||
+      eventType === "PAYMENT_SUCCESS_WEBHOOK";
 
     if (!orderId) {
       return NextResponse.json(
@@ -81,13 +105,21 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!orderStatus && !paymentStatus && !isSuccessfulPayment) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "webhook accepted without actionable payment state",
+        },
+        { status: 200 }
+      );
+    }
+
     await applyOrderPaymentState({
       orderId,
       orderStatus,
       paymentStatus,
-      transactionReference: transactionReference
-        ? String(transactionReference)
-        : null,
+      transactionReference: transactionReference ? String(transactionReference) : null,
       source: "webhook",
     });
 

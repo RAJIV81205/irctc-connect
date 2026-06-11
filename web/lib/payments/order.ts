@@ -50,9 +50,9 @@ export async function applyOrderPaymentState(input: PaymentStateInput) {
 
   order.status = paid ? "paid" : nextStatus;
   order.paymentStatus = paymentStatus;
-  if (input.orderStatus) {
-    order.cashfreeOrderStatus = input.orderStatus;
-  }
+  order.cashfreeOrderStatus = paid
+    ? "PAID"
+    : input.orderStatus || order.cashfreeOrderStatus || null;
   if (input.transactionReference) {
     order.transactionReference = input.transactionReference;
   }
