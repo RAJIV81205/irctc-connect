@@ -14,6 +14,7 @@ import {
   CheckCircle,
   ChevronRight,
   Gamepad2,
+  History,
   IndianRupee,
   MapPin,
   Package,
@@ -79,6 +80,27 @@ if (result.success) {
 if (result.success) {
   console.log(result.data.statusNote);
   console.log(result.data.timeline);
+}`,
+  },
+  {
+    id: "train-history",
+    title: "Train History",
+    icon: History,
+    description: "Get the completed journey history of a train for a specific date — full station-by-station timeline, per-stop delays, and final coach position once the train has reached its destination.",
+    signature: "getTrainHistory(trainNumber: string, journeyDate: string)",
+    params: [
+      { name: "trainNumber", type: "string", desc: "5-digit train number" },
+      { name: "journeyDate", type: "string", desc: "Journey date in DD-MM-YYYY" },
+    ],
+    example: `const result = await getTrainHistory("12301", "15-04-2025");
+
+if (result.success) {
+  console.log(\`🚂 \${result.data.trainName} — \${result.data.journeyDate}\`);
+
+  result.data.stations.forEach((stop) => {
+    console.log(\`🚉 \${stop.stationName} (\${stop.stationCode}) | PF \${stop.platform}\`);
+    console.log(\`   Arr: \${stop.arrival.scheduled} → \${stop.arrival.actual} (delay \${stop.arrival.delay}m)\`);
+  });
 }`,
   },
   {
@@ -175,6 +197,7 @@ const quickStartSnippet = `import {
   checkPNRStatus,
   getTrainInfo,
   trackTrain,
+  getTrainHistory,
   liveAtStation,
   searchTrainBetweenStations,
   getAvailability,
@@ -186,6 +209,7 @@ configure(process.env.IRCTC_API_KEY);
 const pnr    = await checkPNRStatus("1234567890");
 const train  = await getTrainInfo("12345");
 const live   = await trackTrain("12345", "06-12-2025");
+const hist   = await getTrainHistory("12345", "06-12-2025");
 const stn    = await liveAtStation("NDLS");
 const search = await searchTrainBetweenStations("NDLS", "BCT");
 const seats  = await getAvailability("12496","ASN","DDU","27-12-2025","2A","GN");
@@ -208,7 +232,7 @@ export default function DocsPage() {
       return `### ${ep.title}\nLink: [${docsBaseUrl}#${ep.id}](${docsBaseUrl}#${ep.id})\nSignature: \`${ep.signature}\`\nParameters:\n${params}\n\nExample:\n\`\`\`javascript\n${ep.example}\n\`\`\``;
     }).join("\n\n");
 
-    const sectionLinks = ["installation","quickstart","pnr-status","train-info","live-tracking","station-live","train-search","seat-availability","fare-lookup","validation","errors"]
+    const sectionLinks = ["installation","quickstart","pnr-status","train-info","live-tracking","train-history","station-live","train-search","seat-availability","fare-lookup","validation","errors"]
       .map((id) => { const s = flatSections.find((i) => i.id === id); return s ? `- [${s.label}](${docsBaseUrl}#${s.id})` : null; })
       .filter(Boolean).join("\n");
 

@@ -11,6 +11,7 @@ import {
   BarChart3,
   AlertTriangle,
   Gamepad2,
+  History,
   type LucideIcon,
   Armchair,
   IndianRupee
@@ -58,6 +59,7 @@ export const sidebarGroups: SidebarGroup[] = [
       { id: "pnr-status", label: "PNR Status", icon: Ticket },
       { id: "train-info", label: "Train Information", icon: Train },
       { id: "live-tracking", label: "Live Tracking", icon: MapPin },
+      { id: "train-history", label: "Train History", icon: History },
       { id: "station-live", label: "Live at Station", icon: Building2 },
       { id: "train-search", label: "Train Search", icon: Search },
       { id: "seat-availability", label: "Seat Availability", icon: Armchair },
@@ -89,6 +91,7 @@ export const sections: Array<{ id: string; label: string; icon: LucideIcon }> = 
   { id: "pnr-status", label: "PNR Status", icon: Ticket },
   { id: "train-info", label: "Train Information", icon: Train },
   { id: "live-tracking", label: "Live Tracking", icon: MapPin },
+  { id: "train-history", label: "Train History", icon: History },
   { id: "station-live", label: "Live at Station", icon: Building2 },
   { id: "train-search", label: "Train Search", icon: Search },
   { id: "seat-availability", label: "Seat Availability", icon: Armchair },
@@ -242,6 +245,46 @@ if (result.success) {
   console.log('Delay:', result.data.delay);
 }`,
     note: 'The date parameter must be in DD-MM-YYYY format.'
+  },
+  trainHistory: {
+    title: 'Train History',
+    description: 'Get the completed journey history of a train for a specific journey date. The backend persists a record once the train has reached its destination, including the full station-by-station timeline, per-stop delays, and the final coach position.',
+    signature: 'getTrainHistory(trainNumber: string, journeyDate: string): Promise<Result>',
+    example: `import { getTrainHistory } from 'irctc-connect';
+
+const result = await getTrainHistory('12301', '15-04-2025');
+
+if (result.success) {
+  console.log('Train:', result.data.trainName);
+  console.log('Journey date:', result.data.journeyDate);
+  console.log('Stations:', result.data.stations.length);
+  console.log('Last update:', result.data.lastUpdate);
+}`,
+    responseFields: [
+      { field: 'historyKey', description: 'Composite key (trainNo:journeyDate) used by the backend to look up the record' },
+      { field: 'trainNo', description: '5-digit train number' },
+      { field: 'trainName', description: 'Train name' },
+      { field: 'journeyDate', description: 'Journey date in DD-MM-YYYY format' },
+      { field: 'sourceStationCode', description: 'Source station code' },
+      { field: 'sourceStationName', description: 'Source station name' },
+      { field: 'destinationStationCode', description: 'Destination station code' },
+      { field: 'destinationStationName', description: 'Destination station name' },
+      { field: 'stations[].stationCode', description: 'Stop station code' },
+      { field: 'stations[].stationName', description: 'Stop station name' },
+      { field: 'stations[].platform', description: 'Platform number at the stop' },
+      { field: 'stations[].distanceKm', description: 'Cumulative distance from source in km' },
+      { field: 'stations[].arrival.scheduled', description: 'Scheduled arrival time' },
+      { field: 'stations[].arrival.actual', description: 'Actual arrival time' },
+      { field: 'stations[].arrival.delay', description: 'Arrival delay in minutes' },
+      { field: 'stations[].departure.scheduled', description: 'Scheduled departure time' },
+      { field: 'stations[].departure.actual', description: 'Actual departure time' },
+      { field: 'stations[].departure.delay', description: 'Departure delay in minutes' },
+      { field: 'coachPosition[].type', description: 'Coach type (ENG, 1A, 2A, 3A, SL, etc.)' },
+      { field: 'coachPosition[].number', description: 'Coach number' },
+      { field: 'coachPosition[].position', description: 'Coach position from the engine' },
+      { field: 'lastUpdate', description: 'ISO timestamp of the last update to the record' }
+    ],
+    note: 'Returns 404 with { success: false, error: "Train history record not found" } when the train has not yet reached its destination for the given date.'
   },
   station: {
     title: 'Station Live',

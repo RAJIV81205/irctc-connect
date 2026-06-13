@@ -11,6 +11,7 @@ import {
   configure,
   fareLookup,
   getAvailability,
+  getTrainHistory,
   getTrainInfo,
   liveAtStation,
   searchTrainBetweenStations,
@@ -1041,7 +1042,7 @@ export default function AdminPanel() {
   const [userSearch, setUserSearch] = useState("");
   const [adminApiKey, setAdminApiKey] = useState<string | null>(null);
   const [playgroundAction, setPlaygroundAction] = useState<
-    "pnr" | "train" | "track" | "station" | "search" | "availability" | "fare"
+    "pnr" | "train" | "track" | "history" | "station" | "search" | "availability" | "fare"
   >("pnr");
   const [playgroundInput, setPlaygroundInput] = useState({
     pnr: "",
@@ -1239,6 +1240,15 @@ export default function AdminPanel() {
             throw new Error("Date must be in DD-MM-YYYY format");
           }
           result = await trackTrain(playgroundInput.trainNumber, playgroundInput.journeyDate);
+          break;
+        case "history":
+          if (!/^\d{5}$/.test(playgroundInput.trainNumber)) {
+            throw new Error("Train number must be exactly 5 digits");
+          }
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(playgroundInput.journeyDate)) {
+            throw new Error("Date must be in DD-MM-YYYY format");
+          }
+          result = await getTrainHistory(playgroundInput.trainNumber, playgroundInput.journeyDate);
           break;
         case "station":
           if (!playgroundInput.stationCode.trim()) {
@@ -2794,6 +2804,7 @@ export default function AdminPanel() {
                     { id: "pnr", label: "PNR" },
                     { id: "train", label: "Train" },
                     { id: "track", label: "Track" },
+                    { id: "history", label: "History" },
                     { id: "station", label: "Station" },
                     { id: "search", label: "Search" },
                     { id: "availability", label: "Availability" },
@@ -2881,6 +2892,52 @@ export default function AdminPanel() {
                   )}
 
                   {playgroundAction === "track" && (
+                    <>
+                      <input
+                        value={playgroundInput.trainNumber}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            trainNumber: e.target.value.replace(/\D/g, ""),
+                          }))
+                        }
+                        maxLength={5}
+                        placeholder="Train number"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        type="date"
+                        value={toInputDate(playgroundInput.journeyDate)}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            journeyDate: fromInputDate(e.target.value),
+                          }))
+                        }
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {playgroundAction === "history" && (
                     <>
                       <input
                         value={playgroundInput.trainNumber}

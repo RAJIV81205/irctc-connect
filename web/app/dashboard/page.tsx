@@ -21,6 +21,7 @@ import {
   configure,
   fareLookup,
   getAvailability,
+  getTrainHistory,
   getTrainInfo,
   liveAtStation,
   searchTrainBetweenStations,
@@ -367,7 +368,7 @@ export default function DashboardPage() {
   const [apiCodeLanguage, setApiCodeLanguage] = useState<ApiCodeLanguage>("javascript");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [playgroundAction, setPlaygroundAction] = useState<"pnr" | "train" | "track" | "station" | "search" | "seat" | "fare">("pnr");
+  const [playgroundAction, setPlaygroundAction] = useState<"pnr" | "train" | "track" | "history" | "station" | "search" | "seat" | "fare">("pnr");
   const [playgroundLoading, setPlaygroundLoading] = useState(false);
   const [playgroundStatusCode, setPlaygroundStatusCode] = useState<number | null>(null);
   const [playgroundResponseTime, setPlaygroundResponseTime] = useState<number | null>(null);
@@ -377,6 +378,8 @@ export default function DashboardPage() {
   const [trainInput, setTrainInput] = useState("");
   const [trackTrainInput, setTrackTrainInput] = useState("");
   const [trackDateInput, setTrackDateInput] = useState("");
+  const [historyTrainInput, setHistoryTrainInput] = useState("");
+  const [historyDateInput, setHistoryDateInput] = useState("");
   const [stationInput, setStationInput] = useState("");
   const [stationHoursInput, setStationHoursInput] = useState<"2" | "4" | "8">("2");
   const [fromStationInput, setFromStationInput] = useState("");
@@ -521,6 +524,10 @@ export default function DashboardPage() {
           if (!/^\d{5}$/.test(trackTrainInput)) throw new Error("Train number must be exactly 5 digits");
           if (!/^\d{2}-\d{2}-\d{4}$/.test(trackDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
           result = await trackTrain(trackTrainInput, trackDateInput); break;
+        case "history":
+          if (!/^\d{5}$/.test(historyTrainInput)) throw new Error("Train number must be exactly 5 digits");
+          if (!/^\d{2}-\d{2}-\d{4}$/.test(historyDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
+          result = await getTrainHistory(historyTrainInput, historyDateInput); break;
         case "station":
           if (!stationInput.trim()) throw new Error("Station code is required");
           result = await liveAtStation(stationInput.trim().toUpperCase(), Number(stationHoursInput) as 2 | 4 | 8); break;
@@ -584,13 +591,14 @@ export default function DashboardPage() {
     return `const API_KEY = process.env.IRCTC_API_KEY;\n\nconst response = await fetch("${url}", {\n  method: "GET",\n  headers: {\n    "x-api-key": API_KEY,\n    "accept": "application/json",\n  },\n});\n\nconst data = await response.json();\nconsole.log(data);`;
   };
 
-  const usageExampleCode = `import {\n  configure,\n  checkPNRStatus,\n  getTrainInfo,\n  trackTrain,\n} from "irctc-connect";\n\n// Step 1: configure once with your API key\nconfigure(process.env.IRCTC_API_KEY);\n\n// Check PNR status\nconst pnrResult = await checkPNRStatus("1234567890");\n\n// Get train information\nconst trainResult = await getTrainInfo("12345");\n\n// Track Live Train\nconst liveTrainResult = await trackTrain("12345", "28-03-2026");`;
+  const usageExampleCode = `import {\n  configure,\n  checkPNRStatus,\n  getTrainInfo,\n  trackTrain,\n  getTrainHistory,\n} from "irctc-connect";\n\n// Step 1: configure once with your API key\nconfigure(process.env.IRCTC_API_KEY);\n\n// Check PNR status\nconst pnrResult = await checkPNRStatus("1234567890");\n\n// Get train information\nconst trainResult = await getTrainInfo("12345");\n\n// Track Live Train\nconst liveTrainResult = await trackTrain("12345", "28-03-2026");\n\n// Get Train History (for completed journeys)\nconst historyResult = await getTrainHistory("12345", "28-03-2026");`;
 
   const endpointDocs = [
     { name: "Check PNR Status", method: "GET", path: "/api/checkPNRStatus/:pnr", examplePath: "/api/checkPNRStatus/1234567890", notes: "PNR must be 10 digits." },
     { name: "Get Train Info", method: "GET", path: "/api/getTrainInfo/:trainNumber", examplePath: "/api/getTrainInfo/12345", notes: "Train number must be 5 digits." },
     { name: "Track Train", method: "GET", path: "/api/trackTrain/:trainNumber/:date", examplePath: "/api/trackTrain/12345/28-03-2026", notes: "Date format: DD-MM-YYYY. You can also pass `today` as date." },
     { name: "Live At Station", method: "GET", path: "/api/liveAtStation/:stnCode?hrs=2|4|8", examplePath: "/api/liveAtStation/NDLS?hrs=4", notes: "Use station code in uppercase. Optional ?hrs= query param accepts 2, 4, or 8 (default 2)." },
+    { name: "Get Train History", method: "GET", path: "/api/trainHistory/:trainNo/:journeyDate", examplePath: "/api/trainHistory/12345/15-04-2025", notes: "Date format: DD-MM-YYYY. Returns 404 if the train has not yet completed the journey for that date." },
     { name: "Search Trains Between Stations", method: "GET", path: "/api/searchTrainBetweenStations/:fromStnCode/:toStnCode?date=DD-MM-YYYY", examplePath: "/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026", notes: "Date query param is optional." },
     { name: "Get Seat Availability", method: "GET", path: "/api/getAvailability/:trainNo/:fromStnCode/:toStnCode/:date/:coach/:quota", examplePath: "/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN", notes: "Date format: DD-MM-YYYY." },
     { name: "Fare Lookup", method: "GET", path: "/api/fareLookup/:trainNo/:date/:fromStation/:toStation/:class/:quota", examplePath: "/api/fareLookup/12313/06-06-2026/ASN/NDLS/3A/GN", notes: "Returns full fare breakdown — base fare, GST, dynamic fare, total. Date format: DD-MM-YYYY." },
@@ -1171,7 +1179,7 @@ export default function DashboardPage() {
                   <p style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.7, marginBottom: 16 }}>Run live requests without leaving your workspace.</p>
                   {/* Action pills */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-                    {[{ id: "pnr", label: "PNR" }, { id: "train", label: "Train" }, { id: "track", label: "Track" }, { id: "station", label: "Station" }, { id: "search", label: "Search" }, { id: "seat", label: "Seat" }, { id: "fare", label: "Fare" }].map((item) => (
+                    {[{ id: "pnr", label: "PNR" }, { id: "train", label: "Train" }, { id: "track", label: "Track" }, { id: "history", label: "History" }, { id: "station", label: "Station" }, { id: "search", label: "Search" }, { id: "seat", label: "Seat" }, { id: "fare", label: "Fare" }].map((item) => (
                       <button type="button" key={item.id} onClick={() => { setPlaygroundAction(item.id as typeof playgroundAction); resetPlaygroundMeta(); }}
                         style={{ background: playgroundAction === item.id ? "#000" : "#f3f4f6", border: `1px solid ${playgroundAction === item.id ? "#000" : "#e5e7eb"}`, color: playgroundAction === item.id ? "#fff" : "#6b7280", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "background 0.15s, color 0.15s" }}>
                         {item.label}
@@ -1185,6 +1193,10 @@ export default function DashboardPage() {
                     {playgroundAction === "track" && (<>
                       <input value={trackTrainInput} onChange={(e) => setTrackTrainInput(e.target.value.replace(/\D/g, ""))} maxLength={5} placeholder="Train number" className="db-input" />
                       <input type="date" value={toInputDate(trackDateInput)} onChange={(e) => setTrackDateInput(fromInputDate(e.target.value))} className="db-input" />
+                    </>)}
+                    {playgroundAction === "history" && (<>
+                      <input value={historyTrainInput} onChange={(e) => setHistoryTrainInput(e.target.value.replace(/\D/g, ""))} maxLength={5} placeholder="Train number" className="db-input" />
+                      <input type="date" value={toInputDate(historyDateInput)} onChange={(e) => setHistoryDateInput(fromInputDate(e.target.value))} className="db-input" />
                     </>)}
                     {playgroundAction === "station" && (<>
                       <input value={stationInput} onChange={(e) => setStationInput(e.target.value.toUpperCase())} placeholder="Station code (e.g. NDLS)" className="db-input" />
