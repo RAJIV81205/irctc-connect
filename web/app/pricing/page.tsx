@@ -8,8 +8,23 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = buildMetadata({
   title: "Pricing",
   description:
-    "Compare IRCTC Connect pricing plans for Indian Railways API access, higher usage limits, and enterprise support.",
+    "Compare IRCTC Connect pricing plans for Indian Railways API access. Free, Pro and Enterprise tiers with monthly request limits, seat-availability quota, and priority support.",
   path: "/pricing",
+  keywords: [
+    "irctc api pricing",
+    "irctc connect pricing",
+    "indian railways api pricing",
+    "railway api pricing",
+    "irctc api free tier",
+    "irctc api plans",
+    "irctc api subscription",
+    "irctc pro plan",
+    "irctc enterprise plan",
+    "indian railways api cost",
+    "railway api for developers pricing",
+    "irctc api rate limit pricing",
+    "irctc api monthly cost",
+  ],
 });
 
 const breadcrumbSchema = {

@@ -17,6 +17,16 @@ export const metadata: Metadata = buildMetadata({
   description:
     "Get in touch with the IRCTC Connect team for API support, enterprise onboarding, billing questions, or technical help with the Indian Railways SDK.",
   path: "/contact",
+  keywords: [
+    "irctc connect contact",
+    "irctc api support",
+    "indian railways api support",
+    "irctc developer support",
+    "irctc enterprise onboarding",
+    "irctc api help",
+    "contact irctc connect team",
+    "irctc sdk technical support",
+  ],
 });
 
 const contactCards = [

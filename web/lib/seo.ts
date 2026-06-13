@@ -1,42 +1,107 @@
 export const SITE_NAME = "IRCTC Connect";
 export const SITE_TITLE =
-  "IRCTC Connect - Indian Railways API for PNR Status, Live Train Tracking & Seat Availability";
+  "IRCTC Connect - Indian Railways API & Node.js SDK for PNR Status, Live Train Tracking & Seat Availability";
 export const SITE_DESCRIPTION =
-  "IRCTC Connect is a developer-focused Indian Railways API and Node.js SDK for PNR status, live train tracking, station boards, train search, and seat availability.";
-export const SITE_KEYWORDS = [
+  "IRCTC Connect is a developer-first Indian Railways REST API and Node.js SDK. Check PNR status, track live trains, search trains between stations, view seat availability, fare, and station boards in real time.";
+
+// Primary brand + product keywords (high-intent, brand-defining).
+export const PRIMARY_KEYWORDS = [
   "irctc",
   "irctc connect",
   "irctc api",
   "irctc sdk",
+  "irctc developer",
   "indian railways api",
   "railway api",
-  "train data api",
-  "train history api",
-  "fare lookup api",
-  "train availability api",
   "indian railways sdk",
-  "node.js irctc package",
+  "irctc nodejs",
+  "irctc npm",
   "irctc npm package",
+  "irctc connect npm",
+  "irctc package for nodejs",
+  "irctc integration nodejs",
+  "node.js irctc package",
+  "indian railways rest api",
+  "irctc rest api",
+  "irctc api key",
+  "irctc api for developers",
+  "irctc api documentation",
+  "railway api for developers",
+  "railway data api india",
+  "indian railways data api",
+  "irctc javascript sdk",
+  "irctc typescript sdk",
+  "irctc api pricing",
+];
+
+// Feature-specific keywords mapped to actual endpoints in the SDK.
+export const FEATURE_KEYWORDS = [
   "pnr status api",
   "pnr status check api",
+  "check pnr status",
+  "pnr enquiry api",
+  "pnr prediction api",
   "train tracking api",
   "live train tracking api",
-  "seat availability api",
-  "train search api",
-  "railway station live status",
-  "railway api for developers",
-  "irctc package for nodejs",
-  "train between stations api",
-  "check pnr status",
-  "irctc api key",
-  "indian railways rest api",
+  "live train running status",
   "train running status api",
-  "irctc developer api",
-  "irctc integration nodejs",
-  "railway data api india",
+  "train schedule api",
+  "train time table api",
+  "train between stations api",
+  "train search api",
+  "seat availability api",
   "train availability checker api",
-  "irctc connect npm",
+  "train fare api",
+  "train fare enquiry api",
+  "station board api",
+  "live station board",
+  "train route api",
+  "train coach position",
+  "platform number api",
+  "tatkal api",
+  "train reservation status api",
+  "indian railway passenger status",
+  "railway station live status",
 ];
+
+// Discovery / how-to terms real developers search.
+export const DISCOVERY_KEYWORDS = [
+  "how to check pnr status",
+  "how to track train live",
+  "train running status today",
+  "irctc pnr status check",
+  "indian railways pnr status",
+  "indian railways live train status",
+  "pnr status check online",
+  "live train status indian railways",
+  "train between two stations",
+  "indian railways api free",
+  "irctc api free tier",
+  "best irctc api",
+  "indian railway api nodejs",
+  "npm install irctc",
+  "irctc npm install",
+  "irctc api integration",
+  "indian railway timetable api",
+  "railway api node js",
+  "railway data api node",
+  "irctc train schedule",
+  "indian railways seat availability",
+  "irctc seat availability check",
+  "indian railway fare calculator api",
+  "indian railway station code api",
+  "irctc developer portal",
+  "railway api sandbox",
+  "indian railway api for website",
+];
+
+// Single source of truth used by root metadata and per-page helpers.
+export const SITE_KEYWORDS = [
+  ...PRIMARY_KEYWORDS,
+  ...FEATURE_KEYWORDS,
+  ...DISCOVERY_KEYWORDS,
+];
+
 export const SOCIAL_IMAGE_PATH = "/icon.png";
 export const OG_LOCALE = "en_IN";
 export const TWITTER_CARD = "summary_large_image";
@@ -56,21 +121,29 @@ export function absoluteUrl(pathname: string): string {
   return `${getSiteUrl()}${normalizedPath}`;
 }
 
+export type BuildMetadataOptions = {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  path?: string;
+  imagePath?: string;
+};
+
 export function buildMetadata({
   title,
   description = SITE_DESCRIPTION,
+  keywords,
   path = "/",
-}: {
-  title?: string;
-  description?: string;
-  path?: string;
-}) {
+  imagePath = SOCIAL_IMAGE_PATH,
+}: BuildMetadataOptions = {}) {
   const resolvedTitle = title ? `${title} | ${SITE_NAME}` : SITE_TITLE;
+  const resolvedKeywords = keywords?.length ? keywords : SITE_KEYWORDS;
+  const imageUrl = absoluteUrl(imagePath);
 
   return {
     title: resolvedTitle,
     description,
-    keywords: SITE_KEYWORDS,
+    keywords: resolvedKeywords,
     alternates: {
       canonical: absoluteUrl(path),
     },
@@ -83,7 +156,7 @@ export function buildMetadata({
       type: "website" as const,
       images: [
         {
-          url: absoluteUrl(SOCIAL_IMAGE_PATH),
+          url: imageUrl,
           width: OG_IMAGE_WIDTH,
           height: OG_IMAGE_HEIGHT,
           alt: SITE_NAME,
@@ -96,7 +169,7 @@ export function buildMetadata({
       description,
       site: TWITTER_SITE,
       creator: TWITTER_HANDLE,
-      images: [absoluteUrl(SOCIAL_IMAGE_PATH)],
+      images: [imageUrl],
     },
   };
 }

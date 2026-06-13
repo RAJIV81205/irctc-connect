@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "IRCTC Connect Contact",
-    description: "Get in touch with the IRCTC Connect team for any questions or support.",
+    description:
+    "Contact the IRCTC Connect team for API support, enterprise onboarding, billing, or technical help with the Indian Railways SDK.",
     url: absoluteUrl("/contact"),
     type: "website",
   },

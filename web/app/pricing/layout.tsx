@@ -4,7 +4,7 @@ import { absoluteUrl } from "../../lib/seo";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Explore IRCTC Connect pricing plans for developers and teams building Indian Railways apps.",
+    "IRCTC Connect pricing plans for developers and teams building Indian Railways apps. Compare Free, Pro and Enterprise tiers and request a higher usage limit.",
   alternates: {
     canonical: "/pricing",
   },
