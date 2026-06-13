@@ -19,8 +19,11 @@ export function getTrainInfo(trainNumber: string): Promise<any>;
  */
 export function trackTrain(trainNumber: string, date?: string): Promise<any>;
 
-/** Get the list of upcoming trains at a station. */
-export function liveAtStation(stationCode: string): Promise<any>;
+/**
+ * Get the list of upcoming trains at a station.
+ * @param hours - Time window in hours: 2, 4, or 8 (default 2)
+ */
+export function liveAtStation(stationCode: string, hours?: 2 | 4 | 8): Promise<any>;
 
 /** 
  * Search for all direct trains between two stations. 

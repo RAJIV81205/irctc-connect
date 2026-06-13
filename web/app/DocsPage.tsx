@@ -42,12 +42,12 @@ const endpointSections: EndpointSection[] = [
     description: "Get complete PNR status with passenger details, journey route, and confirmation updates.",
     signature: "checkPNRStatus(pnr: string)",
     params: [{ name: "pnr", type: "string", desc: "10-digit PNR number" }],
-    example: `const result = await checkPNRStatus("1234567890");
+    example: `const result = await checkPNRStatus("5827194603");
 
 if (result.success) {
-  console.log(result.data.status);
   console.log(result.data.train.name);
-  console.log(result.data.passengers);
+  console.log(result.data.journey.source.name);
+  console.log(result.data.passengers[0].current.details);
 }`,
   },
   {
@@ -85,13 +85,23 @@ if (result.success) {
     id: "station-live",
     title: "Live At Station",
     icon: Building2,
-    description: "Get upcoming and passing trains at a station with near real-time status.",
-    signature: "liveAtStation(stationCode: string)",
-    params: [{ name: "stationCode", type: "string", desc: "Station code such as NDLS, BCT, HWH" }],
-    example: `const result = await liveAtStation("NDLS");
+    description: "Get upcoming and passing trains at a station with near real-time status, delays, and platform info.",
+    signature: "liveAtStation(stationCode: string, hours?: number)",
+    params: [
+      { name: "stationCode", type: "string", desc: "Station code such as NDLS, BCT, HWH" },
+      { name: "hours", type: "number", desc: "Time window in hours — 2, 4, or 8 (default 2)" },
+    ],
+    example: `const result = await liveAtStation("NDLS", 2);
 
 if (result.success) {
-  console.log(result.data[0]?.trainname);
+  console.log(result.data.summary);
+  console.log("Total trains:", result.data.totalTrains);
+
+  result.data.trains.forEach((t) => {
+    console.log(\`🚂 \${t.trainNo} — \${t.trainName}\`);
+    console.log(\`   \${t.sourceName} → \${t.destName} | PF \${t.platform}\`);
+    console.log(\`   Arr: \${t.arrival.actual} (scheduled \${t.arrival.scheduled}, delay \${t.arrival.delay})\`);
+  });
 }`,
   },
   {

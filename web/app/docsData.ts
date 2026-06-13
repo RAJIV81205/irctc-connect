@@ -171,24 +171,46 @@ if (pnrResult.success) {
 export const apiDocs = {
   pnr: {
     title: 'PNR Status',
-    description: 'Check real-time PNR status with passenger details and booking information.',
+    description: 'Check real-time PNR status with passenger details, journey details, chart status, and booking fare.',
     signature: 'checkPNRStatus(pnr: string): Promise<Result>',
     example: `import { checkPNRStatus } from 'irctc-connect';
 
-const result = await checkPNRStatus('1234567890');
+const result = await checkPNRStatus('5827194603');
 
 if (result.success) {
-  console.log('Status:', result.data.status);
-  console.log('Train:', result.data.trainName);
-  console.log('Passengers:', result.data.passengers);
+  console.log('PNR:', result.data.pnr);
+  console.log('Train:', result.data.train.name);
+  console.log('From:', result.data.journey.source.name);
+  console.log('Passenger 1 current:', result.data.passengers[0].current.details);
 }`,
     responseFields: [
-      { field: 'status', description: 'Booking status (CNF, WL, RAC, etc.)' },
-      { field: 'trainName', description: 'Name of the train' },
-      { field: 'trainNo', description: 'Train number' },
-      { field: 'passengers', description: 'Array of passenger details' },
-      { field: 'boardingPoint', description: 'Boarding station' },
-      { field: 'destination', description: 'Destination station' }
+      { field: 'pnr', description: '10-digit PNR number' },
+      { field: 'train.number', description: 'Train number' },
+      { field: 'train.name', description: 'Train name' },
+      { field: 'journey.dateOfJourney', description: 'Scheduled journey date and time' },
+      { field: 'journey.class', description: 'Travel class (1A, 2A, 3A, SL, CC, 2S, etc.)' },
+      { field: 'journey.quota', description: 'Booking quota (GN, TQ, LD, SS, etc.)' },
+      { field: 'journey.source', description: 'Origin station with code and name' },
+      { field: 'journey.destination', description: 'Destination station with code and name' },
+      { field: 'journey.boardingPoint', description: 'Boarding station with code and name' },
+      { field: 'journey.distance', description: 'Total journey distance in km' },
+      { field: 'journey.arrivalDate', description: 'Scheduled arrival date and time' },
+      { field: 'chart.status', description: 'Chart preparation status' },
+      { field: 'booking.fare', description: 'Total fare collected' },
+      { field: 'booking.ticketFare', description: 'Base ticket fare' },
+      { field: 'booking.bookingDate', description: 'Date and time of booking' },
+      { field: 'passengers[].serialNumber', description: 'Passenger label (Passenger 1, 2, ...)' },
+      { field: 'passengers[].coachPosition', description: 'Coach position index' },
+      { field: 'passengers[].booking.status', description: 'Original booking status (CNF, WL, RAC, ...)' },
+      { field: 'passengers[].booking.coach', description: 'Booked coach (may be null for WL/RAC)' },
+      { field: 'passengers[].booking.berthNo', description: 'Booked berth number' },
+      { field: 'passengers[].booking.berthCode', description: 'Booked berth code (LB, UB, SL, SU, ...)' },
+      { field: 'passengers[].booking.details', description: 'Formatted booking summary' },
+      { field: 'passengers[].current.status', description: 'Current status after chart preparation' },
+      { field: 'passengers[].current.coach', description: 'Allotted coach' },
+      { field: 'passengers[].current.berthNo', description: 'Allotted berth number' },
+      { field: 'passengers[].current.berthCode', description: 'Allotted berth code (LB, UB, SL, SU, ...)' },
+      { field: 'passengers[].current.details', description: 'Formatted current allocation summary' }
     ]
   },
   train: {
@@ -223,18 +245,42 @@ if (result.success) {
   },
   station: {
     title: 'Station Live',
-    description: 'Get upcoming trains at any station with expected arrival times.',
-    signature: 'liveAtStation(stationCode: string): Promise<Result>',
+    description: 'Get upcoming and passing trains at a station with arrival/departure times, delays, and platform info.',
+    signature: 'liveAtStation(stationCode: string, hours?: 2 | 4 | 8): Promise<Result>',
     example: `import { liveAtStation } from 'irctc-connect';
 
-// Use station code (e.g., NDLS for New Delhi)
-const result = await liveAtStation('NDLS');
+// hours: 2, 4, or 8 (default 2)
+const result = await liveAtStation('NDLS', 2);
 
 if (result.success) {
-  result.data.trains.forEach(train => {
-    console.log(train.trainName, train.expectedTime);
+  console.log(result.data.summary);
+  result.data.trains.forEach((t) => {
+    console.log(\`\${t.trainNo} \${t.trainName} | Arr \${t.arrival.actual} (delay \${t.arrival.delay}m)\`);
   });
-}`
+}`,
+    responseFields: [
+      { field: 'summary', description: 'Human-readable summary line, e.g. "20 Trains departing from/arriving at NDLS in next 2 Hrs."' },
+      { field: 'totalTrains', description: 'Number of trains in the response' },
+      { field: 'trains[].trainNo', description: '5-digit train number' },
+      { field: 'trains[].trainName', description: 'Train name' },
+      { field: 'trains[].source', description: 'Origin station code' },
+      { field: 'trains[].sourceName', description: 'Origin station name' },
+      { field: 'trains[].dest', description: 'Destination station code' },
+      { field: 'trains[].destName', description: 'Destination station name' },
+      { field: 'trains[].trainType', description: 'Train type (e.g. Rajdhani, MEMU, Express)' },
+      { field: 'trains[].classes', description: 'Comma-separated classes available (1A, 2A, 3A, SL, GEN, ...)' },
+      { field: 'trains[].runDate', description: 'Train run date in DD-Mon-YYYY format' },
+      { field: 'trains[].platform', description: 'Platform number' },
+      { field: 'trains[].cancelled', description: 'Whether the train is cancelled at this stop' },
+      { field: 'trains[].arrival.actual', description: 'Actual arrival time' },
+      { field: 'trains[].arrival.scheduled', description: 'Scheduled arrival time' },
+      { field: 'trains[].arrival.delay', description: 'Arrival delay in minutes' },
+      { field: 'trains[].arrival.delayed', description: 'Boolean — whether the train is delayed on arrival' },
+      { field: 'trains[].departure.actual', description: 'Actual departure time' },
+      { field: 'trains[].departure.scheduled', description: 'Scheduled departure time' },
+      { field: 'trains[].departure.delay', description: 'Departure delay in minutes' },
+      { field: 'trains[].departure.delayed', description: 'Boolean — whether the train is delayed on departure' }
+    ]
   }
 };
 

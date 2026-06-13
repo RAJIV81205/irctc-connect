@@ -120,7 +120,7 @@ configure(process.env.IRCTC_API_KEY);
 
 ### 1. `checkPNRStatus(pnr)`
 
-Get comprehensive PNR status with passenger details and journey information.
+Get comprehensive PNR status with passenger details, journey information, chart status, and booking fare.
 
 **Parameters:**
 
@@ -130,16 +130,17 @@ Get comprehensive PNR status with passenger details and journey information.
 
 **Example:**
 ```javascript
-const result = await checkPNRStatus('1234567890');
+const result = await checkPNRStatus('5827194603');
 
 if (result.success) {
   console.log('PNR:', result.data.pnr);
-  console.log('Status:', result.data.status);
-  console.log('Train:', result.data.train.name);
-  console.log('Journey:', `${result.data.journey.from.name} → ${result.data.journey.to.name}`);
+  console.log('Train:', result.data.train.name, `(${result.data.train.number})`);
+  console.log('Journey:', `${result.data.journey.source.name} → ${result.data.journey.destination.name}`);
+  console.log('Class:', result.data.journey.class, '| Quota:', result.data.journey.quota);
+  console.log('Fare:', `₹${result.data.booking.fare}`);
 
   result.data.passengers.forEach(p => {
-    console.log(`${p.name}: ${p.status} — ${p.seat} (${p.berthType})`);
+    console.log(`${p.serialNumber}: booking ${p.booking.details} → current ${p.current.details}`);
   });
 }
 ```
@@ -149,21 +150,65 @@ if (result.success) {
 {
   success: true,
   data: {
-    pnr: "1234567890",
-    status: "CNF",
-    train: { number: "12301", name: "Howrah Rajdhani", class: "3A" },
-    journey: {
-      from: { name: "New Delhi", code: "NDLS", platform: "16" },
-      to:   { name: "Howrah Junction", code: "HWH", platform: "9" },
-      departure: "16/08/25 5:00 PM",
-      arrival:   "17/08/25 9:55 AM",
-      duration:  "16h 55m"
+    pnr: "5827194603",
+    train: {
+      number: "12987",
+      name: "SAMPURN K RAJDHANI"
     },
-    chart: { status: "Prepared", message: "Chart prepared" },
+    journey: {
+      dateOfJourney: "22 Aug 2026, 04:35:00 pm",
+      class: "3A",
+      quota: "GN",
+      source: { code: "JP", name: "JAIPUR JN" },
+      destination: { code: "NDLS", name: "NEW DELHI" },
+      boardingPoint: { code: "JP", name: "JAIPUR JN" },
+      distance: 471,
+      arrivalDate: "22 Aug 2026, 10:20:00 pm"
+    },
+    chart: { status: "Chart Prepared" },
+    booking: {
+      fare: 1845,
+      ticketFare: 1795,
+      bookingDate: "20 Aug 2026, 11:14:32 am"
+    },
     passengers: [
-      { name: "JOHN DOE", status: "CNF", seat: "B2-34", berthType: "SL", confirmationProbability: 99 }
-    ],
-    lastUpdated: "2025-08-16T12:00:00Z"
+      {
+        serialNumber: "Passenger 1",
+        coachPosition: 0,
+        booking: {
+          status: "CNF",
+          coach: "B5",
+          berthNo: 22,
+          berthCode: "LB",
+          details: "CNF/B5/22/LB"
+        },
+        current: {
+          status: "CNF",
+          coach: "B5",
+          berthNo: 22,
+          berthCode: "LB",
+          details: "CNF , B5 - 22 [LB]"
+        }
+      },
+      {
+        serialNumber: "Passenger 2",
+        coachPosition: 0,
+        booking: {
+          status: "RAC",
+          coach: null,
+          berthNo: 7,
+          berthCode: null,
+          details: "RAC/7"
+        },
+        current: {
+          status: "CNF",
+          coach: "B5",
+          berthNo: 31,
+          berthCode: "UB",
+          details: "CNF , B5 - 31 [UB]"
+        }
+      }
+    ]
   }
 }
 ```
@@ -306,25 +351,29 @@ if (result.success) {
 
 ---
 
-### 4. `liveAtStation(stnCode)`
+### 4. `liveAtStation(stnCode, hours?)`
 
-Get the list of upcoming trains at a station right now.
+Get the list of upcoming and passing trains at a station in real time, with arrival/departure times, delays, and platform info.
 
 **Parameters:**
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `stnCode` | string | Station code (e.g., `'NDLS'`, `'BCT'`, `'HWH'`) |
+| `hours` | number | Time window — `2`, `4`, or `8` (default `2`) |
 
 **Example:**
 ```javascript
-const result = await liveAtStation('NDLS');
+const result = await liveAtStation('NDLS', 2);
 
 if (result.success) {
-  result.data.forEach(train => {
-    console.log(`🚂 ${train.trainno} — ${train.trainname}`);
-    console.log(`   📍 ${train.source} → ${train.dest}`);
-    console.log(`   ⏰ At station: ${train.timeat}`);
+  console.log(result.data.summary);
+  console.log(`Total trains: ${result.data.totalTrains}`);
+
+  result.data.trains.forEach(train => {
+    console.log(`🚂 ${train.trainNo} — ${train.trainName}`);
+    console.log(`   📍 ${train.sourceName} → ${train.destName} | PF ${train.platform}`);
+    console.log(`   ⏰ Arr ${train.arrival.actual} (scheduled ${train.arrival.scheduled}, delay ${train.arrival.delay}m)`);
   });
 }
 ```
@@ -333,17 +382,42 @@ if (result.success) {
 ```javascript
 {
   success: true,
-  data: [
-    {
-      i: 0,
-      trainno: "12301",
-      trainname: "HOWRAH RAJDHANI",
-      source: "NEW DELHI",
-      dest: "HOWRAH JN",
-      timeat: "17:00"
-    }
-    // ... more trains
-  ]
+  data: {
+    summary: "20 Trains departing from/arriving at NDLS - NEW DELHI. in next 2 Hrs.",
+    totalTrains: 2,
+    trains: [
+      {
+        trainNo: "12987",
+        trainName: "SAMPURN K RAJDHANI",
+        source: "JP",
+        sourceName: "JAIPUR JN",
+        dest: "NDLS",
+        destName: "NEW DELHI",
+        trainType: "Rajdhani",
+        classes: "1A, 2A, 3A",
+        runDate: "22-Aug-2026",
+        platform: "9",
+        cancelled: false,
+        arrival:   { actual: "10:18", scheduled: "10:20", delay: 0,  delayed: false },
+        departure: { actual: "10:25", scheduled: "10:25", delay: 5,  delayed: true  }
+      },
+      {
+        trainNo: "12309",
+        trainName: "RAJDHANI EXPRESS",
+        source: "HWH",
+        sourceName: "HOWRAH JN",
+        dest: "NDLS",
+        destName: "NEW DELHI",
+        trainType: "Rajdhani",
+        classes: "1A, 2A, 3A",
+        runDate: "22-Aug-2026",
+        platform: "3",
+        cancelled: false,
+        arrival:   { actual: "11:05", scheduled: "11:00", delay: 5,  delayed: true  },
+        departure: { actual: "11:12", scheduled: "11:10", delay: 2,  delayed: true  }
+      }
+    ]
+  }
 }
 ```
 
