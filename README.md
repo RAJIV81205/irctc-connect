@@ -351,7 +351,80 @@ if (result.success) {
 
 ---
 
-### 4. `liveAtStation(stnCode, hours?)`
+### 4. `getTrainHistory(trainNumber, journeyDate)`
+
+Get the completed journey history of a train for a specific journey date. The backend persists a `TrainHistory` record once a train has reached its destination, including the full station-by-station timeline, per-stop delays, and the final coach position.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `trainNumber` | string | 5-digit train number |
+| `journeyDate` | string | Journey date in `DD-MM-YYYY` format |
+
+**Example:**
+```javascript
+const result = await getTrainHistory('12301', '15-04-2025');
+
+if (result.success) {
+  const { trainNo, trainName, journeyDate, stations, coachPosition } = result.data;
+
+  console.log(`🚂 ${trainName} (${trainNo}) — ${journeyDate}`);
+
+  stations.forEach((stop) => {
+    console.log(`\n🚉 ${stop.stationName} (${stop.stationCode})`);
+    console.log(`   PF: ${stop.platform || '-'}`);
+    console.log(`   Arr: ${stop.arrival.scheduled} → ${stop.arrival.actual} (${stop.arrival.delay} min)`);
+    console.log(`   Dep: ${stop.departure.scheduled} → ${stop.departure.actual} (${stop.departure.delay} min)`);
+  });
+}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  data: {
+    historyKey: "12301:15-04-2025",
+    trainNo: "12301",
+    trainName: "HOWRAH RAJDHANI",
+    journeyDate: "15-04-2025",
+    sourceStationCode: "NDLS",
+    sourceStationName: "NEW DELHI",
+    destinationStationCode: "HWH",
+    destinationStationName: "HOWRAH JN",
+    stations: [
+      {
+        stationCode: "NDLS",
+        stationName: "NEW DELHI",
+        platform: "16",
+        distanceKm: 0,
+        arrival:   { scheduled: "SRC", actual: "SRC",   delay: 0  },
+        departure: { scheduled: "17:00", actual: "17:00", delay: 0 }
+      },
+      {
+        stationCode: "HWH",
+        stationName: "HOWRAH JN",
+        platform: "9",
+        distanceKm: 1447,
+        arrival:   { scheduled: "09:55", actual: "09:55", delay: 0 },
+        departure: { scheduled: "10:00", actual: "10:00", delay: 0 }
+      }
+    ],
+    coachPosition: [
+      { type: "ENG", number: "ENG", position: "0" },
+      { type: "3A",  number: "B1",  position: "5" }
+    ],
+    lastUpdate: "2025-04-16T10:05:00.000Z"
+  }
+}
+```
+
+> The endpoint returns `404` with `{ success: false, error: "Train history record not found" }` for dates where the train has not yet reached its destination.
+
+---
+
+### 5. `liveAtStation(stnCode, hours?)`
 
 Get the list of upcoming and passing trains at a station in real time, with arrival/departure times, delays, and platform info.
 
@@ -423,7 +496,7 @@ if (result.success) {
 
 ---
 
-### 5. `searchTrainBetweenStations(fromStnCode, toStnCode)`
+### 6. `searchTrainBetweenStations(fromStnCode, toStnCode)`
 
 Find all direct trains running between two stations.
 
@@ -481,7 +554,7 @@ if (result.success) {
 
 ---
 
-### 6. `getAvailability(trainNo, fromStnCode, toStnCode, date, coach, quota)`
+### 7. `getAvailability(trainNo, fromStnCode, toStnCode, date, coach, quota)`
 
 Check seat availability and fare breakdown for a specific train, class, and date.
 
@@ -521,7 +594,7 @@ if (result.success) {
 
 ---
 
-### 7. `fareLookup(trainNo, fromStnCode, toStnCode, date, travelClass, quota)`
+### 8. `fareLookup(trainNo, fromStnCode, toStnCode, date, travelClass, quota)`
 
 Get the full fare breakdown for a journey — base fare, reservation, superfast, catering, GST, dynamic fare, and total.
 
