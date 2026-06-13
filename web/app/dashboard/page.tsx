@@ -378,6 +378,7 @@ export default function DashboardPage() {
   const [trackTrainInput, setTrackTrainInput] = useState("");
   const [trackDateInput, setTrackDateInput] = useState("");
   const [stationInput, setStationInput] = useState("");
+  const [stationHoursInput, setStationHoursInput] = useState<"2" | "4" | "8">("2");
   const [fromStationInput, setFromStationInput] = useState("");
   const [toStationInput, setToStationInput] = useState("");
   const [searchDateInput, setSearchDateInput] = useState("");
@@ -522,7 +523,7 @@ export default function DashboardPage() {
           result = await trackTrain(trackTrainInput, trackDateInput); break;
         case "station":
           if (!stationInput.trim()) throw new Error("Station code is required");
-          result = await liveAtStation(stationInput.trim().toUpperCase()); break;
+          result = await liveAtStation(stationInput.trim().toUpperCase(), Number(stationHoursInput) as 2 | 4 | 8); break;
         case "search":
           if (!fromStationInput.trim() || !toStationInput.trim()) throw new Error("From and To station codes are required");
           if (searchDateInput && !/^\d{2}-\d{2}-\d{4}$/.test(searchDateInput)) throw new Error("Date must be in DD-MM-YYYY format");
@@ -589,7 +590,7 @@ export default function DashboardPage() {
     { name: "Check PNR Status", method: "GET", path: "/api/checkPNRStatus/:pnr", examplePath: "/api/checkPNRStatus/1234567890", notes: "PNR must be 10 digits." },
     { name: "Get Train Info", method: "GET", path: "/api/getTrainInfo/:trainNumber", examplePath: "/api/getTrainInfo/12345", notes: "Train number must be 5 digits." },
     { name: "Track Train", method: "GET", path: "/api/trackTrain/:trainNumber/:date", examplePath: "/api/trackTrain/12345/28-03-2026", notes: "Date format: DD-MM-YYYY. You can also pass `today` as date." },
-    { name: "Live At Station", method: "GET", path: "/api/liveAtStation/:stnCode", examplePath: "/api/liveAtStation/NDLS", notes: "Use station code in uppercase." },
+    { name: "Live At Station", method: "GET", path: "/api/liveAtStation/:stnCode?hrs=2|4|8", examplePath: "/api/liveAtStation/NDLS?hrs=4", notes: "Use station code in uppercase. Optional ?hrs= query param accepts 2, 4, or 8 (default 2)." },
     { name: "Search Trains Between Stations", method: "GET", path: "/api/searchTrainBetweenStations/:fromStnCode/:toStnCode?date=DD-MM-YYYY", examplePath: "/api/searchTrainBetweenStations/NDLS/BCT?date=28-03-2026", notes: "Date query param is optional." },
     { name: "Get Seat Availability", method: "GET", path: "/api/getAvailability/:trainNo/:fromStnCode/:toStnCode/:date/:coach/:quota", examplePath: "/api/getAvailability/12496/ASN/DDU/27-12-2025/2A/GN", notes: "Date format: DD-MM-YYYY." },
     { name: "Fare Lookup", method: "GET", path: "/api/fareLookup/:trainNo/:date/:fromStation/:toStation/:class/:quota", examplePath: "/api/fareLookup/12313/06-06-2026/ASN/NDLS/3A/GN", notes: "Returns full fare breakdown — base fare, GST, dynamic fare, total. Date format: DD-MM-YYYY." },
@@ -1185,7 +1186,14 @@ export default function DashboardPage() {
                       <input value={trackTrainInput} onChange={(e) => setTrackTrainInput(e.target.value.replace(/\D/g, ""))} maxLength={5} placeholder="Train number" className="db-input" />
                       <input type="date" value={toInputDate(trackDateInput)} onChange={(e) => setTrackDateInput(fromInputDate(e.target.value))} className="db-input" />
                     </>)}
-                    {playgroundAction === "station" && <input value={stationInput} onChange={(e) => setStationInput(e.target.value.toUpperCase())} placeholder="Station code (e.g. NDLS)" className="db-input" style={{ gridColumn: "1 / -1" }} />}
+                    {playgroundAction === "station" && (<>
+                      <input value={stationInput} onChange={(e) => setStationInput(e.target.value.toUpperCase())} placeholder="Station code (e.g. NDLS)" className="db-input" />
+                      <select value={stationHoursInput} onChange={(e) => setStationHoursInput(e.target.value as "2" | "4" | "8")} className="db-select" aria-label="Time window in hours">
+                        <option value="2">2 hrs</option>
+                        <option value="4">4 hrs</option>
+                        <option value="8">8 hrs</option>
+                      </select>
+                    </>)}
                     {playgroundAction === "search" && (<>
                       <input value={fromStationInput} onChange={(e) => setFromStationInput(e.target.value.toUpperCase())} placeholder="From station code" className="db-input" />
                       <input value={toStationInput} onChange={(e) => setToStationInput(e.target.value.toUpperCase())} placeholder="To station code" className="db-input" />

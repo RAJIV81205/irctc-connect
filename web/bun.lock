@@ -11,7 +11,7 @@
         "@vercel/analytics": "^2.0.1",
         "cashfree-pg": "^5.1.0",
         "firebase": "^12.11.0",
-        "irctc-connect": "^3.1.1",
+        "irctc-connect": "^3.2.0",
         "jsonwebtoken": "^9.0.3",
         "lucide-react": "^0.556.0",
         "mongoose": "^9.3.3",
@@ -880,7 +880,7 @@
 
     "internmap": ["internmap@2.0.3", "", {}, "sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg=="],
 
-    "irctc-connect": ["irctc-connect@3.1.1", "", {}, "sha512-4+4no3+WEbxPqELqoXKXgaT6INqSK9wTRbfNdCl1nlRyzmksoqMx+S7epRq7skOKHAx3z1EJdke2SB8yWV9hnQ=="],
+    "irctc-connect": ["irctc-connect@3.2.0", "", {}, "sha512-MSjT1c1FAur7alUvZ/xjVE2behkqKb1Z3MtPguXiAN+yumFh/bGMp/Yj5NHuguRSdqTPQxjYzLG6AAl1VhtTsw=="],
 
     "is-alphabetical": ["is-alphabetical@2.0.1", "", {}, "sha512-FWyyY60MeTNyeSRpkM2Iry0G9hpr7/9kD40mD/cGQEuilcZYS4okz8SN2Q6rLCJ8gbCt6fN+rC+6tMGS99LaxQ=="],
 

@@ -1048,6 +1048,7 @@ export default function AdminPanel() {
     trainNumber: "",
     journeyDate: "",
     stationCode: "",
+    stationHours: "2",
     fromStation: "",
     toStation: "",
     classCode: "SL",
@@ -1243,7 +1244,16 @@ export default function AdminPanel() {
           if (!playgroundInput.stationCode.trim()) {
             throw new Error("Station code is required");
           }
-          result = await liveAtStation(playgroundInput.stationCode.trim().toUpperCase());
+          {
+            const hours = Number(playgroundInput.stationHours);
+            if (![2, 4, 8].includes(hours)) {
+              throw new Error("Hours must be 2, 4, or 8");
+            }
+            result = await liveAtStation(
+              playgroundInput.stationCode.trim().toUpperCase(),
+              hours as 2 | 4 | 8
+            );
+          }
           break;
         case "search":
           if (!playgroundInput.fromStation.trim() || !playgroundInput.toStation.trim()) {
@@ -2917,27 +2927,52 @@ export default function AdminPanel() {
                   )}
 
                   {playgroundAction === "station" && (
-                    <input
-                      value={playgroundInput.stationCode}
-                      onChange={(e) =>
-                        setPlaygroundInput((prev) => ({
-                          ...prev,
-                          stationCode: e.target.value.toUpperCase(),
-                        }))
-                      }
-                      placeholder="Station code (e.g. NDLS)"
-                      style={{
-                        gridColumn: "1 / -1",
-                        background: "#0a0d13",
-                        border: "1px solid #2d3548",
-                        borderRadius: 8,
-                        padding: "11px 12px",
-                        color: "#cbd5e1",
-                        fontSize: 13,
-                        fontFamily: "'JetBrains Mono', monospace",
-                        outline: "none",
-                      }}
-                    />
+                    <>
+                      <input
+                        value={playgroundInput.stationCode}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            stationCode: e.target.value.toUpperCase(),
+                          }))
+                        }
+                        placeholder="Station code (e.g. NDLS)"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      />
+                      <select
+                        value={playgroundInput.stationHours}
+                        onChange={(e) =>
+                          setPlaygroundInput((prev) => ({
+                            ...prev,
+                            stationHours: e.target.value,
+                          }))
+                        }
+                        aria-label="Time window in hours"
+                        style={{
+                          background: "#0a0d13",
+                          border: "1px solid #2d3548",
+                          borderRadius: 8,
+                          padding: "11px 12px",
+                          color: "#cbd5e1",
+                          fontSize: 13,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          outline: "none",
+                        }}
+                      >
+                        <option value="2">2 hrs</option>
+                        <option value="4">4 hrs</option>
+                        <option value="8">8 hrs</option>
+                      </select>
+                    </>
                   )}
 
                   {playgroundAction === "search" && (
