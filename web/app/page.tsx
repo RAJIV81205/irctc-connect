@@ -171,15 +171,45 @@ export default async function LandingPage() {
     { label: "API Requests", value: "3M+" },
     { label: "Uptime", value: "99.9%" },
     { label: "Live Train Data", value: "✓" },
-    { label: "SDK", value: "v3.0.4" },
+    { label: "SDK", value: "v3.3.0" },
   ];
+
+  // Stable @id anchors so schema nodes reference one another (entity consolidation).
+  const orgId = `${absoluteUrl("/")}#organization`;
+  const websiteId = `${absoluteUrl("/")}#website`;
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": orgId,
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+    logo: {
+      "@type": "ImageObject",
+      url: absoluteUrl("/icon.png"),
+    },
+    description: SITE_DESCRIPTION,
+    founder: {
+      "@type": "Person",
+      name: "Rajiv Dubey",
+      url: "https://github.com/RAJIV81205",
+    },
+    sameAs: [
+      "https://github.com/RAJIV81205/irctc-connect",
+      "https://github.com/RAJIV81205",
+      "https://www.npmjs.com/package/irctc-connect",
+      "https://twitter.com/rajiv81205",
+    ],
+  };
 
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": websiteId,
     name: SITE_NAME,
     url: absoluteUrl("/"),
     description: SITE_DESCRIPTION,
+    publisher: { "@id": orgId },
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -197,7 +227,7 @@ export default async function LandingPage() {
     operatingSystem: "Node.js",
     url: absoluteUrl("/"),
     description: SITE_DESCRIPTION,
-    softwareVersion: "3.0.4",
+    softwareVersion: "3.3.0",
     downloadUrl: "https://www.npmjs.com/package/irctc-connect",
     codeRepository: "https://github.com/RAJIV81205/irctc-connect",
     featureList: [
@@ -213,6 +243,7 @@ export default async function LandingPage() {
       name: "Rajiv Dubey",
       url: "https://github.com/RAJIV81205",
     },
+    publisher: { "@id": orgId },
     offers: [
       { "@type": "Offer", name: "Free", price: "0", priceCurrency: "INR" },
       { "@type": "Offer", name: "Pro", price: "49", priceCurrency: "INR", url: absoluteUrl("/pricing") },
@@ -226,8 +257,51 @@ export default async function LandingPage() {
     ],
   };
 
+  // Single source of truth: drives both the visible FAQ section and FAQPage
+  // schema. Answers MUST stay identical between the two (Google requirement).
+  const faqs = [
+    {
+      q: "How do I check PNR status with an API?",
+      a: "Sign up for a free IRCTC Connect API key, then call the getPNRStatus method (or the REST PNR endpoint) with a 10-digit PNR number. You get back the booking status, coach and berth details, boarding point, and chart status as JSON — ready to use in any Node.js, JavaScript, or TypeScript backend.",
+    },
+    {
+      q: "How do I track a train live and get its running status?",
+      a: "Use the live train tracking method with a train number to fetch real-time running status: current location, last reported station, delay in minutes, and upcoming stops with expected arrival and departure times. It works for any train on the Indian Railways network.",
+    },
+    {
+      q: "How do I search for trains between two stations?",
+      a: "Call the train-between-stations method with a source and destination station code (and optional date). IRCTC Connect returns every train on that route with departure and arrival times, running days, train type, and available classes — ideal for building journey-planning features.",
+    },
+    {
+      q: "Is there a free tier and how do I get an API key?",
+      a: "Yes. IRCTC Connect has a free tier so you can start building right away. Create an account, generate your API key from the dashboard, and start calling railway endpoints in minutes. Paid plans start at ₹49 when you need higher rate limits — see the pricing page for details.",
+    },
+    {
+      q: "Does it support seat availability and fare enquiry?",
+      a: "It does. You can check seat and berth availability for a train, class, and date, and run a fare enquiry to get class-wise ticket prices. Both are exposed as simple promise-based methods in the SDK and as REST endpoints.",
+    },
+    {
+      q: "Does IRCTC Connect support Node.js and TypeScript?",
+      a: "IRCTC Connect is a promise-based Node.js SDK with first-class TypeScript types built in. Install it with npm install irctc-connect, import the client, and every method is fully typed with autocomplete for requests and responses.",
+    },
+  ];
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+
   return (
     <main style={{ background: "#ffffff", minHeight: "100vh" }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
@@ -239,6 +313,10 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
       {/* ── CINEMATIC HERO ── */}
@@ -415,8 +493,38 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── FAQ ── */}
+      <section className="lp-section lp-section-tinted" aria-labelledby="faq-heading">
+        <div className="lp-inner">
+          <div className="lp-section-head">
+            <p className="lp-eyebrow">Questions, answered</p>
+            <h2 className="lp-h2" id="faq-heading">
+              Frequently asked
+              <br />
+              questions.
+            </h2>
+            <p className="lp-body">
+              Everything developers ask before integrating the Indian Railways
+              API — PNR status, live tracking, seat availability and more.
+            </p>
+          </div>
+
+          <div className="lp-faq">
+            {faqs.map((item) => (
+              <details key={item.q} className="lp-faq-item">
+                <summary className="lp-faq-q">
+                  <span>{item.q}</span>
+                  <span className="lp-faq-icon" aria-hidden>+</span>
+                </summary>
+                <p className="lp-faq-a">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── FOOTER ── */}
-      <div className="lp-footer">
+      <footer className="lp-footer">
         {stats.stars > 0 && (
           <>★ {stats.stars.toLocaleString()} stars · {stats.downloads.toLocaleString()} downloads/mo · </>
         )}
@@ -429,7 +537,7 @@ export default async function LandingPage() {
         >
           Rajiv Dubey
         </a>
-      </div>
+      </footer>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -759,6 +867,56 @@ export default async function LandingPage() {
           transition: background 0.15s, color 0.15s;
         }
         .lp-cta-btn-ghost:hover { background: #161b22; color: #f9fafb; }
+
+        /* ── FAQ ── */
+        .lp-faq {
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+          background: #f3f4f6;
+          border: 1px solid #f3f4f6;
+          border-radius: 16px;
+          overflow: hidden;
+        }
+        @media (max-width: 480px) { .lp-faq { border-radius: 12px; } }
+        .lp-faq-item { background: #fff; }
+        .lp-faq-q {
+          list-style: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 20px 24px;
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 15px;
+          font-weight: 500;
+          color: #000;
+          transition: background 0.15s;
+        }
+        .lp-faq-q::-webkit-details-marker { display: none; }
+        .lp-faq-q:hover { background: #fafafa; }
+        @media (max-width: 480px) { .lp-faq-q { padding: 16px 18px; font-size: 14px; } }
+        .lp-faq-icon {
+          flex-shrink: 0;
+          font-size: 20px;
+          font-weight: 300;
+          color: #9ca3af;
+          transition: transform 0.2s ease;
+          line-height: 1;
+        }
+        .lp-faq-item[open] .lp-faq-icon { transform: rotate(45deg); }
+        .lp-faq-a {
+          margin: 0;
+          padding: 0 24px 22px;
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 14px;
+          font-weight: 300;
+          line-height: 1.7;
+          color: #6F6F6F;
+          max-width: 720px;
+        }
+        @media (max-width: 480px) { .lp-faq-a { padding: 0 18px 18px; } }
 
         /* ── Footer ── */
         .lp-footer {

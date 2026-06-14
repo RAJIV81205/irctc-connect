@@ -335,7 +335,7 @@ export default function ContactPage() {
 			</footer>
 
 			<style>{`
-				@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&display=swap');
 
 				.cp-root {
 					background: #ffffff;
