@@ -35,6 +35,15 @@ function maskEmail(email: string): string {
   return `${start}.....${end}`;
 }
 
+function shuffleUsers<T>(items: T[]): T[] {
+  const out = items.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export async function GET() {
   try {
     await connectToDatabase();
@@ -57,10 +66,17 @@ export async function GET() {
       }))
       .filter((user) => user.name.length > 0);
 
+    // Shuffle so the landing-page showcase rotates across requests
+    // instead of being locked to the same `sort: { updatedAt: -1 }` order.
+    for (let i = cleaned.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cleaned[i], cleaned[j]] = [cleaned[j], cleaned[i]];
+    }
+
     return NextResponse.json(
       {
         success: true,
-        users: cleaned.length > 0 ? cleaned : FALLBACK_USERS,
+        users: cleaned.length > 0 ? cleaned : shuffleUsers(FALLBACK_USERS),
       },
       { status: 200 },
     );
@@ -69,7 +85,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: true,
-        users: FALLBACK_USERS,
+        users: shuffleUsers(FALLBACK_USERS),
       },
       { status: 200 },
     );

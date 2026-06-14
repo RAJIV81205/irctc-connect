@@ -5,7 +5,9 @@ import {
   ArrowRight,
   CheckCircle2,
   Github,
+  IndianRupee,
   MapPin,
+  Receipt,
   Search,
   Ticket,
   Train,
@@ -64,6 +66,15 @@ const enterpriseUsersFallback: EnterpriseShowcaseUser[] = [
   { id: "f-6", name: "Sneha K.", maskedEmail: "sneh.....zoh.com" },
 ];
 
+function shuffleUsers<T>(items: T[]): T[] {
+  const out = items.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 async function getEnterpriseShowcaseUsers(): Promise<EnterpriseShowcaseUser[]> {
   try {
     const headerStore = await headers();
@@ -73,18 +84,20 @@ async function getEnterpriseShowcaseUsers(): Promise<EnterpriseShowcaseUser[]> {
       headerStore.get("x-forwarded-proto") ||
       (host?.includes("localhost") ? "http" : "https");
     const base = host ? `${proto}://${host}` : absoluteUrl("/");
+    // No `revalidate`: the upstream API now randomizes per request, and we
+    // want the landing page to reflect a fresh ordering on every render.
     const res = await fetch(`${base}/api/public/enterprise-users`, {
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
     const data = (await res.json()) as {
       success?: boolean;
       users?: EnterpriseShowcaseUser[];
     };
     if (!res.ok || !data?.success || !Array.isArray(data.users))
-      return enterpriseUsersFallback;
-    return data.users.length > 0 ? data.users : enterpriseUsersFallback;
+      return shuffleUsers(enterpriseUsersFallback);
+    return data.users.length > 0 ? data.users : shuffleUsers(enterpriseUsersFallback);
   } catch {
-    return enterpriseUsersFallback;
+    return shuffleUsers(enterpriseUsersFallback);
   }
 }
 
@@ -130,6 +143,20 @@ const endpoints = [
     method: "liveAtStation",
     description:
       "Arrivals, departures, and trains passing through a station.",
+  },
+  {
+    icon: IndianRupee,
+    title: "Fare Lookup",
+    method: "fareLookup",
+    description:
+      "Fare, concession, and booking-class breakdown between two stations.",
+  },
+  {
+    icon: Receipt,
+    title: "Train History",
+    method: "trainHistory",
+    description:
+      "Persisted historical journey record by train number and date.",
   },
 ];
 
