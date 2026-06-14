@@ -19,7 +19,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import type { PricingPlan, PaidPlanType } from "../../lib/constants";
+import type { PricingPlan, PaidPlanType, PricingFeature } from "../../lib/constants";
 import { TOPUP_OPTIONS, formatINR } from "../../lib/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -79,6 +79,35 @@ function normalizePlan(raw: string): "free" | PaidPlanType | null {
     return mapped as "free" | PaidPlanType;
   }
   return null;
+}
+
+// Quantitative features (request quota, rate limits) exist on every plan with
+// tier-specific values — they are never "missing", only categorical perks are.
+function isQuantitativeFeature(feature: PricingFeature): boolean {
+  return Boolean(feature.highlight) || /\bmin\b/i.test(feature.text);
+}
+
+// For each plan, the categorical perks that only higher-tier plans unlock.
+// Derived from the plan list (assumed ordered cheapest → most capable) so it
+// stays in sync if the underlying pricing config changes.
+function computeMissingByPlan(plans: PricingPlan[]): Record<string, PricingFeature[]> {
+  const result: Record<string, PricingFeature[]> = {};
+  plans.forEach((plan, index) => {
+    const ownTexts = new Set(plan.features.map((f) => f.text.toLowerCase()));
+    const seen = new Set<string>();
+    const missing: PricingFeature[] = [];
+    for (let higher = index + 1; higher < plans.length; higher++) {
+      for (const feature of plans[higher].features) {
+        if (isQuantitativeFeature(feature)) continue;
+        const key = feature.text.toLowerCase();
+        if (ownTexts.has(key) || seen.has(key)) continue;
+        seen.add(key);
+        missing.push(feature);
+      }
+    }
+    result[plan.id] = missing;
+  });
+  return result;
 }
 
 // ─── SDK loader ───────────────────────────────────────────────────────────────
@@ -458,6 +487,7 @@ function PricingPageContent({
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const timeLeft = useCountdown(initialOfferEndsAt);
+  const missingByPlan = computeMissingByPlan(initialPlans);
   const contactUrl = `mailto:${initialContactEmail}?subject=${encodeURIComponent("IRCTC Connect Payment Help")}`;
   const orderIdFromQuery = searchParams.get("order_id");
   const isPaymentReturn = searchParams.get("payment_return") === "1";
@@ -743,10 +773,29 @@ function PricingPageContent({
                     {/* Features */}
                     <div className="mt-7 border-t pt-6" style={{ borderColor: isPopular ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }}>
                       <ul className="space-y-3" role="list">
+                        {/* What you get — check icon + bold text */}
                         {plan.features.map((feature, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: isPopular ? "rgba(255,255,255,0.4)" : "#000", marginTop: "8px" }} aria-hidden />
-                            <span className="text-sm leading-6" style={{ color: feature.highlight ? (isPopular ? "#fff" : "#000") : (isPopular ? "rgba(255,255,255,0.55)" : "#6F6F6F"), fontWeight: feature.highlight ? 500 : 300 }}>
+                          <li key={`inc-${i}`} className="flex items-start gap-3">
+                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                              style={{ background: isPopular ? "rgba(255,255,255,0.16)" : "#000" }} aria-hidden>
+                              <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                            </span>
+                            <span className="text-sm leading-6"
+                              style={{ color: isPopular ? "#fff" : "#000", fontWeight: feature.highlight ? 600 : 500 }}>
+                              {feature.text}
+                            </span>
+                          </li>
+                        ))}
+
+                        {/* What you miss out on — cross icon + faded text */}
+                        {missingByPlan[plan.id]?.map((feature, i) => (
+                          <li key={`miss-${i}`} className="flex items-start gap-3">
+                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                              style={{ background: isPopular ? "rgba(255,255,255,0.06)" : "#f3f4f6" }} aria-hidden>
+                              <X className="h-2.5 w-2.5" strokeWidth={3} style={{ color: isPopular ? "rgba(255,255,255,0.35)" : "#b0b0b0" }} />
+                            </span>
+                            <span className="text-sm leading-6"
+                              style={{ color: isPopular ? "rgba(255,255,255,0.3)" : "#b8b8b8", fontWeight: 300 }}>
                               {feature.text}
                             </span>
                           </li>

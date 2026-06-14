@@ -60,7 +60,7 @@ export const PLAN_CONFIG: PlanConfigShape = {
       features: [
         { text: "50 API requests per month", highlight: true },
         { text: "100 requests / 10 min" },
-        { text: "Basic endpoint access" },
+        { text: "SDK Access only" },
         { text: "Email support" },
       ],
       planType: "free",
@@ -140,9 +140,8 @@ export function getPaidPlanRuntime(planType: PaidPlanType) {
   return {
     amount: Math.max(0, Number(plan.price) || 0),
     limit: Math.max(0, Number(plan.limit) || 0),
-    userPlan: (plan.userPlan || (planType === "advance" ? "enterprise" : "pro")) as
-      | "pro"
-      | "enterprise",
+    userPlan: (plan.userPlan ||
+      (planType === "advance" ? "enterprise" : "pro")) as "pro" | "enterprise",
   };
 }
 
@@ -150,7 +149,9 @@ export const PRICING_PLANS: PricingPlan[] = PLAN_CONFIG.plans.map((plan) => ({
   id: plan.id,
   name: plan.name,
   originalPrice:
-    typeof plan.originalPrice === "number" ? formatINR(plan.originalPrice) : undefined,
+    typeof plan.originalPrice === "number"
+      ? formatINR(plan.originalPrice)
+      : undefined,
   price: formatINR(plan.price),
   period: plan.period,
   description: plan.description,
