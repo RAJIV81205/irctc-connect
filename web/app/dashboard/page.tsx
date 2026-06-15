@@ -1044,8 +1044,12 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Topup */}
-                {canBuyLimitTopup && (
-                  <div className="db-card">
+                <div
+                  className="db-card"
+                  style={{ position: "relative" }}
+                  onMouseEnter={(e) => { const o = e.currentTarget.querySelector<HTMLElement>("[data-topup-overlay]"); if (o) o.style.opacity = "1"; }}
+                  onMouseLeave={(e) => { const o = e.currentTarget.querySelector<HTMLElement>("[data-topup-overlay]"); if (o) o.style.opacity = "0"; }}
+                >
                     <p className="db-section-label">Scale your product</p>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
                       <span style={{ fontSize: 13, color: "#374151" }}>Selected: <b style={{ color: "#2563eb" }}>{selectedTopup.requests.toLocaleString("en-IN")} requests</b></span>
@@ -1070,8 +1074,48 @@ export default function DashboardPage() {
                     {limitPurchaseMessage && (
                       <p style={{ marginTop: 10, color: limitPurchaseMessage.toLowerCase().includes("failed") ? "#dc2626" : "#6b7280", fontSize: 12, lineHeight: 1.6 }}>{limitPurchaseMessage}</p>
                     )}
+                    {!canBuyLimitTopup && (
+                      <div
+                        data-topup-overlay
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: 12,
+                          background: "rgba(255, 255, 255, 0.6)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 10,
+                          padding: 20,
+                          zIndex: 2,
+                          pointerEvents: "none",
+                          opacity: 0,
+                          transition: "opacity 0.18s ease",
+                        }}
+                      >
+                        <p style={{ fontSize: 13, color: "#374151", margin: 0 }}>
+                          Purchase a plan to increase your request limit
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => router.push("/pricing")}
+                          style={{
+                            background: "#111827",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 8,
+                            padding: "8px 14px",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            pointerEvents: "auto",
+                          }}
+                        >
+                          View plans
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
               </div>
             )}
 
