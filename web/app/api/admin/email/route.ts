@@ -179,8 +179,9 @@ async function sendBatchEmailWithRetry(params: {
 }
 
 type EmailRequestBody = {
-  scope?: "single" | "all" | "reminder";
+  scope?: "single" | "all" | "manual" | "reminder";
   userId?: string;
+  userIds?: string[];
   email?: string;
   subject?: string;
   html?: string;
@@ -200,7 +201,7 @@ export async function POST(req: Request) {
     const html = body.html?.trim();
     const filter = (body.filter || "all_users") as EmailAudienceFilter;
 
-    if (!scope || (scope !== "single" && scope !== "all" && scope !== "reminder")) {
+    if (!scope || (scope !== "single" && scope !== "all" && scope !== "manual" && scope !== "reminder")) {
       return NextResponse.json({ success: false, message: "Invalid email scope" }, { status: 400 });
     }
 
@@ -260,6 +261,56 @@ export async function POST(req: Request) {
           message: `Email sent to ${user.email}`,
           sentCount: 1,
           failedCount: 0,
+        },
+        { status: 200 }
+      );
+    }
+
+    if (scope === "manual") {
+      const userIds = Array.isArray(body.userIds) ? body.userIds.filter((id): id is string => typeof id === "string" && id.length > 0) : [];
+      if (userIds.length === 0) {
+        return NextResponse.json({ success: false, message: "userIds is required for manual email" }, { status: 400 });
+      }
+
+      const manualUsers = await User.find({ _id: { $in: userIds } }).select("email");
+      if (manualUsers.length === 0) {
+        return NextResponse.json({ success: false, message: "No users found for the provided userIds" }, { status: 404 });
+      }
+
+      const failedEmails: string[] = [];
+      const emailBatches = chunkArray(manualUsers, BATCH_SIZE);
+
+      for (const [batchIndex, batch] of emailBatches.entries()) {
+        if (batchIndex > 0) {
+          await sleep(BATCH_INTERVAL_MS);
+        }
+
+        const payload = batch.map((user) => ({
+          to: user.email,
+          subject: subject as string,
+          html: html as string,
+        }));
+
+        try {
+          const result = await sendBatchEmailWithRetry({ emails: payload });
+          failedEmails.push(...result.failedEmails);
+        } catch (error) {
+          console.error("Failed to send manual admin email batch:", error);
+          failedEmails.push(...batch.map((user) => user.email));
+        }
+      }
+
+      const uniqueFailedEmails = [...new Set(failedEmails)];
+      const sentCount = Math.max(0, manualUsers.length - uniqueFailedEmails.length);
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Sent ${sentCount} email(s) to ${manualUsers.length} selected user${manualUsers.length === 1 ? "" : "s"}${uniqueFailedEmails.length ? `, ${uniqueFailedEmails.length} failed` : ""}`,
+          recipientCount: manualUsers.length,
+          sentCount,
+          failedCount: uniqueFailedEmails.length,
+          failedEmails: uniqueFailedEmails,
         },
         { status: 200 }
       );

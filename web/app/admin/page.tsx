@@ -688,6 +688,7 @@ function EmailComposerModal({
   targetUser,
   audienceFilter,
   filteredCount,
+  selectedUsers,
   subject,
   html,
   sending,
@@ -697,10 +698,11 @@ function EmailComposerModal({
   onClose,
   showSensitiveInfo,
 }: {
-  mode: "single" | "all";
+  mode: "single" | "all" | "manual";
   targetUser: User | null;
   audienceFilter: EmailAudienceFilter;
   filteredCount: number;
+  selectedUsers: User[];
   subject: string;
   html: string;
   sending: boolean;
@@ -710,10 +712,16 @@ function EmailComposerModal({
   onClose: () => void;
   showSensitiveInfo: boolean;
 }) {
-  const title = mode === "all" ? "Send Product Email to Audience" : "Send Product Email";
+  const title = mode === "all"
+    ? "Send Product Email to Audience"
+    : mode === "manual"
+      ? "Send Product Email to Selected Users"
+      : "Send Product Email";
   const recipientText = mode === "all"
     ? `${getEmailAudienceLabel(audienceFilter)} (${filteredCount})`
-    : targetUser?.email ? displayEmail(targetUser.email, showSensitiveInfo) : "Selected user";
+    : mode === "manual"
+      ? `${selectedUsers.length} selected user${selectedUsers.length === 1 ? "" : "s"}`
+      : targetUser?.email ? displayEmail(targetUser.email, showSensitiveInfo) : "Selected user";
 
   return (
     <div
@@ -732,11 +740,42 @@ function EmailComposerModal({
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 15, margin: 0 }}>{title}</p>
             <p style={{ color: "#64748b", fontSize: 12, margin: "5px 0 0", fontFamily: "'JetBrains Mono', monospace" }}>
               Recipient: {recipientText}
             </p>
+            {mode === "manual" && selectedUsers.length > 0 && (
+              <div
+                style={{
+                  marginTop: 10,
+                  maxHeight: 120,
+                  overflowY: "auto",
+                  background: "#0a0d13",
+                  border: "1px solid #1e2330",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                }}
+              >
+                {selectedUsers.map((u) => (
+                  <p
+                    key={u._id}
+                    style={{
+                      color: "#cbd5e1",
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      margin: "3px 0",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {displayEmail(u.email, showSensitiveInfo)}
+                    {u.name ? <span style={{ color: "#475569" }}>  ·  {u.name}</span> : null}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
           <button type="button" onClick={onClose} style={{ color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
             <IconX />
@@ -1027,9 +1066,10 @@ export default function AdminPanel() {
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [clearingUnpaid, setClearingUnpaid] = useState(false);
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
-  const [emailScope, setEmailScope] = useState<"single" | "all">("single");
+  const [emailScope, setEmailScope] = useState<"single" | "all" | "manual">("single");
   const [emailAudienceFilter, setEmailAudienceFilter] = useState<EmailAudienceFilter>("all_users");
   const [emailTargetUser, setEmailTargetUser] = useState<User | null>(null);
+  const [emailSelectedUserIds, setEmailSelectedUserIds] = useState<string[]>([]);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailHtml, setEmailHtml] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -1400,7 +1440,7 @@ export default function AdminPanel() {
     }
   };
 
-  const openEmailComposer = (scope: "single" | "all", user?: User) => {
+  const openEmailComposer = (scope: "single" | "all" | "manual", user?: User) => {
     setEmailScope(scope);
     setEmailTargetUser(scope === "single" ? (user || null) : null);
     setEmailSubject("");
@@ -1424,6 +1464,11 @@ export default function AdminPanel() {
       return;
     }
 
+    if (emailScope === "manual" && emailSelectedUserIds.length === 0) {
+      setEmailFeedback({ type: "error", message: "Select at least one user to email." });
+      return;
+    }
+
     setSendingEmail(true);
     try {
       const res = await fetch("/api/admin/email", {
@@ -1432,6 +1477,7 @@ export default function AdminPanel() {
         body: JSON.stringify({
           scope: emailScope,
           userId: emailScope === "single" ? emailTargetUser?._id : undefined,
+          userIds: emailScope === "manual" ? emailSelectedUserIds : undefined,
           filter: emailScope === "all" ? emailAudienceFilter : undefined,
           subject: emailSubject,
           html: emailHtml,
@@ -1443,6 +1489,9 @@ export default function AdminPanel() {
       }
 
       setEmailFeedback({ type: "success", message: data.message || "Email sent successfully." });
+      if (emailScope === "manual") {
+        setEmailSelectedUserIds([]);
+      }
       setEmailComposerOpen(false);
     } catch (error: unknown) {
       setEmailFeedback({ type: "error", message: getErrorMessage(error, "Failed to send email.") });
@@ -1621,6 +1670,7 @@ export default function AdminPanel() {
           targetUser={emailTargetUser}
           audienceFilter={emailAudienceFilter}
           filteredCount={filteredEmailUsers.length}
+          selectedUsers={users.filter((u) => emailSelectedUserIds.includes(u._id))}
           subject={emailSubject}
           html={emailHtml}
           sending={sendingEmail}
@@ -1852,36 +1902,105 @@ export default function AdminPanel() {
                     {filteredUsers.length} of {users.length}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => openEmailComposer("all")}
-                  disabled={filteredUsers.length === 0}
-                  style={{
-                    background: filteredUsers.length === 0 ? "#1a1f2e" : "#0f2233",
-                    border: `1px solid ${filteredUsers.length === 0 ? "#2d3548" : "#1a3a5c"}`,
-                    color: filteredUsers.length === 0 ? "#64748b" : "#60a5fa",
-                    borderRadius: 6, padding: "6px 12px", fontSize: 12,
-                    cursor: filteredUsers.length === 0 ? "not-allowed" : "pointer",
-                    fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Send to {getEmailAudienceLabel(emailAudienceFilter)} ({filteredUsers.length})
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => openEmailComposer("manual")}
+                    disabled={emailSelectedUserIds.length === 0}
+                    title={emailSelectedUserIds.length === 0 ? "Select users with the checkboxes first" : "Compose email to selected users"}
+                    style={{
+                      background: emailSelectedUserIds.length === 0 ? "#1a1f2e" : "#102a1d",
+                      border: `1px solid ${emailSelectedUserIds.length === 0 ? "#2d3548" : "#1f4731"}`,
+                      color: emailSelectedUserIds.length === 0 ? "#64748b" : "#6ee7b7",
+                      borderRadius: 6, padding: "6px 12px", fontSize: 12,
+                      cursor: emailSelectedUserIds.length === 0 ? "not-allowed" : "pointer",
+                      fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Send to selected ({emailSelectedUserIds.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEmailComposer("all")}
+                    disabled={filteredUsers.length === 0}
+                    style={{
+                      background: filteredUsers.length === 0 ? "#1a1f2e" : "#0f2233",
+                      border: `1px solid ${filteredUsers.length === 0 ? "#2d3548" : "#1a3a5c"}`,
+                      color: filteredUsers.length === 0 ? "#64748b" : "#60a5fa",
+                      borderRadius: 6, padding: "6px 12px", fontSize: 12,
+                      cursor: filteredUsers.length === 0 ? "not-allowed" : "pointer",
+                      fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Send to {getEmailAudienceLabel(emailAudienceFilter)} ({filteredUsers.length})
+                  </button>
+                </div>
               </div>
 
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
-                      {["User", "Plan", "Status", "Usage", "Billing Left", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                      {["Select", "User", "Plan", "Status", "Usage", "Billing Left", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          {h === "Select" ? (
+                            <input
+                              type="checkbox"
+                              checked={filteredUsers.length > 0 && filteredUsers.every((u) => emailSelectedUserIds.includes(u._id))}
+                              ref={(el) => {
+                                if (el) {
+                                  const allSelected = filteredUsers.length > 0 && filteredUsers.every((u) => emailSelectedUserIds.includes(u._id));
+                                  const someSelected = filteredUsers.some((u) => emailSelectedUserIds.includes(u._id));
+                                  el.indeterminate = !allSelected && someSelected;
+                                }
+                              }}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  const merged = new Set([...emailSelectedUserIds, ...filteredUsers.map((u) => u._id)]);
+                                  setEmailSelectedUserIds(Array.from(merged));
+                                } else {
+                                  const visibleIds = new Set(filteredUsers.map((u) => u._id));
+                                  setEmailSelectedUserIds(emailSelectedUserIds.filter((id) => !visibleIds.has(id)));
+                                }
+                              }}
+                              style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#60a5fa" }}
+                              title="Select all visible users"
+                            />
+                          ) : h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((u) => (
-                      <tr key={u._id} className="row-hover" style={{ borderBottom: "1px solid #141820", transition: "background 0.15s" }}>
+                    {filteredUsers.map((u) => {
+                      const isSelected = emailSelectedUserIds.includes(u._id);
+                      return (
+                      <tr
+                        key={u._id}
+                        className="row-hover"
+                        style={{
+                          borderBottom: "1px solid #141820",
+                          transition: "background 0.15s",
+                          background: isSelected ? "#101a2c" : "transparent",
+                        }}
+                      >
+                        <td style={{ padding: "14px 16px" }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEmailSelectedUserIds((prev) => prev.includes(u._id) ? prev : [...prev, u._id]);
+                              } else {
+                                setEmailSelectedUserIds((prev) => prev.filter((id) => id !== u._id));
+                              }
+                            }}
+                            style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#60a5fa" }}
+                            title={`Select ${u.email}`}
+                          />
+                        </td>
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
@@ -1963,9 +2082,10 @@ export default function AdminPanel() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                     {filteredUsers.length === 0 && (
-                      <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
+                      <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
                     )}
                   </tbody>
                 </table>
