@@ -51,6 +51,8 @@ export async function POST(req: Request) {
         apiKey: createApiKey(),
         plan: "free",
         active: true,
+        // New signups are always clean — moderation is an explicit admin action.
+        status: "clean",
         limit:50
       });
       authAction = "register";
@@ -60,6 +62,13 @@ export async function POST(req: Request) {
     if (!user.active) {
       return NextResponse.json(
         { success: false, message: "user account is inactive" },
+        { status: 403 }
+      );
+    }
+
+    if (user.status === "banned") {
+      return NextResponse.json(
+        { success: false, message: "user account is banned" },
         { status: 403 }
       );
     }

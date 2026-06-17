@@ -73,6 +73,75 @@ export async function PUT(req: Request) {
       if (field in rawUpdates) updates[field] = rawUpdates[field];
     }
 
+    // Moderation status (clean / flagged / banned). When provided, append a statusReasons
+    // entry so the audit trail is preserved.
+    const VALID_STATUSES = ["clean", "flagged", "banned"] as const;
+    type ModerationStatus = (typeof VALID_STATUSES)[number];
+    let nextStatus: ModerationStatus | undefined;
+    if ("status" in rawUpdates) {
+      const candidate = rawUpdates.status;
+      if (typeof candidate !== "string" || !VALID_STATUSES.includes(candidate as ModerationStatus)) {
+        return NextResponse.json(
+          { success: false, message: "Invalid status" },
+          { status: 400 },
+        );
+      }
+      nextStatus = candidate as ModerationStatus;
+    }
+
+    const reason = typeof rawUpdates.statusReason === "string" ? rawUpdates.statusReason.trim() : "";
+    const note = typeof rawUpdates.statusNote === "string" ? rawUpdates.statusNote.trim() : "";
+    const moderator = admin.email || admin.userId || "admin";
+
+    const existingUser = await User.findById(_id).select("status statusReasons flaggedAt bannedAt bannedBy");
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 },
+      );
+    }
+
+    if (nextStatus && nextStatus !== existingUser.status) {
+      const now = new Date();
+      const entry = {
+        reason: reason || `Status changed to ${nextStatus}`,
+        by: moderator,
+        at: now,
+        note: note || null,
+      };
+
+      const nextReasons = [...((existingUser.statusReasons as unknown as Array<typeof entry>) || []), entry];
+
+      if (nextStatus === "banned") {
+        updates.status = "banned";
+        updates.flaggedAt = existingUser.flaggedAt ?? null;
+        updates.bannedAt = now;
+        updates.bannedBy = moderator;
+      } else if (nextStatus === "flagged") {
+        updates.status = "flagged";
+        updates.flaggedAt = now;
+        updates.bannedAt = null;
+        updates.bannedBy = null;
+      } else {
+        // clean
+        updates.status = "clean";
+        updates.flaggedAt = null;
+        updates.bannedAt = null;
+        updates.bannedBy = null;
+      }
+      updates.statusReasons = nextReasons;
+    } else if (nextStatus === existingUser.status && reason) {
+      // No status change but a follow-up note — append to the log without touching timestamps.
+      const entry = {
+        reason,
+        by: moderator,
+        at: new Date(),
+        note: note || null,
+      };
+      const nextReasons = [...((existingUser.statusReasons as unknown as Array<typeof entry>) || []), entry];
+      updates.statusReasons = nextReasons;
+    }
+
     const normalizeNullableDate = (value: unknown) => {
       if (value === null || value === "") return null;
       if (typeof value !== "string") return undefined;

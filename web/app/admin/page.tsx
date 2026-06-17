@@ -54,6 +54,11 @@ interface User {
   apiKey?: string;
   billingDate?: string | null;
   expirationDate?: string | null;
+  status?: "clean" | "flagged" | "banned";
+  statusReasons?: Array<{ reason: string; by: string; at: string; note?: string | null }>;
+  flaggedAt?: string | null;
+  bannedAt?: string | null;
+  bannedBy?: string | null;
 }
 
 interface Order {
@@ -416,6 +421,45 @@ const maskEmail = (email: string) => {
   return `${visibleStart}***${visibleEnd}@${domainPart}`;
 };
 
+const UserStatusBadge = ({ status }: { status?: User["status"] }) => {
+  const value = status || "clean";
+  const palette: Record<NonNullable<User["status"]>, { bg: string; border: string; color: string; label: string }> = {
+    clean: { bg: "#0f2a1d", border: "#1a4731", color: "#6ee7b7", label: "Clean" },
+    flagged: { bg: "#2a1f0f", border: "#4a3a1f", color: "#fb923c", label: "Flagged" },
+    banned: { bg: "#2a0f0f", border: "#4a1f1f", color: "#f87171", label: "Banned" },
+  };
+  const tone = palette[value as NonNullable<User["status"]>];
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        fontSize: 11,
+        fontFamily: "'JetBrains Mono', monospace",
+        background: tone.bg,
+        border: `1px solid ${tone.border}`,
+        color: tone.color,
+        padding: "2px 8px",
+        borderRadius: 6,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: tone.color,
+          boxShadow: `0 0 6px ${tone.color}`,
+          flexShrink: 0,
+        }}
+      />
+      {tone.label}
+    </span>
+  );
+};
+
 const displayEmail = (email: string, showSensitiveInfo: boolean) =>
   showSensitiveInfo ? email : maskEmail(email);
 
@@ -527,8 +571,10 @@ function BillingTimer({ user }: { user: User }) {
 }
 
 // ─── Edit User Modal ──────────────────────────────────────────────────────────
-function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: User; onSave: (id: string, updates: Partial<User>) => void; onClose: () => void; showSensitiveInfo: boolean }) {
+function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: User; onSave: (id: string, updates: Partial<User> & { statusReason?: string; statusNote?: string }) => void; onClose: () => void; showSensitiveInfo: boolean }) {
   const [draft, setDraft] = useState({ ...user });
+  const [statusReason, setStatusReason] = useState("");
+  const [statusNote, setStatusNote] = useState("");
 
   return (
     <div
@@ -616,6 +662,47 @@ function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: Use
             <span style={{ color: "#94a3b8", fontSize: 13 }}>Account Active</span>
           </label>
 
+          {/* Moderation status */}
+          <div
+            style={{
+              border: "1px solid #1e2330",
+              borderRadius: 8,
+              padding: 12,
+              background: "#0a0d13",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>
+                Moderation status
+              </span>
+              <UserStatusBadge status={draft.status} />
+            </div>
+            <select
+              value={draft.status || "clean"}
+              onChange={(e) => setDraft({ ...draft, status: e.target.value as User["status"] })}
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 13 }}
+            >
+              <option value="clean">Clean</option>
+              <option value="flagged">Flagged (review)</option>
+              <option value="banned">Banned (block access)</option>
+            </select>
+            <input
+              value={statusReason}
+              onChange={(e) => setStatusReason(e.target.value)}
+              placeholder="Reason (e.g. abuse report #4521)"
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+            />
+            <input
+              value={statusNote}
+              onChange={(e) => setStatusNote(e.target.value)}
+              placeholder="Internal note (optional)"
+              style={{ background: "#1a1f2e", border: "1px solid #2d3548", color: "#e2e8f0", borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}
+            />
+          </div>
+
           {/* Billing Date */}
           <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <span style={{ color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" }}>Billing Date</span>
@@ -666,6 +753,9 @@ function EditUserModal({ user, onSave, onClose, showSensitiveInfo }: { user: Use
                 limit: draft.limit,
                 billingDate: draft.billingDate || null,
                 expirationDate: draft.expirationDate || null,
+                status: draft.status,
+                statusReason: statusReason.trim() || undefined,
+                statusNote: statusNote.trim() || undefined,
               });
               onClose();
             }}
@@ -1070,6 +1160,7 @@ export default function AdminPanel() {
   const [emailAudienceFilter, setEmailAudienceFilter] = useState<EmailAudienceFilter>("all_users");
   const [emailTargetUser, setEmailTargetUser] = useState<User | null>(null);
   const [emailSelectedUserIds, setEmailSelectedUserIds] = useState<string[]>([]);
+  const [manualSelectionMode, setManualSelectionMode] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailHtml, setEmailHtml] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -1389,11 +1480,13 @@ export default function AdminPanel() {
   };
 
   // Optimistic update: patch cache instantly, revalidate after PUT
-  const updateUser = async (id: string, updates: Partial<User>) => {
-    // Optimistically update local cache
+  const updateUser = async (id: string, updates: Partial<User> & { statusReason?: string; statusNote?: string }) => {
+    // Optimistically update local cache. We don't echo statusReason/statusNote back since
+    // they are one-shot payload fields, not part of the User model.
+    const { statusReason: _sr, statusNote: _sn, ...patch } = updates;
     await mutateUsers(
       (prev) => prev
-        ? { ...prev, users: prev.users.map((u) => u._id === id ? { ...u, ...updates } : u) }
+        ? { ...prev, users: prev.users.map((u) => u._id === id ? { ...u, ...patch } : u) }
         : prev,
       false
     );
@@ -1401,7 +1494,7 @@ export default function AdminPanel() {
       const res = await fetch("/api/admin/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ _id: id, ...updates }),
+        body: JSON.stringify({ _id: id, ...patch, statusReason: _sr, statusNote: _sn }),
       });
       if (!res.ok) throw new Error("Update failed");
     } catch (e) {
@@ -1864,6 +1957,46 @@ export default function AdminPanel() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !manualSelectionMode;
+                      setManualSelectionMode(next);
+                      if (next) {
+                        const visibleIds = filteredUsers.map((u) => u._id);
+                        setEmailSelectedUserIds(visibleIds);
+                      } else {
+                        setEmailSelectedUserIds([]);
+                      }
+                    }}
+                    title={manualSelectionMode ? "Exit manual selection mode" : "Pick specific users to email"}
+                    style={{
+                      background: manualSelectionMode ? "#1f4731" : "#1a1f2e",
+                      border: `1px solid ${manualSelectionMode ? "#2d6b46" : "#2d3548"}`,
+                      color: manualSelectionMode ? "#6ee7b7" : "#94a3b8",
+                      borderRadius: 6,
+                      padding: "7px 12px",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: manualSelectionMode ? "#34d399" : "#475569",
+                        boxShadow: manualSelectionMode ? "0 0 6px #34d399" : "none",
+                      }}
+                    />
+                    {manualSelectionMode ? "Selection ON" : "Select"}
+                  </button>
                   <input
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
@@ -1879,63 +2012,90 @@ export default function AdminPanel() {
                       minWidth: 220,
                     }}
                   />
-                  <select
-                    value={emailAudienceFilter}
-                    onChange={(e) => setEmailAudienceFilter(e.target.value as EmailAudienceFilter)}
-                    style={{
-                      background: "#1a1f2e",
-                      border: "1px solid #2d3548",
-                      color: "#e2e8f0",
-                      borderRadius: 6,
-                      padding: "7px 10px",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {EMAIL_AUDIENCE_FILTER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  {!manualSelectionMode && (
+                    <select
+                      value={emailAudienceFilter}
+                      onChange={(e) => setEmailAudienceFilter(e.target.value as EmailAudienceFilter)}
+                      style={{
+                        background: "#1a1f2e",
+                        border: "1px solid #2d3548",
+                        color: "#e2e8f0",
+                        borderRadius: 6,
+                        padding: "7px 10px",
+                        fontSize: 12,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {EMAIL_AUDIENCE_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {manualSelectionMode && emailSelectedUserIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setEmailSelectedUserIds([])}
+                      title="Clear current selection"
+                      style={{
+                        background: "none",
+                        border: "1px solid #2d3548",
+                        color: "#94a3b8",
+                        borderRadius: 6,
+                        padding: "6px 10px",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Clear ({emailSelectedUserIds.length})
+                    </button>
+                  )}
                   <span style={{ color: "#475569", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap" }}>
-                    {filteredUsers.length} of {users.length}
+                    {manualSelectionMode
+                      ? `${emailSelectedUserIds.length} selected of ${filteredUsers.length}`
+                      : `${filteredUsers.length} of ${users.length}`}
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <button
-                    type="button"
-                    onClick={() => openEmailComposer("manual")}
-                    disabled={emailSelectedUserIds.length === 0}
-                    title={emailSelectedUserIds.length === 0 ? "Select users with the checkboxes first" : "Compose email to selected users"}
-                    style={{
-                      background: emailSelectedUserIds.length === 0 ? "#1a1f2e" : "#102a1d",
-                      border: `1px solid ${emailSelectedUserIds.length === 0 ? "#2d3548" : "#1f4731"}`,
-                      color: emailSelectedUserIds.length === 0 ? "#64748b" : "#6ee7b7",
-                      borderRadius: 6, padding: "6px 12px", fontSize: 12,
-                      cursor: emailSelectedUserIds.length === 0 ? "not-allowed" : "pointer",
-                      fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Send to selected ({emailSelectedUserIds.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openEmailComposer("all")}
-                    disabled={filteredUsers.length === 0}
-                    style={{
-                      background: filteredUsers.length === 0 ? "#1a1f2e" : "#0f2233",
-                      border: `1px solid ${filteredUsers.length === 0 ? "#2d3548" : "#1a3a5c"}`,
-                      color: filteredUsers.length === 0 ? "#64748b" : "#60a5fa",
-                      borderRadius: 6, padding: "6px 12px", fontSize: 12,
-                      cursor: filteredUsers.length === 0 ? "not-allowed" : "pointer",
-                      fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Send to {getEmailAudienceLabel(emailAudienceFilter)} ({filteredUsers.length})
-                  </button>
+                  {manualSelectionMode ? (
+                    <button
+                      type="button"
+                      onClick={() => openEmailComposer("manual")}
+                      disabled={emailSelectedUserIds.length === 0}
+                      title={emailSelectedUserIds.length === 0 ? "Select at least one user" : "Compose email to selected users"}
+                      style={{
+                        background: emailSelectedUserIds.length === 0 ? "#1a1f2e" : "#102a1d",
+                        border: `1px solid ${emailSelectedUserIds.length === 0 ? "#2d3548" : "#1f4731"}`,
+                        color: emailSelectedUserIds.length === 0 ? "#64748b" : "#6ee7b7",
+                        borderRadius: 6, padding: "6px 12px", fontSize: 12,
+                        cursor: emailSelectedUserIds.length === 0 ? "not-allowed" : "pointer",
+                        fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Send to selected ({emailSelectedUserIds.length})
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openEmailComposer("all")}
+                      disabled={filteredUsers.length === 0}
+                      style={{
+                        background: filteredUsers.length === 0 ? "#1a1f2e" : "#0f2233",
+                        border: `1px solid ${filteredUsers.length === 0 ? "#2d3548" : "#1a3a5c"}`,
+                        color: filteredUsers.length === 0 ? "#64748b" : "#60a5fa",
+                        borderRadius: 6, padding: "6px 12px", fontSize: 12,
+                        cursor: filteredUsers.length === 0 ? "not-allowed" : "pointer",
+                        fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Send to {getEmailAudienceLabel(emailAudienceFilter)} ({filteredUsers.length})
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1943,39 +2103,40 @@ export default function AdminPanel() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#0a0d13", borderBottom: "1px solid #1e2330" }}>
-                      {["Select", "User", "Plan", "Status", "Usage", "Billing Left", "Actions"].map((h) => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          {h === "Select" ? (
-                            <input
-                              type="checkbox"
-                              checked={filteredUsers.length > 0 && filteredUsers.every((u) => emailSelectedUserIds.includes(u._id))}
-                              ref={(el) => {
-                                if (el) {
-                                  const allSelected = filteredUsers.length > 0 && filteredUsers.every((u) => emailSelectedUserIds.includes(u._id));
-                                  const someSelected = filteredUsers.some((u) => emailSelectedUserIds.includes(u._id));
-                                  el.indeterminate = !allSelected && someSelected;
-                                }
-                              }}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  const merged = new Set([...emailSelectedUserIds, ...filteredUsers.map((u) => u._id)]);
-                                  setEmailSelectedUserIds(Array.from(merged));
-                                } else {
-                                  const visibleIds = new Set(filteredUsers.map((u) => u._id));
-                                  setEmailSelectedUserIds(emailSelectedUserIds.filter((id) => !visibleIds.has(id)));
-                                }
-                              }}
-                              style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#60a5fa" }}
-                              title="Select all visible users"
-                            />
-                          ) : h}
+                      {manualSelectionMode && (
+                        <th style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          <input
+                            type="checkbox"
+                            checked={filteredUsers.length > 0 && filteredUsers.every((u) => emailSelectedUserIds.includes(u._id))}
+                            ref={(el) => {
+                              if (el) {
+                                const allSelected = filteredUsers.length > 0 && filteredUsers.every((u) => emailSelectedUserIds.includes(u._id));
+                                const someSelected = filteredUsers.some((u) => emailSelectedUserIds.includes(u._id));
+                                el.indeterminate = !allSelected && someSelected;
+                              }
+                            }}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                const merged = new Set([...emailSelectedUserIds, ...filteredUsers.map((u) => u._id)]);
+                                setEmailSelectedUserIds(Array.from(merged));
+                              } else {
+                                const visibleIds = new Set(filteredUsers.map((u) => u._id));
+                                setEmailSelectedUserIds(emailSelectedUserIds.filter((id) => !visibleIds.has(id)));
+                              }
+                            }}
+                            style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#60a5fa" }}
+                            title="Select all visible users"
+                          />
                         </th>
+                      )}
+                      {["User", "Plan", "Status", "Status (Moderation)", "Usage", "Billing Left", "Actions"].map((h) => (
+                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#475569", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUsers.map((u) => {
-                      const isSelected = emailSelectedUserIds.includes(u._id);
+                      const isSelected = manualSelectionMode && emailSelectedUserIds.includes(u._id);
                       return (
                       <tr
                         key={u._id}
@@ -1986,21 +2147,23 @@ export default function AdminPanel() {
                           background: isSelected ? "#101a2c" : "transparent",
                         }}
                       >
-                        <td style={{ padding: "14px 16px" }}>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setEmailSelectedUserIds((prev) => prev.includes(u._id) ? prev : [...prev, u._id]);
-                              } else {
-                                setEmailSelectedUserIds((prev) => prev.filter((id) => id !== u._id));
-                              }
-                            }}
-                            style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#60a5fa" }}
-                            title={`Select ${u.email}`}
-                          />
-                        </td>
+                        {manualSelectionMode && (
+                          <td style={{ padding: "14px 16px" }}>
+                            <input
+                              type="checkbox"
+                              checked={emailSelectedUserIds.includes(u._id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEmailSelectedUserIds((prev) => prev.includes(u._id) ? prev : [...prev, u._id]);
+                                } else {
+                                  setEmailSelectedUserIds((prev) => prev.filter((id) => id !== u._id));
+                                }
+                              }}
+                              style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#60a5fa" }}
+                              title={`Select ${u.email}`}
+                            />
+                          </td>
+                        )}
                         <td style={{ padding: "14px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
@@ -2022,6 +2185,21 @@ export default function AdminPanel() {
                           </div>
                         </td>
                         <td style={{ padding: "14px 16px" }}><PlanBadge plan={u.plan} /></td>
+                        <td style={{ padding: "14px 16px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                            <UserStatusBadge status={u.status} />
+                            {u.status === "banned" && u.bannedAt && (
+                              <span style={{ color: "#475569", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                                {new Date(u.bannedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                            {u.status === "flagged" && u.flaggedAt && (
+                              <span style={{ color: "#475569", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                                {new Date(u.flaggedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td style={{ padding: "14px 16px" }}>
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
                             <span style={{ width: 6, height: 6, borderRadius: "50%", background: u.active ? "#34d399" : "#64748b", flexShrink: 0 }} />
@@ -2085,7 +2263,7 @@ export default function AdminPanel() {
                       );
                     })}
                     {filteredUsers.length === 0 && (
-                      <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
+                      <tr><td colSpan={manualSelectionMode ? 8 : 7} style={{ padding: 40, textAlign: "center", color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>No users found</td></tr>
                     )}
                   </tbody>
                 </table>

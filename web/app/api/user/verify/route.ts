@@ -46,6 +46,21 @@ export async function GET(request: Request) {
       return response;
     }
 
+    if (user.status === "banned") {
+      const response = NextResponse.json(
+        { success: false, message: "unauthorized: account is banned" },
+        { status: 403 }
+      );
+      response.cookies.set(getAuthCookieName(), "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 0,
+      });
+      return response;
+    }
+
     const email = String(user.email || "").trim().toLowerCase();
     const { searchParams } = new URL(request.url);
     const daysParam = Number(searchParams.get("days") || 14);

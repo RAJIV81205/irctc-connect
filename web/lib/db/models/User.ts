@@ -57,9 +57,53 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // ── Trust & moderation state ────────────────────────────────────────────
+    // Tracks whether the account has been flagged for review or banned.
+    // `active` still controls runtime access; `status` records moderation history.
+    status: {
+      type: String,
+      enum: ["clean", "flagged", "banned"],
+      default: "clean",
+      required: true,
+      index: true,
+    },
+
+    statusReasons: {
+      type: [
+        {
+          reason: { type: String, required: true, trim: true },
+          by: { type: String, required: true, trim: true },
+          at: { type: Date, required: true, default: () => new Date() },
+          note: { type: String, trim: true, default: null },
+        },
+      ],
+      default: [],
+    },
+
+    flaggedAt: {
+      type: Date,
+      default: null,
+    },
+
+    bannedAt: {
+      type: Date,
+      default: null,
+    },
+
+    bannedBy: {
+      type: String,
+      default: null,
+      trim: true,
+    },
   },
   { timestamps: true },
 );
+
+userSchema.virtual("isBanned").get(function () {
+  return this.status === "banned";
+});
+
 
 export type UserDocument = InferSchemaType<typeof userSchema> & {
   _id: mongoose.Types.ObjectId;
