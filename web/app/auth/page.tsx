@@ -236,7 +236,31 @@ function AuthPageInner() {
         }
         .auth-back:hover { color: #000; }
 
-        /* Animation */
+        /* Legal notice */
+        .auth-legal {
+          margin: 22px 0 0;
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 300;
+          line-height: 1.6;
+          color: #9ca3af;
+          text-align: center;
+          max-width: 320px;
+          animation: auth-rise 0.7s ease 0.24s both;
+        }
+        .auth-legal-link {
+          color: #6F6F6F;
+          text-decoration: none;
+          border-bottom: 1px solid #e5e7eb;
+          padding-bottom: 1px;
+          transition: color 0.15s, border-color 0.15s;
+        }
+        .auth-legal-link:hover {
+          color: #000;
+          border-color: #000;
+        }
+
+                /* Animation */
         @keyframes auth-rise {
           from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -244,7 +268,7 @@ function AuthPageInner() {
 
         @media (prefers-reduced-motion: reduce) {
           .auth-eyebrow, .auth-heading, .auth-sub,
-          .auth-card, .auth-back { animation: none; }
+          .auth-card, .auth-back, .auth-legal { animation: none; }
           .auth-google-btn { transition: none; }
         }
 
@@ -309,6 +333,13 @@ function AuthPageInner() {
             ))}
           </div>
         </div>
+
+        <p className="auth-legal">
+          By continuing, you agree to our{" "}
+          <Link href="/terms" className="auth-legal-link">Terms</Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="auth-legal-link">Privacy Policy</Link>.
+        </p>
 
         <Link href="/" className="auth-back">
           <ArrowLeft size={13} />
