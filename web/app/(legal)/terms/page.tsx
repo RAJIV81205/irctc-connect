@@ -7,8 +7,11 @@ import { TERMS_AND_CONDITIONS } from "../../../lib/constants";
 export const metadata: Metadata = buildMetadata({
   title: "Terms and Conditions",
   description:
-    "Read the IRCTC Connect terms of service. Understand the rules, acceptable use, and obligations that govern your use of the Indian Railways API, dashboard, and Node.js SDK.",
+    "Read the IRCTC Connect terms of service. Understand the rules, acceptable use, payment terms, and obligations that govern your use of the Indian Railways API, dashboard, and Node.js SDK.",
   path: "/terms",
+  type: "article",
+  publishedTime: TERMS_AND_CONDITIONS.lastUpdated + "T00:00:00.000Z",
+  modifiedTime: TERMS_AND_CONDITIONS.lastUpdated + "T00:00:00.000Z",
   keywords: [
     "irctc connect terms",
     "irctc api terms of service",
@@ -18,6 +21,13 @@ export const metadata: Metadata = buildMetadata({
     "irctc api license",
     "irctc rate limits",
     "irctc service agreement",
+    "irctc refund policy",
+    "irctc api acceptable use policy",
+    "irctc data usage terms",
+    "irctc api key sharing policy",
+    "indian railways api license",
+    "irctc subscription terms",
+    "irctc developer agreement",
   ],
 });
 
@@ -37,6 +47,26 @@ const breadcrumbSchema = {
   ],
 };
 
+const webPageSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: `${SITE_NAME} Terms and Conditions`,
+  url: absoluteUrl("/terms"),
+  inLanguage: "en-IN",
+  datePublished: data.lastUpdated + "T00:00:00.000Z",
+  dateModified: data.lastUpdated + "T00:00:00.000Z",
+  isPartOf: {
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+  },
+  publisher: {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+  },
+};
+
 export default function TermsPage() {
   return (
     <>
@@ -53,6 +83,10 @@ export default function TermsPage() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }}
         />
 
         {/* Hero */}

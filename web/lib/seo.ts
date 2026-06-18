@@ -127,6 +127,9 @@ export type BuildMetadataOptions = {
   keywords?: string[];
   path?: string;
   imagePath?: string;
+  type?: "website" | "article";
+  publishedTime?: string;
+  modifiedTime?: string;
 };
 
 export function buildMetadata({
@@ -135,10 +138,15 @@ export function buildMetadata({
   keywords,
   path = "/",
   imagePath = SOCIAL_IMAGE_PATH,
+  type = "website",
+  publishedTime,
+  modifiedTime,
 }: BuildMetadataOptions = {}) {
   const resolvedTitle = title ? `${title} | ${SITE_NAME}` : SITE_TITLE;
   const resolvedKeywords = keywords?.length ? keywords : SITE_KEYWORDS;
   const imageUrl = absoluteUrl(imagePath);
+
+  const isArticle = type === "article";
 
   return {
     title: resolvedTitle,
@@ -147,13 +155,26 @@ export function buildMetadata({
     alternates: {
       canonical: absoluteUrl(path),
     },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large" as const,
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       title: resolvedTitle,
       description,
       url: absoluteUrl(path),
       siteName: SITE_NAME,
       locale: OG_LOCALE,
-      type: "website" as const,
+      type: isArticle ? ("article" as const) : ("website" as const),
+      ...(publishedTime ? { publishedTime } : {}),
+      ...(modifiedTime ? { modifiedTime } : {}),
       images: [
         {
           url: imageUrl,

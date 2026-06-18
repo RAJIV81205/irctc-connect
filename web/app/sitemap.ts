@@ -1,8 +1,14 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "../lib/seo";
+import {
+  PRIVACY_POLICY,
+  TERMS_AND_CONDITIONS,
+} from "../lib/constants";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
+  const privacyUpdated = new Date(PRIVACY_POLICY.lastUpdated);
+  const termsUpdated = new Date(TERMS_AND_CONDITIONS.lastUpdated);
 
   return [
     {
@@ -27,7 +33,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: absoluteUrl("/contact"),
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.7,
-    }
+      priority: 0.5,
+    },
+    {
+      url: absoluteUrl("/terms"),
+      lastModified: termsUpdated,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: absoluteUrl("/privacy"),
+      lastModified: privacyUpdated,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
 }

@@ -7,8 +7,11 @@ import { PRIVACY_POLICY } from "../../../lib/constants";
 export const metadata: Metadata = buildMetadata({
   title: "Privacy Policy",
   description:
-    "Read the IRCTC Connect privacy policy. Learn what data we collect, how we use it, and the choices you have when using the Indian Railways API and dashboard.",
+    "Read the IRCTC Connect privacy policy. Learn what data we collect, how we use it, how it is stored, and the choices you have when using the Indian Railways API, dashboard, and SDK.",
   path: "/privacy",
+  type: "article",
+  publishedTime: PRIVACY_POLICY.lastUpdated + "T00:00:00.000Z",
+  modifiedTime: PRIVACY_POLICY.lastUpdated + "T00:00:00.000Z",
   keywords: [
     "irctc connect privacy policy",
     "irctc api privacy",
@@ -18,6 +21,13 @@ export const metadata: Metadata = buildMetadata({
     "irctc account data",
     "irctc cookies policy",
     "irctc data retention",
+    "irctc gdpr",
+    "irctc data sharing",
+    "irctc third party services",
+    "indian railways data protection",
+    "irctc api usage logs",
+    "irctc user data rights",
+    "irctc security monitoring",
   ],
 });
 
@@ -37,6 +47,26 @@ const breadcrumbSchema = {
   ],
 };
 
+const webPageSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: `${SITE_NAME} Privacy Policy`,
+  url: absoluteUrl("/privacy"),
+  inLanguage: "en-IN",
+  datePublished: data.lastUpdated + "T00:00:00.000Z",
+  dateModified: data.lastUpdated + "T00:00:00.000Z",
+  isPartOf: {
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+  },
+  publisher: {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+  },
+};
+
 export default function PrivacyPage() {
   return (
     <>
@@ -53,6 +83,10 @@ export default function PrivacyPage() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }}
         />
 
         {/* Hero */}
