@@ -4,7 +4,8 @@
 [![Downloads](https://img.shields.io/npm/dm/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
 [![License](https://img.shields.io/npm/l/irctc-connect.svg)](https://github.com/RAJIV81205/irctc-connect/blob/main/LICENSE)
 
-<img width="1536" height="657" alt="RailKit Banner" src="https://github.com/user-attachments/assets/39c770a2-639c-443c-93b6-4e78889e78b0" />
+<img width="1536" height="657" alt="RailKit Banner" src="https://github.com/user-attachments/assets/6bdcc05f-186d-4f6f-918d-a99a65026c97" />
+
 
 A comprehensive Node.js SDK for Indian Railways. Get real-time PNR status, train information, live tracking, station updates, train search, and seat availability — all through a single, clean API.
 
@@ -26,7 +27,7 @@ A comprehensive Node.js SDK for Indian Railways. Get real-time PNR status, train
 ## 📦 Installation
 
 ```bash
-npm install irctc-connect
+npm install railkit
 ```
 
 ---
@@ -46,15 +47,15 @@ npm install irctc-connect
 
 ```bash
 # .env
-IRCTC_API_KEY=your_api_key_here
+RAILKIT_API_KEY=your_api_key_here
 ```
 
 ### Step 2 — Configure the SDK once at startup
 
 ```javascript
-import { configure } from 'irctc-connect';
+import { configure } from 'railkit';
 
-configure(process.env.IRCTC_API_KEY);
+configure(process.env.RAILKIT_API_KEY);
 ```
 
 Call `configure()` **once** at the top of your app before using any other function. It stores your key globally for all subsequent calls.
@@ -71,10 +72,10 @@ import {
   searchTrainBetweenStations,
   getAvailability,
   fareLookup,
-} from 'irctc-connect';
+} from 'railkit';
 
 // Configure once
-configure(process.env.IRCTC_API_KEY);
+configure(process.env.RAILKIT_API_KEY);
 
 // Check PNR status
 const pnrResult = await checkPNRStatus('1234567890');
@@ -111,9 +112,9 @@ Configure the SDK with your API key. **Must be called once before any other func
 | `apiKey` | string | Your API key from the dashboard |
 
 ```javascript
-import { configure } from 'irctc-connect';
+import { configure } from 'railkit';
 
-configure(process.env.IRCTC_API_KEY);
+configure(process.env.RAILKIT_API_KEY);
 ```
 
 ---
@@ -766,9 +767,9 @@ Used by both `getAvailability` and `fareLookup`.
 
 ## 🙋 Support
 
-- **Issues:** [GitHub Issues](https://github.com/RAJIV81205/irctc-connect/issues)
+- **Issues:** [GitHub Issues](https://github.com/RAJIV81205/railkit/issues)
 - **Docs:** [railkit.rajivdubey.dev/docs](https://railkit.rajivdubey.dev/docs)
-- **Discussions:** [GitHub Discussions](https://github.com/RAJIV81205/irctc-connect/discussions)
+- **Discussions:** [GitHub Discussions](https://github.com/RAJIV81205/railkit/discussions)
 
 ---
 
