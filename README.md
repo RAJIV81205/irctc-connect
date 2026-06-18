@@ -4,7 +4,7 @@
 [![Downloads](https://img.shields.io/npm/dm/irctc-connect.svg)](https://www.npmjs.com/package/irctc-connect)
 [![License](https://img.shields.io/npm/l/irctc-connect.svg)](https://github.com/RAJIV81205/irctc-connect/blob/main/LICENSE)
 
-<img width="1536" height="657" alt="IRCTC Connect Banner" src="https://github.com/user-attachments/assets/39c770a2-639c-443c-93b6-4e78889e78b0" />
+<img width="1536" height="657" alt="RailKit Banner" src="https://github.com/user-attachments/assets/39c770a2-639c-443c-93b6-4e78889e78b0" />
 
 A comprehensive Node.js SDK for Indian Railways. Get real-time PNR status, train information, live tracking, station updates, train search, and seat availability — all through a single, clean API.
 
@@ -33,7 +33,7 @@ npm install irctc-connect
 
 ## 🔑 Getting an API Key
 
-1. Visit **[irctc.rajivdubey.dev](https://irctc.rajivdubey.dev)**
+1. Visit **[railkit.rajivdubey.dev](https://railkit.rajivdubey.dev)**
 2. Sign up and navigate to your Dashboard
 3. Generate an API key from the **API Keys** section
 4. Copy the key — you'll use it in the next step
@@ -760,14 +760,14 @@ Used by both `getAvailability` and `fareLookup`.
 
 - Node.js 18+ (native `fetch` required)
 - Internet connection for API calls
-- A valid IRCTC Connect API key
+- A valid RailKit API key
 
 ---
 
 ## 🙋 Support
 
 - **Issues:** [GitHub Issues](https://github.com/RAJIV81205/irctc-connect/issues)
-- **Docs:** [irctc.rajivdubey.dev/docs](https://irctc.rajivdubey.dev/docs)
+- **Docs:** [railkit.rajivdubey.dev/docs](https://railkit.rajivdubey.dev/docs)
 - **Discussions:** [GitHub Discussions](https://github.com/RAJIV81205/irctc-connect/discussions)
 
 ---
