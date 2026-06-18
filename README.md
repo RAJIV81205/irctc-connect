@@ -763,6 +763,7 @@ Used by both `getAvailability` and `fareLookup`.
 - Internet connection for API calls
 - A valid RailKit API key
 
+
 ---
 
 ## 🙋 Support
