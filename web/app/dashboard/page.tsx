@@ -576,7 +576,7 @@ export default function DashboardPage() {
   const avatarSeed = encodeURIComponent(dbUser.name || dbUser.email);
   const dicebearUrl = `https://api.dicebear.com/10.x/pixel-art/svg?seed=${avatarSeed}`;
   const canBuyLimitTopup = normalizedPlan === "pro" || normalizedPlan === "enterprise" || normalizedPlan === "advance" || normalizedPlan === "advanced";
-  const directApiBaseUrl = process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL || "https://irctc-api.rajivdubey.dev";
+  const directApiBaseUrl = process.env.NEXT_PUBLIC_DIRECT_API_BASE_URL || "https://railkit-api.rajivdubey.dev";
 
   const apiLanguageMeta: Record<ApiCodeLanguage, { label: string; syntax: "javascript" | "python" | "bash" }> = {
     javascript: { label: "JavaScript", syntax: "javascript" },
