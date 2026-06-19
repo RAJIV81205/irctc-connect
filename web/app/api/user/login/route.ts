@@ -1,121 +1,49 @@
-import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db/db";
-import User from "@/lib/db/models/User";
-import { getAuthCookieName, signAuthToken } from "@/lib/auth";
 
-function createApiKey() {
-  return `irctc_${crypto.randomBytes(24).toString("hex")}`;
-}
-
-function fallbackNameFromEmail(email: string) {
-  const localPart = email.split("@")[0] || "user";
-  return localPart.replace(/[._-]+/g, " ").trim() || "user";
-}
+import {
+  authenticateWithGoogleCode,
+  buildAuthCookie,
+} from "@/lib/auth/google";
 
 export async function POST(req: Request) {
   try {
-    await connectToDatabase();
+    const body = await req.json().catch(() => ({}));
+    const code: string | undefined =
+      typeof body?.code === "string" ? body.code : undefined;
 
-    const body = (await req.json()) as {
-      email?: string;
-      name?: string;
-    };
-
-    const email = body.email?.trim().toLowerCase();
-    const name = body.name?.trim();
-
-    if (!email) {
+    if (!code) {
       return NextResponse.json(
-        { success: false, message: "email is required" },
+        { success: false, message: "Authorization code is required" },
         { status: 400 }
       );
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const result = await authenticateWithGoogleCode(code, req);
+
+    if (!result.ok) {
       return NextResponse.json(
-        { success: false, message: "invalid email format" },
-        { status: 400 }
+        { success: false, message: result.message },
+        { status: result.status }
       );
     }
-
-    let user = await User.findOne({ email });
-    let authAction: "login" | "register" = "login";
-    let statusCode = 200;
-
-    if (!user) {
-      user = await User.create({
-        name: name || fallbackNameFromEmail(email),
-        email,
-        apiKey: createApiKey(),
-        plan: "free",
-        active: true,
-        // New signups are always clean — moderation is an explicit admin action.
-        status: "clean",
-        limit:50
-      });
-      authAction = "register";
-      statusCode = 201;
-    }
-
-    if (!user.active) {
-      return NextResponse.json(
-        { success: false, message: "user account is inactive" },
-        { status: 403 }
-      );
-    }
-
-    if (user.status === "banned") {
-      return NextResponse.json(
-        { success: false, message: "user account is banned" },
-        { status: 403 }
-      );
-    }
-
-    const token = signAuthToken({
-      userId: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      plan: user.plan,
-    });
 
     const response = NextResponse.json(
       {
         success: true,
-        message:
-          authAction === "register"
-            ? "registration successful"
-            : "login successful",
-        action: authAction,
-        user: {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          apiKey: user.apiKey,
-          usage: user.usage,
-          limit: user.limit,
-          active: user.active,
-          plan: user.plan,
-          billingDate: user.billingDate,
-        },
+        action: result.action,
+        user: result.user,
       },
-      { status: statusCode }
+      { status: result.action === "register" ? 201 : 200 }
     );
 
-    response.cookies.set(getAuthCookieName(), token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    const cookie = buildAuthCookie(result.token);
+    response.cookies.set(cookie.name, cookie.value, cookie.options);
 
     return response;
   } catch (error) {
-    console.error("Login route error:", error);
+    console.error("Google login route error:", error);
     return NextResponse.json(
-      { success: false, message: "internal server error" },
+      { success: false, message: "Authentication failed" },
       { status: 500 }
     );
   }
