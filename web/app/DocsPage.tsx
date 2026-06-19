@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { packageInfo, responseFormats, sidebarGroups } from "./docsData";
-import { useTheme } from "./ThemeProvider";
+import { useSidebar } from "./SidebarProvider";
 import {
   AlertTriangle,
   Armchair,
@@ -218,7 +218,7 @@ const fare   = await fareLookup("12313","ASN","NDLS","06-06-2026","3A","GN");`;
 const docsBaseUrl = "https://railkit.rajivdubey.dev/docs";
 
 export default function DocsPage() {
-  const { sidebarOpen, setSidebarOpen } = useTheme();
+  const { sidebarOpen, setSidebarOpen } = useSidebar();
   const [activeSection, setActiveSection] = useState("introduction");
   const [copiedInstall, setCopiedInstall] = useState(false);
   const [copiedAIMarkdown, setCopiedAIMarkdown] = useState(false);

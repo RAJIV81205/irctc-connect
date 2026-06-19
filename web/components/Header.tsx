@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronRight, LogOut, Menu, X } from "lucide-react";
-import { useTheme } from "../app/ThemeProvider";
+import { useSidebar } from "../app/SidebarProvider";
 
 type VerifiedUser = {
   id: string;
@@ -20,7 +20,7 @@ export function Header() {
   const isDashboardPage = pathname === "/dashboard";
   const isDocsPage = pathname === "/docs";
   const router = useRouter();
-  const { sidebarOpen, setSidebarOpen } = useTheme();
+  const { sidebarOpen, setSidebarOpen } = useSidebar();
   const [user, setUser] = useState<VerifiedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

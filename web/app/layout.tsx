@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import { ThemeProvider } from "./ThemeProvider";
+import { SidebarProvider } from "./SidebarProvider";
 import { Header } from "../components/Header";
 import { Analytics } from "@vercel/analytics/next"
 import {
@@ -119,22 +119,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-WCXRHWZD');`,
           }}
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem('theme');
-                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  const activeTheme = theme || systemTheme;
-                  if (activeTheme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
       </head>
       <body className={`${notoSans.variable} antialiased`}>
         <noscript>
@@ -145,10 +129,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-        <ThemeProvider>
+        <SidebarProvider>
           <Header />
           {children}
-        </ThemeProvider>
+        </SidebarProvider>
         <Analytics />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-1SFQ77RRP2"
