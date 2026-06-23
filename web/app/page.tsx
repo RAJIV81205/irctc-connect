@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { headers } from "next/headers";
 import {
   ArrowRight,
@@ -12,6 +13,7 @@ import {
   Ticket,
   Train,
   Users,
+  Twitter,
 } from "lucide-react";
 // Github is deprecated in newer lucide versions — aliased here for compatibility
 import {
@@ -525,18 +527,94 @@ export default async function LandingPage() {
 
       {/* ── FOOTER ── */}
       <footer className="lp-footer">
-        {stats.stars > 0 && (
-          <>★ {stats.stars.toLocaleString()} stars · {stats.downloads.toLocaleString()} downloads/mo · </>
-        )}
-        Built by{" "}
-        <a
-          href="https://github.com/RAJIV81205"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "#6b7280", textDecoration: "underline" }}
-        >
-          Rajiv Dubey
-        </a>
+        <div className="lp-inner lp-footer-inner">
+          <div className="lp-footer-brand">
+            <div className="lp-footer-logo">
+              <div className="lp-footer-logo-mark">
+                <Image
+                  src="/icon.png"
+                  alt="RailKit"
+                  width={24}
+                  height={24}
+                  style={{ objectFit: "contain" }}
+                />
+              </div>
+              <span className="lp-footer-logo-name">RailKit</span>
+            </div>
+            <p className="lp-footer-kicker">Developer platform</p>
+            <p className="lp-footer-copy">
+              API + SDK for PNR, live tracking, seat availability, and rail
+              workflows.
+            </p>
+            <p className="lp-footer-meta">
+              Built by{" "}
+              <a
+                href="https://github.com/RAJIV81205"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Rajiv Dubey
+              </a>
+              {stats.stars > 0 && (
+                <>
+                  {" "}
+                  · {stats.stars.toLocaleString()} stars ·{" "}
+                  {stats.downloads.toLocaleString()} downloads/mo
+                </>
+              )}
+            </p>
+          </div>
+
+          <div className="lp-footer-links-wrap">
+            <div className="lp-footer-col">
+              <div className="lp-footer-title">Pages</div>
+              <Link href="/" className="lp-footer-link">
+                Home
+              </Link>
+              <Link href="/docs" className="lp-footer-link">
+                Docs
+              </Link>
+              <Link href="/pricing" className="lp-footer-link">
+                Pricing
+              </Link>
+              <Link href="/contact" className="lp-footer-link">
+                Contact
+              </Link>
+            </div>
+
+            <div className="lp-footer-col">
+              <div className="lp-footer-title">Legal</div>
+              <Link href="/terms" className="lp-footer-link">
+                Terms
+              </Link>
+              <Link href="/privacy" className="lp-footer-link">
+                Privacy
+              </Link>
+            </div>
+
+            <div className="lp-footer-col">
+              <div className="lp-footer-title">Social</div>
+              <a
+                href="https://github.com/RAJIV81205/railkit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lp-footer-link lp-footer-social"
+              >
+                <Github size={14} />
+                GitHub
+              </a>
+              <a
+                href="https://twitter.com/RailKitAPI"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lp-footer-link lp-footer-social"
+              >
+                <Twitter size={14} />
+                Twitter
+              </a>
+            </div>
+          </div>
+        </div>
       </footer>
 
       <style>{`
@@ -920,12 +998,133 @@ export default async function LandingPage() {
 
         /* ── Footer ── */
         .lp-footer {
-          border-top: 1px solid #f3f4f6;
-          padding: 28px 24px;
-          text-align: center;
+          border-top: 1px solid rgba(0, 0, 0, 0.06);
+          background:
+            radial-gradient(circle at top right, rgba(255, 255, 255, 0.45), transparent 34%),
+            linear-gradient(180deg, #f7f1e8 0%, #eee4d6 100%);
+          padding: 64px 24px 56px;
+          min-height: 50vh;
+          display: flex;
+          align-items: center;
+        }
+        .lp-footer-inner {
+          display: grid;
+          grid-template-columns: 1.3fr 1fr;
+          gap: 28px;
+          align-items: start;
+          min-height: 220px;
+          width: 100%;
+        }
+        @media (max-width: 860px) {
+          .lp-footer-inner {
+            grid-template-columns: 1fr;
+          }
+        }
+        .lp-footer-brand {
+          min-width: 0;
+        }
+        .lp-footer-logo {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 14px;
+        }
+        .lp-footer-logo-mark {
+          width: 34px;
+          height: 34px;
+          border-radius: 9px;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          background: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+        .lp-footer-logo-name {
+          font-family: 'Instrument Serif', Georgia, serif;
+          font-size: 24px;
+          font-weight: 400;
+          letter-spacing: -0.02em;
+          color: #000;
+          line-height: 1;
+        }
+        .lp-footer-kicker {
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #7c6f62;
+          margin: 0 0 12px;
+        }
+        .lp-footer-copy {
+          font-family: 'Instrument Serif', Georgia, serif;
+          font-size: clamp(22px, 2.5vw, 30px);
+          line-height: 1.18;
+          color: #000;
+          margin: 0 0 12px;
+          max-width: 520px;
+        }
+        .lp-footer-meta {
           font-family: 'Inter', system-ui, sans-serif;
           font-size: 13px;
-          color: #9ca3af;
+          line-height: 1.6;
+          color: #6f6256;
+          margin: 0;
+        }
+        .lp-footer-meta a {
+          color: #4b4036;
+          text-decoration: none;
+          border-bottom: 1px solid transparent;
+        }
+        .lp-footer-meta a:hover {
+          color: #000;
+          border-bottom-color: #000;
+        }
+        .lp-footer-links-wrap {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 18px;
+          padding-top: 8px;
+        }
+        @media (max-width: 560px) {
+          .lp-footer-links-wrap {
+            grid-template-columns: 1fr;
+          }
+        }
+        .lp-footer-col {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          min-width: 0;
+        }
+        .lp-footer-title {
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #7c6f62;
+          margin-bottom: 2px;
+        }
+        .lp-footer-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          width: fit-content;
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 14px;
+          color: #3d342b;
+          text-decoration: none;
+          transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .lp-footer-link:hover {
+          color: #000;
+          transform: translateX(1px);
+        }
+        .lp-footer-social {
+          color: #3d342b;
         }
       `}</style>
     </main>
