@@ -4,7 +4,7 @@ on:
   schedule:
     # Run at midnight UTC every day (0:00 UTC = 5:30 AM IST)
     # Adjust the cron expression based on your timezone preference
-     - cron: '30 0,12 * * *'
+    - cron: '30 3,13 * * *'
   
   # Allow manual trigger for testing
   workflow_dispatch:
