@@ -23,6 +23,7 @@ import {
   SITE_NAME,
 } from "../lib/seo";
 import { CinematicHero } from "../components/CinematicHero";
+import { MoochiFollower } from "../components/MoochiFollower";
 
 export const metadata: Metadata = {
   ...buildMetadata({
@@ -321,6 +322,8 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
+      <MoochiFollower />
+
       {/* ── CINEMATIC HERO ── */}
       <CinematicHero stats={heroStats} />
 
@@ -330,7 +333,7 @@ export default async function LandingPage() {
           <div className="lp-section-head">
             <p className="lp-eyebrow">What it includes</p>
             <h2 className="lp-h2">
-              Six methods.
+              Eight methods.
               <br />
               Every use case.
             </h2>
@@ -369,7 +372,7 @@ export default async function LandingPage() {
               </h2>
               <p className="lp-body">
                 Works in API routes, background jobs, support tools, or mobile
-                app backends. One key, one import, six methods.
+                app backends. One key, one import, Eight methods.
               </p>
               <ul className="lp-checklist">
                 {[
