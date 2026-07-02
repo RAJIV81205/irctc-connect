@@ -12,6 +12,11 @@ interface IUser {
   limit: number;
 }
 
+interface BillingExpiredEmailUser {
+  name: string;
+  email: string;
+}
+
 const senderEmail = "railkit@rajivdubey.dev";
 const senderName = "RailKit";
 const replyToEmail = "lucky81205+railkit@gmail.com";
@@ -204,6 +209,78 @@ const welcomeTemplateHtml = (user: IUser): string => {
   `.trim();
 };
 
+const billingExpiredTemplateHtml = (user: BillingExpiredEmailUser): string => {
+  const firstName = user.name.split(" ")[0] || "there";
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your RailKit plan has expired</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="min-height:100vh;padding:40px 16px;">
+    <tr>
+      <td align="center" valign="top">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e4e4e7;">
+          <tr>
+            <td style="background:#18181b;padding:36px 40px 28px;text-align:center;">
+              <img
+                src="https://railkit.rajivdubey.dev/icon.png"
+                alt="RailKit"
+                width="52"
+                height="52"
+                style="border-radius:12px;border:1px solid rgba(255,255,255,0.12);display:block;margin:0 auto 14px;"
+              />
+              <h1 style="margin:0 0 4px;color:#ffffff;font-size:20px;font-weight:600;letter-spacing:-0.3px;">RailKit</h1>
+              <p style="margin:0;color:#a1a1aa;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;">Billing update</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 40px 32px;">
+              <h2 style="margin:0 0 16px;font-size:20px;font-weight:600;color:#18181b;">Hi ${firstName},</h2>
+              <p style="margin:0 0 14px;font-size:15px;line-height:1.75;color:#3f3f46;">
+                Your paid RailKit plan has expired because the current billing period ended and no renewal was completed.
+              </p>
+              <p style="margin:0 0 14px;font-size:15px;line-height:1.75;color:#3f3f46;">
+                Your account has been moved to the <strong style="color:#18181b;">Free plan</strong>. API access remains available with the free-plan monthly limit.
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.75;color:#3f3f46;">
+                To restore paid limits, renew your subscription from pricing page. If this looks wrong, reply to this email and it will be reviewed directly.
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="https://railkit.rajivdubey.dev/pricing" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 32px;border-radius:8px;letter-spacing:0.2px;">
+                      Renew plan
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#fafafa;border-top:1px solid #e4e4e7;padding:20px 40px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:13px;color:#71717a;">
+                RailKit ·
+                <a href="https://railkit.rajivdubey.dev" style="color:#18181b;text-decoration:none;">railkit.rajivdubey.dev</a>
+              </p>
+              <p style="margin:0;font-size:11px;color:#d4d4d8;">
+                Transactional billing email for ${user.email}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+};
+
 // ─── Send Welcome Email (with Invoice) ───────────────────────────────────────
 
 export async function sendWelcomeEmail(userId: string) {
@@ -245,6 +322,23 @@ export async function sendWelcomeEmail(userId: string) {
   }
 
   console.log(`Welcome email sent to ${user.email} | ID: ${data?.id}`);
+  return data;
+}
+
+export async function sendBillingExpiredEmail(user: BillingExpiredEmailUser) {
+  const { data, error } = await resend.emails.send({
+    from: `${senderName} <${senderEmail}>`,
+    to: [user.email],
+    replyTo: `${replyToName} <${replyToEmail}>`,
+    subject: "Your RailKit paid plan has expired",
+    html: billingExpiredTemplateHtml(user),
+  });
+
+  if (error) {
+    console.error(`Failed to send billing expired email to ${user.email}:`, error);
+    throw error;
+  }
+
   return data;
 }
 

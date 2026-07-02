@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/db";
 import User from "@/lib/db/models/User";
+import { sendBillingExpiredEmail } from "@/lib/services/email";
 
 /**
  * Daily cron job to check and update user plans based on billing dates.
@@ -11,13 +12,13 @@ import User from "@/lib/db/models/User";
  * - If expirationDate is set and has passed, set expirationDate to null
  * - Pro/Enterprise: If 30 days passed since billing date, downgrade to free with limit 50 and usage 0
  * - Free: If 30 days passed since billing date, reset limit to 50
+ * - Paid expiry email: send transactional email during downgrade
  * - On billing downgrade/reset: clear both expirationDate and billingDate to null
  *
  * FIXES APPLIED:
- * 1. Promise.all → Promise.allSettled: single user save failure no longer kills entire batch
+ * 1. Promise.all → Promise.allSettled: single user failure no longer kills entire batch
  * 2. CRON_SECRET empty-string guard: "" now treated as misconfigured, not valid
- * 3. Idempotency: already-downgraded users safely skipped on retry
- * 4. Structured error logging per user failure
+ * 3. Structured error logging per user failure
  */
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -95,10 +96,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // FIX 3 (idempotency) is inherent in the logic below:
-    //   - After downgrade, billingDate = null → user excluded from next run's query
-    //   - If a retry happens mid-batch, already-saved users are idempotently skipped
-    //     because their billingDate is now null and won't match the query again.
+    // After downgrade/reset, billingDate = null so user is excluded from later cron runs.
+    // Expiry email is sent only in same execution path as paid-plan downgrade.
 
     const updatePromises = users.map(async (user) => {
       // Snapshot booleans from DB state BEFORE any mutations
@@ -114,6 +113,8 @@ export async function POST(req: Request) {
         user.billingDate != null &&
         new Date(user.billingDate).getTime() <= thirtyDaysAgo.getTime();
 
+      let shouldSendBillingExpiredEmail = false;
+
       // Step 1: Clear expired manual expiry
       if (hasExpiredExpiration) {
         user.expirationDate = null;
@@ -125,6 +126,7 @@ export async function POST(req: Request) {
           user.plan = "free";
           user.limit = 50;
           user.usage = 0;
+          shouldSendBillingExpiredEmail = true;
           user.billingDate = null;
           user.expirationDate = null; // defensive clear
         } else if (user.plan === "free") {
@@ -135,30 +137,43 @@ export async function POST(req: Request) {
         }
       }
 
-      return user.save();
+      const savedUser = await user.save();
+
+      if (shouldSendBillingExpiredEmail) {
+        await sendBillingExpiredEmail({
+          name: savedUser.name,
+          email: savedUser.email,
+        });
+      }
+
+      return savedUser;
     });
 
-    // FIX 1: Promise.allSettled instead of Promise.all.
-    // Old code: ONE failing user.save() threw → entire batch aborted → 500 returned,
-    //   no users updated, cron reports failure even if 999/1000 were fine.
-    // New code: each user processed independently; failures logged per-user;
-    //   succeeded users counted separately; partial success returned as 207.
+    // Promise.allSettled keeps other users processing even if one save/email fails.
     const settled = await Promise.allSettled(updatePromises);
 
-    const succeeded: any[] = [];
+    const succeeded: Array<{
+      userId: string;
+      email: string;
+      plan: string;
+      limit: number;
+      usage: number;
+      billingDate: Date | null;
+      expirationDate: Date | null;
+    }> = [];
     const failed: { userId: string; reason: string }[] = [];
 
     settled.forEach((result, idx) => {
       if (result.status === "fulfilled") {
         const user = result.value;
         succeeded.push({
-          userId: user._id,
+          userId: String(user._id),
           email: user.email,
           plan: user.plan,
           limit: user.limit,
           usage: user.usage,
-          billingDate: user.billingDate,
-          expirationDate: user.expirationDate,
+          billingDate: user.billingDate ?? null,
+          expirationDate: user.expirationDate ?? null,
         });
       } else {
         // Log full error server-side; return only safe summary to caller
