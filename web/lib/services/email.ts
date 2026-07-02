@@ -228,7 +228,7 @@ const billingExpiredTemplateHtml = (user: BillingExpiredEmailUser): string => {
           <tr>
             <td style="background:#18181b;padding:36px 40px 28px;text-align:center;">
               <img
-                src="https://railkit.rajivdubey.dev/icon.png"
+                src="https://railkit.rajivdubey.dev/icon-dark.png"
                 alt="RailKit"
                 width="52"
                 height="52"
